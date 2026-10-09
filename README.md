@@ -2,6 +2,8 @@
 
 Peer-to-peer video calls and side text in the browser. Static PWA — Ogma holds no user media or chat database.
 
+**Start a call:** [https://adambergmanconsulting-lgtm.github.io/Ogma/](https://adambergmanconsulting-lgtm.github.io/Ogma/)
+
 Open or share a capability link (`#room=…`). Public BitTorrent trackers only help peers meet; live audio, video, and chat stay on WebRTC between browsers. Anyone with the link can join. There are no accounts.
 
 **Name.** In Celtic myth, Ogma is the god of speech and open dialogue. Legend pictured him linking the speaker’s tongue to the listener’s ear with invisible golden threads — a metaphor for a serverless video stream.
