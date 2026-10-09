@@ -62,6 +62,10 @@ export function VaultSettings(props: VaultSettingsProps) {
           <span className="text-sm text-[color:var(--color-muted)]">Your name</span>
           <input
             data-testid="vault-rename"
+            type="text"
+            name="displayName"
+            autoComplete="nickname"
+            data-1p-ignore
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
