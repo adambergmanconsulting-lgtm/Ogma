@@ -60,7 +60,7 @@ export function Lobby(props: LobbyProps) {
                 data-testid="join-room"
                 disabled={props.busy || !props.roomInput.trim()}
                 onClick={props.onJoin}
-                className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[#1a1408] transition hover:brightness-105 disabled:opacity-60 sm:flex-1"
+                className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] transition hover:bg-[color:var(--color-honey)] disabled:opacity-60 sm:flex-1"
               >
                 Join this room
               </button>
@@ -81,7 +81,7 @@ export function Lobby(props: LobbyProps) {
                 data-testid="create-room"
                 disabled={props.busy}
                 onClick={props.onCreate}
-                className="flex-1 rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[#1a1408] transition hover:brightness-105 disabled:opacity-60"
+                className="flex-1 rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] transition hover:bg-[color:var(--color-honey)] disabled:opacity-60"
               >
                 Create room
               </button>

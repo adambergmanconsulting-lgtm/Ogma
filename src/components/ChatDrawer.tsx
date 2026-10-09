@@ -53,7 +53,7 @@ export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDraw
                   className={[
                     'max-w-[85%] rounded-2xl px-3 py-2 text-sm',
                     mine
-                      ? 'bg-[color:var(--color-gold)] text-[#1a1408]'
+                      ? 'bg-[color:var(--color-gold)] text-[color:var(--color-on-gold)]'
                       : 'bg-[color:var(--color-panel-2)] ring-1 ring-[color:var(--color-line)]',
                   ].join(' ')}
                 >
@@ -72,13 +72,13 @@ export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDraw
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Say something…"
-          className="min-w-0 flex-1 rounded-xl border border-[color:var(--color-line)] bg-[#0d1524] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-gold)]"
+          className="min-w-0 flex-1 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-gold)]"
         />
         <button
           type="submit"
           data-testid="chat-send"
           aria-label="Send"
-          className="rounded-xl bg-[color:var(--color-gold)] px-3 text-[#1a1408]"
+          className="rounded-xl bg-[color:var(--color-gold)] px-3 text-[color:var(--color-on-gold)] hover:bg-[color:var(--color-honey)]"
         >
           <Send className="h-4 w-4" />
         </button>

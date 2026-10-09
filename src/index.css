@@ -3,15 +3,21 @@
 @theme {
   --font-display: 'Fraunces', Georgia, serif;
   --font-sans: 'Source Sans 3', 'Segoe UI', sans-serif;
-  --color-ink: #e8eef8;
-  --color-muted: #9aabbf;
-  --color-panel: #121a2b;
-  --color-panel-2: #182338;
-  --color-line: #2a3a55;
-  --color-gold: #d4a24c;
-  --color-gold-soft: #e8c97a;
+  /* Slate stone canvas + carved panels (Ogham / pillar) */
+  --color-bg: #0f172a;
+  --color-ink: #f1f5f9;
+  --color-muted: #94a3b8;
+  --color-panel: #1e293b;
+  --color-panel-2: #334155;
+  --color-line: #475569;
+  /* Gold & amber chains; sun-face soft accent */
+  --color-gold: #f59e0b;
+  --color-honey: #d97706;
+  --color-gold-soft: #fbbf24;
+  --color-on-gold: #0f172a;
+  /* Moss / sacred-tree connected */
+  --color-ok: #10b981;
   --color-danger: #e35d6a;
-  --color-ok: #3ecf8e;
 }
 
 html,
@@ -25,10 +31,11 @@ body {
   font-family: var(--font-sans);
   color: var(--color-ink);
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(212, 162, 76, 0.14), transparent 55%),
-    radial-gradient(900px 500px at 90% 0%, rgba(70, 120, 200, 0.16), transparent 50%),
-    linear-gradient(165deg, #0b1220 0%, #10182a 45%, #0a101c 100%);
+    radial-gradient(1200px 600px at 10% -10%, rgba(245, 158, 11, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(16, 185, 129, 0.1), transparent 50%),
+    linear-gradient(165deg, #0f172a 0%, #1e293b 45%, #0b1220 100%);
   background-attachment: fixed;
+  background-color: var(--color-bg);
 }
 
 * {

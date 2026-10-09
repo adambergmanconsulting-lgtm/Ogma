@@ -11,7 +11,7 @@ async function render(size, out) {
   await page.setViewportSize({ width: size, height: size });
   const sized = svg.replace('<svg', `<svg width="${size}" height="${size}"`);
   await page.setContent(
-    `<!doctype html><html><body style="margin:0;background:#0b1220">${sized}</body></html>`,
+    `<!doctype html><html><body style="margin:0;background:#0f172a">${sized}</body></html>`,
   );
   const buf = await page.screenshot({ type: 'png', omitBackground: false });
   writeFileSync(out, buf);

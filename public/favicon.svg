@@ -1,10 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Ogham stave mark: secondary brand geometry (threads stay primary in UI). -->
-  <rect width="64" height="64" rx="14" fill="#0b1220"/>
-  <path d="M32 10v44" stroke="#d4a24c" stroke-width="3" stroke-linecap="round"/>
-  <!-- Right-side notches (consonant-like) -->
-  <path d="M32 16h14M32 21h14" stroke="#d4a24c" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M32 28h10M32 33h10M32 38h10" stroke="#e8c97a" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Across-stem notches (vowel-like) -->
-  <path d="M22 46h20M22 51h20" stroke="#f3e6c8" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
+  <!-- Ogham stave mark: secondary brand geometry. -->
+  <rect width="64" height="64" rx="14" fill="#0f172a"/>
+  <path d="M32 10v44" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 16h14M32 21h14" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 28h10M32 33h10M32 38h10" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M22 46h20M22 51h20" stroke="#fef08a" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
 </svg>

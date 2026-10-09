@@ -32,7 +32,7 @@ function DeviceSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-[color:var(--color-line)] bg-[#0d1524] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-gold)]"
+        className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-gold)]"
       >
         {options.length === 0 ? <option value="">No devices found</option> : null}
         {options.map((d) => (

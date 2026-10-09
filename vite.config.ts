@@ -19,8 +19,8 @@ export default defineConfig({
         short_name: 'Ogma',
         description:
           'Serverless P2P video calling and chat — invisible golden threads between speakers.',
-        theme_color: '#0b1220',
-        background_color: '#0b1220',
+        theme_color: '#0f172a',
+        background_color: '#0f172a',
         display: 'standalone',
         start_url: './',
         scope: './',

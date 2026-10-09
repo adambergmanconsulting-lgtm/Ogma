@@ -36,8 +36,8 @@ function CtrlButton({
         danger
           ? 'bg-[color:var(--color-danger)] text-white hover:brightness-110'
           : active
-            ? 'bg-[color:var(--color-gold)] text-[#1a1408] hover:brightness-105'
-            : 'bg-[color:var(--color-panel-2)] text-[color:var(--color-ink)] ring-1 ring-[color:var(--color-line)] hover:bg-[#1f2c45]',
+            ? 'bg-[color:var(--color-gold)] text-[color:var(--color-on-gold)] hover:bg-[color:var(--color-honey)]'
+            : 'bg-[color:var(--color-panel-2)] text-[color:var(--color-ink)] ring-1 ring-[color:var(--color-line)] hover:brightness-110',
       ].join(' ')}
     >
       {children}
