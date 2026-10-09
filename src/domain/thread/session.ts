@@ -1,73 +1,46 @@
-import {
-  defaultRelayUrls,
-  getRelaySockets,
-  joinRoom,
-  selfId,
-  type Room,
-} from '@trystero-p2p/torrent';
+import { joinRoom, selfId } from '@trystero-p2p/torrent';
 import { ICE_SERVERS, MAX_PEERS } from '../types';
 import {
+  normalizeInboundChat,
+  textChatPayload,
+  type TextChatPayload,
+} from './chatEnvelope';
+import { createMeshMediaPlane } from './mediaPlane';
+import {
   clearScheduledPublishes,
-  publishLocalToPeers,
-  replaceLocalTrackOnPeers,
   schedulePublishes,
   wirePeerMediaBridge,
 } from './publishMedia';
+import { THREAD_TRACKER_URLS, TRYSTERO_APP_ID } from './relayHealth';
+import { allowsBinaryChat, DEFAULT_ROOM_MODE, type RoomMode } from './roomMode';
+import type {
+  ControlWire,
+  MetaWire,
+  ThreadSession,
+  ThreadSessionHandlers,
+} from './sessionTypes';
 
-export const TRYSTERO_APP_ID = 'ogma-thread-v1';
-export const THREAD_TRACKER_URLS = [...defaultRelayUrls];
+export { countOpenRelays, listRelayHealth, THREAD_TRACKER_URLS, TRYSTERO_APP_ID } from './relayHealth';
+export type { RelayHealth } from './relayHealth';
+export type { TextChatPayload };
+export type { ChatWire } from './chatEnvelope';
+export type {
+  ControlWire,
+  MetaWire,
+  SubscribeControl,
+  ThreadSession,
+  ThreadSessionHandlers,
+} from './sessionTypes';
 
-export type RelayHealth = { url: string; readyState: number };
-
-export function listRelayHealth(): RelayHealth[] {
-  const sockets = getRelaySockets() as Record<string, WebSocket | undefined>;
-  return Object.entries(sockets).map(([url, socket]) => ({
-    url,
-    readyState: socket?.readyState ?? WebSocket.CLOSED,
-  }));
-}
-
-const WS_OPEN = 1;
-
-export function countOpenRelays(health = listRelayHealth()): number {
-  return health.filter((h) => h.readyState === WS_OPEN).length;
-}
-
-export type ChatWire = {
-  id: string;
-  text: string;
-  displayName: string;
-  sentAt: number;
-};
-
-export type MetaWire = { displayName: string };
-
-export interface ThreadSessionHandlers {
-  onPeerJoin: (peerId: string) => void;
-  onPeerLeave: (peerId: string) => void;
-  onPeerStream: (peerId: string, stream: MediaStream) => void;
-  onChat: (peerId: string, message: ChatWire) => void;
-  onMeta: (peerId: string, meta: MetaWire) => void;
-  onJoinError: (message: string) => void;
-  onRoomFull: () => void;
-}
-
-export interface ThreadSession {
-  selfId: string;
-  room: Room;
-  sendChat: (message: ChatWire) => Promise<void>;
-  sendMeta: (meta: MetaWire) => Promise<void>;
-  addStream: (stream: MediaStream) => void;
-  replaceTrack: (oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) => void;
-  peerCount: () => number;
-  leave: () => Promise<void>;
-}
-
-function remotePeerCount(room: Room): number {
+function remotePeerCount(room: { getPeers: () => object }): number {
   return Object.keys(room.getPeers()).length;
 }
 
-export function openThreadSession(roomSecret: string, handlers: ThreadSessionHandlers): ThreadSession {
+export function openThreadSession(
+  roomSecret: string,
+  handlers: ThreadSessionHandlers,
+  roomMode: RoomMode = DEFAULT_ROOM_MODE,
+): ThreadSession {
   const room = joinRoom(
     {
       appId: TRYSTERO_APP_ID,
@@ -86,16 +59,31 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
     },
   );
 
-  const chat = room.makeAction<ChatWire>('chat');
+  const mediaPlane = createMeshMediaPlane(room);
+  const allowBinary = allowsBinaryChat(roomMode);
+  const chat = room.makeAction<TextChatPayload>('chat');
   const meta = room.makeAction<MetaWire>('meta');
+  const control = room.makeAction<ControlWire>('control');
   let localStream: MediaStream | null = null;
   const trackUnsubs = new Map<string, () => void>();
   const publishTimers = new Map<string, number[]>();
 
-  chat.onMessage = (data, context) => handlers.onChat(context.peerId, data);
+  chat.onMessage = (data, context) => {
+    const normalized = normalizeInboundChat(data, allowBinary);
+    if (!normalized || normalized.kind !== 'text') return;
+    handlers.onChat(context.peerId, normalized);
+  };
   meta.onMessage = (data, context) => handlers.onMeta(context.peerId, data);
+  control.onMessage = (data, context) => {
+    if (!data || typeof data !== 'object') return;
+    if (data.type === 'speaking') {
+      handlers.onSpeaking(context.peerId, data.level, data.ts);
+      return;
+    }
+    if (data.type === 'subscribe') handlers.onSubscribe(context.peerId, data);
+  };
 
-  const publish = (target?: string) => publishLocalToPeers(room, localStream, target);
+  const publish = (target?: string) => mediaPlane.publishLocal(localStream, target);
 
   const enforceCapacity = () => {
     if (remotePeerCount(room) > MAX_PEERS - 1) {
@@ -128,7 +116,6 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
     handlers.onPeerLeave(peerId);
   };
   room.onPeerStream = (stream, peerId) => onRemoteStream(peerId, stream);
-
   queueMicrotask(() => {
     enforceCapacity();
   });
@@ -136,11 +123,26 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
   return {
     selfId,
     room,
+    mediaPlane,
+    roomMode,
     async sendChat(message) {
-      await chat.send(message);
+      await chat.send(
+        textChatPayload(message.id, message.text, message.displayName, message.sentAt),
+      );
     },
     async sendMeta(m) {
       await meta.send(m);
+    },
+    async sendSpeaking(level) {
+      await control.send({ type: 'speaking', level, ts: Date.now() });
+    },
+    async sendSubscribe(msg) {
+      await control.send({
+        type: 'subscribe',
+        wantVideoFrom: msg.wantVideoFrom,
+        pins: msg.pins,
+        showAll: msg.showAll,
+      });
     },
     addStream(stream) {
       localStream = stream;
@@ -150,7 +152,15 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
       }
     },
     replaceTrack(oldTrack, newTrack) {
-      replaceLocalTrackOnPeers(room, oldTrack, newTrack);
+      mediaPlane.replaceTrack(oldTrack, newTrack);
+    },
+    setOutboundVideoEnabled(peerId, enabled, videoTrack) {
+      const track =
+        videoTrack ?? localStream?.getVideoTracks().find((t) => t.readyState === 'live') ?? null;
+      mediaPlane.setOutboundVideoEnabled(peerId, enabled, track);
+    },
+    applySendBitrate(maxBitrateBps) {
+      mediaPlane.applySendBitrate(maxBitrateBps);
     },
     peerCount() {
       return remotePeerCount(room) + 1;
@@ -167,6 +177,7 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
       room.onPeerStream = null;
       chat.onMessage = null;
       meta.onMessage = null;
+      control.onMessage = null;
       await room.leave();
     },
   };

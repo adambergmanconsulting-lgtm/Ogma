@@ -41,7 +41,10 @@ export const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
+/** Hard refuse new joins at this total (self + remotes). */
 export const MAX_PEERS = 6;
+/** Soft UI warn when total people reach this. */
+export const WARN_PEERS = 5;
 
 export const DEFAULT_MEDIA_CONSTRAINTS: MediaConstraintsConfig = {
   widthMax: 1280,

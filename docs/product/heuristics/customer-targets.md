@@ -15,6 +15,7 @@
 | Small team / friends | Instant link-based video + side chat without accounts | Enterprises needing SSO/recording |
 | Conference room operator | Pick USB camera/mic/speaker and hot-swap mid-call | Broadcast/webinar hosts (SFU scale) |
 | Privacy-minded group | Stay on P2P data channels; no central chat DB | Teams needing compliance archives |
+| Team / company (paid, later) | Reliable A/V at N≥6 + images in side chat via opt-in infra | Must-have compliance archive / SSO until those are explicit SKUs |
 
 ## App core (index)
 

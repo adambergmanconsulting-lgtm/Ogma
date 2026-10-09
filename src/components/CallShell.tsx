@@ -6,7 +6,6 @@ import type { MediaDeviceOption } from '../domain/types';
 import { ChatDrawer } from './ChatDrawer';
 import { ControlBar } from './ControlBar';
 import { InviteLinkBar } from './InviteLinkBar';
-import { OghamMark } from './OghamMark';
 import { SettingsDrawer } from './SettingsDrawer';
 import { VideoGrid } from './VideoGrid';
 
@@ -27,6 +26,9 @@ interface CallShellProps {
   drawer: Drawer;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  pinnedPeerIds?: string[];
+  showAllVideos?: boolean;
+  capacityWarning?: string | null;
   videoDevices: MediaDeviceOption[];
   audioDevices: MediaDeviceOption[];
   outputDevices: MediaDeviceOption[];
@@ -37,6 +39,8 @@ interface CallShellProps {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleChat: () => void;
+  onTogglePin?: (peerId: string) => void;
+  onToggleShowAllVideos?: () => void;
   onOpenSettings: () => void;
   onCloseDrawer: () => void;
   onLeave: () => void;
@@ -61,37 +65,24 @@ export function CallShell(props: CallShellProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <OghamMark className="h-4 w-auto shrink-0 text-[color:var(--color-gold)]" />
-            <span className="shrink-0 font-[family-name:var(--font-display)] text-base tracking-tight sm:text-lg">
-              Ogma
+      <header className="px-3 pt-2 pb-1">
+        <div className="flex min-w-0 items-center gap-2 text-xs text-[color:var(--color-muted)]">
+          <span data-testid="connection-label" className="min-w-0 truncate">
+            {props.connectionLabel}
+          </span>
+          {props.roomCode ? (
+            <span data-testid="room-code" className="shrink-0 tabular-nums">
+              {props.roomCode}
             </span>
-            <span
-              data-testid="connection-label"
-              className="min-w-0 truncate text-xs text-[color:var(--color-muted)]"
-            >
-              {props.connectionLabel}
-              {props.roomCode ? (
-                <>
-                  {' · '}
-                  <span data-testid="room-code">Room {props.roomCode}</span>
-                </>
-              ) : null}
-            </span>
-          </div>
+          ) : null}
         </div>
-        {props.inviteUrl ? (
-          <div className={waitingAlone ? 'invite-link-bar-wait' : undefined}>
+        {props.inviteUrl && waitingAlone ? (
+          <div className="invite-link-bar-wait mt-1.5">
             <InviteLinkBar inviteUrl={props.inviteUrl} onCopyInvite={props.onCopyInvite} />
           </div>
         ) : null}
         {props.linkHint ? (
-          <p
-            role="status"
-            className="mt-1.5 text-[11px] text-[color:var(--color-muted)]"
-          >
+          <p role="status" className="mt-1 text-[11px] text-[color:var(--color-muted)]">
             {props.linkHint}
           </p>
         ) : null}
@@ -104,8 +95,19 @@ export function CallShell(props: CallShellProps) {
             localLabel={props.displayName}
             localMicOff={props.localMicOff}
             remotePeers={props.remotePeers}
+            pinnedPeerIds={props.pinnedPeerIds}
+            onTogglePin={props.onTogglePin}
             applyAudioOutput={props.applyAudioOutput}
           />
+          {props.capacityWarning ? (
+            <p
+              role="status"
+              data-testid="capacity-warning"
+              className="px-4 pb-1 text-xs text-[color:var(--color-muted)]"
+            >
+              {props.capacityWarning}
+            </p>
+          ) : null}
           {props.error ? (
             <p className="px-4 pb-2 text-sm text-[color:var(--color-danger)]">{props.error}</p>
           ) : null}
@@ -113,10 +115,13 @@ export function CallShell(props: CallShellProps) {
             micEnabled={props.micEnabled}
             cameraEnabled={props.cameraEnabled}
             chatOpen={props.drawer === 'chat'}
-            localStream={props.localStream}
+            showAllVideos={props.showAllVideos}
             onToggleMic={props.onToggleMic}
             onToggleCamera={props.onToggleCamera}
             onToggleChat={props.onToggleChat}
+            onToggleShowAllVideos={
+              !waitingAlone ? props.onToggleShowAllVideos : undefined
+            }
             onOpenSettings={props.onOpenSettings}
             onLeave={props.onLeave}
           />

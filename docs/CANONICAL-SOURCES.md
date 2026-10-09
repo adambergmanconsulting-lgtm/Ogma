@@ -36,7 +36,7 @@
 | Thread topology / hub | [thread-topology.md](engineering/protocols/thread-topology.md) |
 | STUN / TURN decision | [connectivity.md](engineering/protocols/connectivity.md) |
 | Loom encrypted sync | [loom-sync.md](engineering/protocols/loom-sync.md) |
-| Auth / entitlement | N/A (capability links; no accounts) |
+| Auth / entitlement | N/A free path (capability links); paid team billing later |
 
 ## Task → one doc
 

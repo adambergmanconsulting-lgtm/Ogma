@@ -1,26 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { buildUserMediaConstraints } from '../domain/media/constraints';
+import type { SendQualityTier } from '../domain/media/constraints';
+import { devicesByKind, listMediaDevices, setAudioOutput } from '../domain/media/devices';
 import {
-  devicesByKind,
-  listMediaDevices,
-  replaceTrackOnStream,
-  setAudioOutput,
-} from '../domain/media/devices';
+  applyLiveVideoQuality,
+  pickDefaultDeviceIds,
+  startUserMediaCapture,
+} from '../domain/media/startUserMedia';
+import { switchAudioTrack, switchVideoTrack } from '../domain/media/switchDevices';
 import type { MediaDeviceOption, MediaConstraintsConfig } from '../domain/types';
-import { DEFAULT_MEDIA_CONSTRAINTS } from '../domain/types';
 
 export interface UseUserMediaOptions {
   peerCount?: number;
+  qualityTier?: SendQualityTier;
+  congested?: boolean;
   onTrackReplaced?: (track: MediaStreamTrack) => void;
 }
 
 export function useUserMedia(options: UseUserMediaOptions = {}) {
-  const { peerCount = 1, onTrackReplaced } = options;
+  const {
+    peerCount = 1,
+    qualityTier = 'high',
+    congested = false,
+    onTrackReplaced,
+  } = options;
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [devices, setDevices] = useState<MediaDeviceOption[]>([]);
-  const [videoDeviceId, setVideoDeviceId] = useState<string>('');
-  const [audioDeviceId, setAudioDeviceId] = useState<string>('');
-  const [audioOutputId, setAudioOutputId] = useState<string>('');
+  const [videoDeviceId, setVideoDeviceId] = useState('');
+  const [audioDeviceId, setAudioDeviceId] = useState('');
+  const [audioOutputId, setAudioOutputId] = useState('');
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,25 +43,26 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     async (config: Partial<MediaConstraintsConfig> = {}) => {
       setError(null);
       try {
-        const constraints = buildUserMediaConstraints(
-          {
-            ...DEFAULT_MEDIA_CONSTRAINTS,
-            videoDeviceId: config.videoDeviceId || videoDeviceId || undefined,
-            audioDeviceId: config.audioDeviceId || audioDeviceId || undefined,
-          },
+        const next = await startUserMediaCapture({
           peerCount,
-        );
-        const next = await navigator.mediaDevices.getUserMedia(constraints);
+          qualityTier,
+          congested,
+          videoDeviceId,
+          audioDeviceId,
+          config,
+        });
         streamRef.current?.getTracks().forEach((t) => t.stop());
         streamRef.current = next;
         setStream(next);
         const list = await refreshDevices();
-        const videos = devicesByKind(list, 'videoinput');
-        const audios = devicesByKind(list, 'audioinput');
-        const outputs = devicesByKind(list, 'audiooutput');
-        if (!videoDeviceId && videos[0]) setVideoDeviceId(videos[0].deviceId);
-        if (!audioDeviceId && audios[0]) setAudioDeviceId(audios[0].deviceId);
-        if (!audioOutputId && outputs[0]) setAudioOutputId(outputs[0].deviceId);
+        const picked = pickDefaultDeviceIds(list, {
+          video: videoDeviceId,
+          audio: audioDeviceId,
+          output: audioOutputId,
+        });
+        if (picked.video) setVideoDeviceId(picked.video);
+        if (picked.audio) setAudioDeviceId(picked.audio);
+        if (picked.output) setAudioOutputId(picked.output);
         return next;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Could not access camera/mic';
@@ -62,8 +70,28 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
         throw err;
       }
     },
-    [audioDeviceId, audioOutputId, peerCount, refreshDevices, videoDeviceId],
+    [
+      audioDeviceId,
+      audioOutputId,
+      congested,
+      peerCount,
+      qualityTier,
+      refreshDevices,
+      videoDeviceId,
+    ],
   );
+
+  useEffect(() => {
+    if (!streamRef.current) return;
+    applyLiveVideoQuality(
+      streamRef.current,
+      peerCount,
+      qualityTier,
+      congested,
+      videoDeviceId,
+      audioDeviceId,
+    );
+  }, [audioDeviceId, congested, peerCount, qualityTier, videoDeviceId]);
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -75,17 +103,8 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     async (deviceId: string) => {
       setVideoDeviceId(deviceId);
       if (!streamRef.current) return;
-      const temp = await navigator.mediaDevices.getUserMedia({
-        video: {
-          deviceId: { exact: deviceId },
-          width: { max: DEFAULT_MEDIA_CONSTRAINTS.widthMax },
-          frameRate: { max: DEFAULT_MEDIA_CONSTRAINTS.frameRateMax },
-        },
-        audio: false,
-      });
-      const track = temp.getVideoTracks()[0];
+      const track = await switchVideoTrack(streamRef.current, deviceId);
       if (!track || !streamRef.current) return;
-      replaceTrackOnStream(streamRef.current, track);
       setStream(new MediaStream(streamRef.current.getTracks()));
       onTrackReplaced?.(track);
       await refreshDevices();
@@ -97,18 +116,8 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     async (deviceId: string) => {
       setAudioDeviceId(deviceId);
       if (!streamRef.current) return;
-      const temp = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: { exact: deviceId },
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-        video: false,
-      });
-      const track = temp.getAudioTracks()[0];
+      const track = await switchAudioTrack(streamRef.current, deviceId, micEnabled);
       if (!track || !streamRef.current) return;
-      track.enabled = micEnabled;
-      replaceTrackOnStream(streamRef.current, track);
       setStream(new MediaStream(streamRef.current.getTracks()));
       onTrackReplaced?.(track);
       await refreshDevices();
@@ -138,8 +147,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
 
   const applyAudioOutput = useCallback(
     async (element: HTMLMediaElement | null) => {
-      if (!element || !audioOutputId) return;
-      await setAudioOutput(element, audioOutputId);
+      if (element && audioOutputId) await setAudioOutput(element, audioOutputId);
     },
     [audioOutputId],
   );

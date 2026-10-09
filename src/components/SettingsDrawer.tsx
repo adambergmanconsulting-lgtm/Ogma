@@ -58,23 +58,18 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     setToneHint(null);
     void playTestTone(props.audioOutputId || undefined)
       .then(() => {
-        setToneHint('Heard the chime? Call audio is unlocked on this tab.');
+        setToneHint('Playing');
       })
       .catch(() => {
-        setToneHint('Could not play test sound — check speaker permissions.');
+        setToneHint('Could not play');
       })
       .finally(() => setToneBusy(false));
   };
 
   return (
-    <aside className="flex w-full max-w-md flex-col border-l border-[color:var(--color-line)] bg-[color:var(--color-panel)]/95 backdrop-blur md:w-96">
-      <div className="flex items-center justify-between border-b border-[color:var(--color-line)] px-4 py-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg">Hardware</h2>
-          <p className="text-xs text-[color:var(--color-muted)]">
-            Hot-swap devices without leaving the call
-          </p>
-        </div>
+    <aside className="flex w-full max-w-md flex-col border-l border-[color:var(--color-line)] bg-[color:var(--color-panel)]/95 backdrop-blur md:w-80">
+      <div className="flex items-center justify-between px-3 py-2">
+        <h2 className="font-[family-name:var(--font-display)] text-base">Devices</h2>
         <button
           type="button"
           aria-label="Close settings"
@@ -85,7 +80,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
         </button>
       </div>
 
-      <div className="space-y-4 px-4 py-4">
+      <div className="space-y-4 px-3 py-3">
         <DeviceSelect
           label="Camera"
           value={props.videoDeviceId}
@@ -110,16 +105,13 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             data-testid="test-sound"
             disabled={toneBusy}
             onClick={onTestSound}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--color-gold)]/60 bg-[color:var(--color-panel-2)] px-3 py-2.5 text-sm font-semibold text-[color:var(--color-ink)] transition hover:bg-[color:var(--color-gold)] hover:text-[color:var(--color-on-gold)] disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel-2)] px-3 py-2.5 text-sm font-semibold transition hover:bg-[color:var(--color-panel)] disabled:opacity-60"
           >
             <Volume2 className="h-4 w-4" aria-hidden />
             {toneBusy ? 'Playing…' : 'Test sound'}
           </button>
-          <p className="text-xs text-[color:var(--color-muted)]">
-            Plays a short chime on the selected speaker and enables call audio in this tab.
-          </p>
           {toneHint ? (
-            <p role="status" className="text-xs text-[color:var(--color-ok)]">
+            <p role="status" className="text-xs text-[color:var(--color-muted)]">
               {toneHint}
             </p>
           ) : null}

@@ -1,4 +1,5 @@
 import type { Room } from '@trystero-p2p/torrent';
+import { applyMaxBitrate } from '../media/sendQuality';
 import { publishTracksToPeer, watchPeerTracks } from './peerMedia';
 
 type PeerMap = Record<string, RTCPeerConnection>;
@@ -29,6 +30,31 @@ export function replaceLocalTrackOnPeers(
       .getSenders()
       .find((s) => s.track === oldTrack || s.track?.kind === newTrack.kind);
     if (sender) void sender.replaceTrack(newTrack);
+  }
+}
+
+/**
+ * Enable/disable outbound video toward one peer via replaceTrack
+ * (shared MediaStreamTrack.enabled would mute every peer).
+ */
+export function setOutboundVideoToPeer(
+  room: Room,
+  peerId: string,
+  enabled: boolean,
+  videoTrack: MediaStreamTrack | null,
+): void {
+  const pc = (room.getPeers() as PeerMap)[peerId];
+  if (!pc || !videoTrack) return;
+  const audioSender = pc.getSenders().find((s) => s.track?.kind === 'audio');
+  const videoSender =
+    pc.getSenders().find((s) => s.track?.kind === 'video' || s.track?.id === videoTrack.id) ??
+    pc.getSenders().find((s) => s !== audioSender);
+  if (videoSender) void videoSender.replaceTrack(enabled ? videoTrack : null);
+}
+
+export function applyBitrateOnPeers(room: Room, maxBitrateBps: number): void {
+  for (const pc of Object.values(room.getPeers() as PeerMap)) {
+    if (pc) void applyMaxBitrate(pc, maxBitrateBps);
   }
 }
 

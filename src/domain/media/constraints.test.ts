@@ -2,16 +2,25 @@ import { describe, expect, it } from 'vitest';
 import { buildUserMediaConstraints } from './constraints';
 
 describe('buildUserMediaConstraints', () => {
-  it('caps resolution and frame rate for multi-peer mesh', () => {
-    const solo = buildUserMediaConstraints({}, 1);
-    const crowded = buildUserMediaConstraints({}, 5);
+  it('keeps high soft ceiling on healthy small rooms', () => {
+    const solo = buildUserMediaConstraints({}, 2, { tier: 'high', congested: false });
+    const video = solo.video as MediaTrackConstraints;
+    expect((video.width as ConstrainULongRange).ideal).toBe(1280);
+    expect((video.frameRate as ConstrainDoubleRange).ideal).toBe(30);
+  });
 
-    const soloVideo = solo.video as MediaTrackConstraints;
-    const crowdedVideo = crowded.video as MediaTrackConstraints;
+  it('drops ideal width/fps for crowded or congested calls', () => {
+    const crowded = buildUserMediaConstraints({}, 5, { tier: 'high', congested: false });
+    const congested = buildUserMediaConstraints({}, 3, { tier: 'high', congested: true });
+    const low = buildUserMediaConstraints({}, 3, { tier: 'low', congested: false });
 
-    expect((soloVideo.width as ConstrainULongRange).ideal).toBe(1280);
-    expect((crowdedVideo.width as ConstrainULongRange).ideal).toBeLessThan(1280);
-    expect((crowdedVideo.frameRate as ConstrainDoubleRange).max).toBe(30);
+    const crowdedW = (crowded.video as MediaTrackConstraints).width as ConstrainULongRange;
+    const congestedW = (congested.video as MediaTrackConstraints).width as ConstrainULongRange;
+    const lowW = (low.video as MediaTrackConstraints).width as ConstrainULongRange;
+
+    expect(crowdedW.ideal).toBeLessThan(1280);
+    expect(congestedW.ideal).toBeLessThanOrEqual(640);
+    expect(lowW.ideal).toBeLessThanOrEqual(640);
   });
 
   it('pins exact device ids when provided', () => {

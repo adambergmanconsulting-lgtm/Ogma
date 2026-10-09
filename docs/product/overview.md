@@ -6,22 +6,24 @@
 
 ## Fast path (read first)
 
-- **Unhosted data plane:** static app shell; Ogma holds no user media/chat DB.
-- **Thread (now):** link → live A/V + text → leave. Rendezvous via BitTorrent trackers (`@trystero-p2p/torrent`). Media over WebRTC.
+- **Free core (no cost):** static app shell; link → live A/V + text → leave. Ogma holds no free-user media/chat DB.
+- **Thread (now):** rendezvous via BitTorrent trackers (`@trystero-p2p/torrent`); media over WebRTC **P2P mesh** (selective subscribe; hub later).
+- **Paid team (later, optional):** images in chat, SFU streaming, related team extras — opt-in infra; honest copy when active.
 - **Loom (later):** encrypted peer-seeded **text** spaces; same capability mindset.
-- **1:1 video must work** (incl. phone foreground). 3 = mesh. 4+ = client hub + selective video.
+- **1:1 video must work** (incl. phone foreground). 3 = mesh. 4+ = client hub + selective video on free path.
 - **Phones:** participants yes; hubs/seeders last resort.
+- **Room size (free):** warn at 5, refuse at 6 until hub; see [thread-topology.md](../engineering/protocols/thread-topology.md).
 - Layers: [application-layering.md](../engineering/architecture/application-layering.md#host-fill-in).
 
 ## Invariants
 
-1. No Ogma backend for product data.
-2. No accounts — capability link is access.
-3. Live A/V and live chat are WebRTC P2P only.
+1. No Ogma backend for **free** product data (chat/history/media DB).
+2. Free access is capability link — no accounts required to join.
+3. **Free** live A/V and live chat are WebRTC P2P only (no SFU on free path).
 4. Trackers are meet-cute only.
-5. Text-only in chat/history; binaries = later paid product.
+5. Free chat/history is text-only; binaries / images = paid team product.
 6. Loom must not weaken Thread.
-7. Honest copy — no “no servers” / “fully anonymous” / unaudited “E2EE” claims.
+7. Honest copy — no “no servers” / “fully anonymous” / unaudited “E2EE” claims; paid mode must say when media/files may relay.
 
 ## Jobs
 
@@ -34,27 +36,38 @@
 
 ## Honest copy (ship in UI)
 
-**Thread:** Video, audio, and live chat stay between peers. Ogma runs no media or chat server. Public trackers only help you meet; STUN may be used for connectivity. Anyone with the link can join.
+**Thread (free):** Video, audio, and live chat stay between peers. Ogma runs no media or chat server on the free path. Public trackers only help you meet; STUN may be used for connectivity. Anyone with the link can join.
+
+**Thread (paid team, when active):** Media and/or files may relay through Ogma or a partner. Say so in the UI for that room — do not reuse free-path copy.
 
 **Loom:** Text history is encrypted with the space key, kept on members’ devices, and syncs when someone has the space open. Ogma keeps no central copy. Anyone with the space link can read that history.
 
-## Non-goals
+## Non-goals (free core)
 
-Accounts, Ogma-sent invites, SFU, images in free sync, cloud recording, screen share (v1), waiting room, background mobile VoIP, store app required to join.
+Forced accounts to join, Ogma-sent invites, SFU on free path, images in free sync, cloud recording, screen share (v1), waiting room, background mobile VoIP, store app required to join.
+
+## Paid team (later SKU — seams only until built)
+
+| Extra | Intent |
+|-------|--------|
+| Images in side chat | Typed chat envelope; not on free Loom/Thread sync |
+| SFU streaming | Second media-plane adapter; free stays mesh |
+| Org billing | May need team accounts; free joins stay link-based |
 
 ## Milestones
 
 | # | Bar |
 |---|-----|
-| M1 | Trystero; 1:1 solid (+ phone); 3-mesh; text; no Gun |
-| M1.5 | Client hub and/or selective video for 4+ |
+| M1 | Trystero; 1:1 solid (+ phone); 3-mesh; text; selective subscribe; no Gun |
+| M1.5 | Client hub for free 4+ |
 | M2 | Loom encrypted text sync |
+| Team | Paid SFU + images (after free-core quality) |
 
 ## Planned (after M1)
 
 | Feature | Intent |
 |---------|--------|
-| Background blur (toggle) | Optional local effect; peers see blur via processed track + `replaceTrack`. Not preview-only CSS. Keep phone CPU and bundle size honest. |
+| Background blur (toggle) | Optional local effect; peers see blur via processed track + `replaceTrack`. Not preview-only CSS. Keep phone CPU and bundle size honest. Yield under CPU/N pressure. |
 
 ## Related
 

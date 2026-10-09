@@ -15,9 +15,10 @@ Open or share a capability link (`#room=…`). Public BitTorrent trackers only h
 ## Run
 
 ```bash
-npm install
 npm run dev
 ```
+
+`npm run dev` installs dependencies first when `node_modules` is missing.
 
 Production build: `npm run build` → static `dist/`. Default host: **GitHub Pages** ([infra/contracts/github-pages.json](infra/contracts/github-pages.json)). Preview: `npm run preview`.
 

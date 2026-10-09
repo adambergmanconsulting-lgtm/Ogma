@@ -6,6 +6,8 @@ interface VideoGridProps {
   localLabel: string;
   localMicOff: boolean;
   remotePeers: RemotePeer[];
+  pinnedPeerIds?: string[];
+  onTogglePin?: (peerId: string) => void;
   applyAudioOutput?: (el: HTMLMediaElement | null) => void | Promise<void>;
 }
 
@@ -21,15 +23,17 @@ export function VideoGrid({
   localLabel,
   localMicOff,
   remotePeers,
+  pinnedPeerIds = [],
+  onTogglePin,
   applyAudioOutput,
 }: VideoGridProps) {
   const total = 1 + remotePeers.length;
 
   return (
-    <div className={`grid h-full min-h-0 flex-1 gap-3 p-3 md:p-4 ${gridClass(total)}`}>
+    <div className={`grid h-full min-h-0 flex-1 gap-2 p-2 md:gap-3 md:p-3 ${gridClass(total)}`}>
       <VideoTile
         stream={localStream}
-        label={`${localLabel} (You)`}
+        label={localLabel}
         muted
         mirrored
         micOff={localMicOff}
@@ -40,6 +44,8 @@ export function VideoGrid({
           key={peer.peerId}
           stream={peer.stream}
           label={peer.displayName}
+          pinned={pinnedPeerIds.includes(peer.peerId)}
+          onTogglePin={onTogglePin ? () => onTogglePin(peer.peerId) : undefined}
           applyAudioOutput={applyAudioOutput}
         />
       ))}

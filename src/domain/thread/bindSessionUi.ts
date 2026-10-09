@@ -1,5 +1,6 @@
-import type { ChatMessage } from '../types';
-import type { ChatWire, MetaWire, ThreadSessionHandlers } from './session';
+import { MAX_PEERS, type ChatMessage } from '../types';
+import type { TextChatPayload } from './chatEnvelope';
+import type { ControlWire, MetaWire, ThreadSessionHandlers } from './sessionTypes';
 
 export interface SessionUiBindings {
   cancelled: () => boolean;
@@ -12,6 +13,8 @@ export interface SessionUiBindings {
   setMessages: (update: (prev: ChatMessage[]) => ChatMessage[]) => void;
   clearSessionRefs: () => void;
   sendMeta: (meta: MetaWire) => void;
+  onSpeaking?: (peerId: string, level: number, ts: number) => void;
+  onSubscribe?: (peerId: string, msg: Extract<ControlWire, { type: 'subscribe' }>) => void;
 }
 
 /** Wire Trystero session callbacks into React state updaters. */
@@ -36,7 +39,7 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
       ui.setConnectionState('connected');
       ui.publishPeers();
     },
-    onChat: (id, wire: ChatWire) => {
+    onChat: (id, wire: TextChatPayload) => {
       if (ui.cancelled()) return;
       ui.setMessages((prev) => [
         ...prev,
@@ -56,6 +59,14 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
         ui.publishPeers();
       }
     },
+    onSpeaking: (id, level, ts) => {
+      if (ui.cancelled()) return;
+      ui.onSpeaking?.(id, level, ts);
+    },
+    onSubscribe: (id, msg) => {
+      if (ui.cancelled()) return;
+      ui.onSubscribe?.(id, msg);
+    },
     onJoinError: (message) => {
       if (ui.cancelled()) return;
       ui.setError(message || "Couldn't reach peers — network may block P2P.");
@@ -63,7 +74,7 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
     },
     onRoomFull: () => {
       if (ui.cancelled()) return;
-      ui.setError('Room is full (max 6 people).');
+      ui.setError(`Room is full (max ${MAX_PEERS} people).`);
       ui.setConnectionState('error');
       ui.clearSessionRefs();
     },

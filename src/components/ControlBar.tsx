@@ -1,15 +1,24 @@
 import type { ReactNode } from 'react';
-import { MessageSquare, Mic, MicOff, PhoneOff, Settings, Video, VideoOff } from 'lucide-react';
-import { MicLevel } from './MicLevel';
+import {
+  LayoutGrid,
+  MessageSquare,
+  Mic,
+  MicOff,
+  PhoneOff,
+  Settings,
+  Video,
+  VideoOff,
+} from 'lucide-react';
 
 interface ControlBarProps {
   micEnabled: boolean;
   cameraEnabled: boolean;
   chatOpen: boolean;
-  localStream: MediaStream | null;
+  showAllVideos?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleChat: () => void;
+  onToggleShowAllVideos?: () => void;
   onOpenSettings: () => void;
   onLeave: () => void;
 }
@@ -52,22 +61,15 @@ function CtrlButton({
 
 export function ControlBar(props: ControlBarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 border-t border-[color:var(--color-line)] bg-[color:var(--color-panel)]/90 px-3 py-3 backdrop-blur md:gap-3">
-      {/* Mute + level glued together — bottom toolbar, left of camera */}
-      <div
-        data-testid="mic-controls"
-        className="flex items-center gap-2 rounded-full border border-[color:var(--color-gold)]/50 bg-[color:var(--color-panel-2)] py-1.5 pl-2 pr-1.5"
+    <div className="flex flex-wrap items-center justify-center gap-2 px-3 py-3 md:gap-3">
+      <CtrlButton
+        label={props.micEnabled ? 'Mute microphone' : 'Unmute microphone'}
+        onClick={props.onToggleMic}
+        active={!props.micEnabled}
+        testId="toggle-mic"
       >
-        <MicLevel stream={props.localStream} active={props.micEnabled} variant="bar" />
-        <CtrlButton
-          label={props.micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-          onClick={props.onToggleMic}
-          active={!props.micEnabled}
-          testId="toggle-mic"
-        >
-          {props.micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-        </CtrlButton>
-      </div>
+        {props.micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+      </CtrlButton>
       <CtrlButton
         label={props.cameraEnabled ? 'Turn camera off' : 'Turn camera on'}
         onClick={props.onToggleCamera}
@@ -84,6 +86,16 @@ export function ControlBar(props: ControlBarProps) {
           <MessageSquare className="h-5 w-5" />
         </span>
       </CtrlButton>
+      {props.onToggleShowAllVideos ? (
+        <CtrlButton
+          label={props.showAllVideos ? 'Speaker video only' : 'Show all videos'}
+          onClick={props.onToggleShowAllVideos}
+          active={props.showAllVideos}
+          testId="toggle-show-all-videos"
+        >
+          <LayoutGrid className="h-5 w-5" />
+        </CtrlButton>
+      ) : null}
       <CtrlButton label="Settings" onClick={props.onOpenSettings}>
         <Settings className="h-5 w-5" />
       </CtrlButton>

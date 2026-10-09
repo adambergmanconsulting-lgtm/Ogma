@@ -8,5 +8,5 @@ export function connectionLabel(
 ): string {
   if (state !== 'connected') return state;
   if (remoteCount > 0) return 'Connected';
-  return openRelays > 0 ? 'Waiting for others…' : 'Connecting to trackers…';
+  return openRelays > 0 ? 'Waiting…' : 'Connecting…';
 }

@@ -5,8 +5,10 @@
 ## Fast path (read first)
 
 - Live video is WebRTC RTP — not torrent chunk sync.
-- **N=2:** direct link (P0). **N=3:** full mesh. **N≥4:** client hub forward + selective subscribe (after spike).
+- **Free path:** N=2 direct; N=3 full mesh; selective subscribe (active speaker + pins); N≥4 client hub after spike.
+- Soft UI warn at **5**; hard refuse at **6** (`MAX_PEERS`) until hub; hub target refuse **7**.
 - Phones: never hub if a non-phone peer exists.
+- **Paid team (later):** SFU media-plane adapter — see [overview.md](../../product/overview.md).
 
 ## Roles
 
@@ -15,9 +17,21 @@
 | Leaf | Send own A/V to hub (or to each peer in mesh); receive subscribed videos |
 | Hub | Receive from leaves; forward tracks to other leaves; send own A/V |
 
-## Hub election (M1.5)
+## Subscription (shipped on mesh)
 
 Broadcast over data channel (JSON):
+
+```json
+{ "type": "subscribe", "wantVideoFrom": ["peerId", "..."], "pins": ["peerId"], "showAll": false }
+```
+
+```json
+{ "type": "speaking", "level": 0.0, "ts": 0 }
+```
+
+Default want: active speaker(s) (audio level) + pins. Escape: show all videos. Others: no outbound video toward that peer (`replaceTrack(null)`).
+
+## Hub election (M1.5)
 
 ```json
 { "type": "hubScore", "peerId": "...", "score": 0, "deviceClass": "desktop|phone", "ts": 0 }
@@ -32,14 +46,6 @@ Broadcast over data channel (JSON):
 
 **Re-elect** when hub leaves or score broadcast shows a better peer by ≥20 for 3s. Renegotiate topology after election.
 
-## Subscription (M1.5)
-
-```json
-{ "type": "subscribe", "wantVideoFrom": ["peerId", "..."], "pins": ["peerId"] }
-```
-
-Default want: active speaker(s) (audio level) + pins + self. Others: no video or lowest layer.
-
 ## Hub spike go/no-go
 
 Before coding M1.5 hub: prove on Chromium and WebKit that a received `MediaStreamTrack` can be added as outbound on another `RTCPeerConnection` (forward without full MCU re-encode).
@@ -48,16 +54,21 @@ Before coding M1.5 hub: prove on Chromium and WebKit that a received `MediaStrea
 |--------|------------|
 | Works on Chrome + Safari | Hub forward + subscription |
 | Chrome only | Hub on desktop Chrome rooms; Safari leaves selective-mesh |
-| Neither reliable | **No hub** — selective subscription on mesh only; hard cap lower |
+| Neither reliable | **No hub** — selective subscription on mesh only; hard cap stays 6 |
 
 ## Encoding
 
-- Caps: width max 1280, fps max 30; scale down with N (see `buildUserMediaConstraints`).
-- Prefer forward encoded bits; simulcast later.
+- Soft ceilings: width max 1280, fps max 30; scale with N, speaking tier, congestion (`buildUserMediaConstraints`, `maxVideoBitrateBps`).
+- Prefer high quality on healthy small rooms; do not hard-drop solely because N rose.
+- Prefer forward encoded bits; simulcast later (or with paid SFU).
 
 ## Hard cap
 
-UI warns at 5, refuses new joins at 7 until tree/multi-hub exists.
+| Stage | Warn | Refuse |
+|-------|------|--------|
+| Mesh + subscribe (now) | 5 | 6 |
+| After free-core hub | 5 | 7 |
+| Paid SFU (later) | — | product cap (start 16) |
 
 ## Related
 

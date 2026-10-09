@@ -6,7 +6,6 @@ interface LobbyProps {
   mediaError: string | null;
   busy: boolean;
   inviteMode: boolean;
-  inviteCode: string;
   onDisplayName: (v: string) => void;
   onRoomInput: (v: string) => void;
   onCreate: () => void;
@@ -15,27 +14,11 @@ interface LobbyProps {
 
 export function Lobby(props: LobbyProps) {
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-5 py-10 fade-up">
-      <div className="mb-8">
-        <h1 className="flex items-center gap-3 font-[family-name:var(--font-display)] text-5xl tracking-tight text-[color:var(--color-ink)] md:text-6xl">
-          <OghamMark className="h-10 w-auto shrink-0 text-[color:var(--color-gold)] md:h-12" />
-          <span>Ogma</span>
-        </h1>
-        {props.inviteMode ? (
-          <div className="mt-3 space-y-2">
-            <p className="max-w-prose text-[color:var(--color-muted)]">
-              You’ve been invited
-              {props.inviteCode ? (
-                <>
-                  {' '}
-                  to room <span data-testid="lobby-room-code">{props.inviteCode}</span>
-                </>
-              ) : null}
-              . Enter your name and join — do not create a new room or you’ll be alone.
-            </p>
-          </div>
-        ) : null}
-      </div>
+    <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-5 py-10 fade-up">
+      <h1 className="mb-8 flex items-center gap-3 font-[family-name:var(--font-display)] text-5xl tracking-tight text-[color:var(--color-ink)] md:text-6xl">
+        <OghamMark className="h-10 w-auto shrink-0 text-[color:var(--color-gold)] md:h-12" />
+        <span>Ogma</span>
+      </h1>
 
       <div className="space-y-3">
         <label className="block space-y-1.5">
@@ -44,18 +27,16 @@ export function Lobby(props: LobbyProps) {
             data-testid="display-name"
             value={props.displayName}
             onChange={(e) => props.onDisplayName(e.target.value)}
-            placeholder="Ada"
             className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
           />
         </label>
         {!props.inviteMode ? (
           <label className="block space-y-1.5">
-            <span className="text-sm text-[color:var(--color-muted)]">Room link or id</span>
+            <span className="text-sm text-[color:var(--color-muted)]">Invite link</span>
             <input
               data-testid="room-input"
               value={props.roomInput}
               onChange={(e) => props.onRoomInput(e.target.value)}
-              placeholder="Paste an invite link to join"
               className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
             />
           </label>
@@ -75,7 +56,7 @@ export function Lobby(props: LobbyProps) {
                 onClick={props.onJoin}
                 className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] transition hover:bg-[color:var(--color-honey)] disabled:opacity-60 sm:flex-1"
               >
-                Join this room
+                Join
               </button>
               <button
                 type="button"
@@ -84,7 +65,7 @@ export function Lobby(props: LobbyProps) {
                 onClick={props.onCreate}
                 className="w-full px-2 py-2 text-sm text-[color:var(--color-muted)] underline-offset-2 hover:underline disabled:opacity-60 sm:w-auto"
               >
-                Create a different room instead
+                New room
               </button>
             </>
           ) : (
@@ -96,7 +77,7 @@ export function Lobby(props: LobbyProps) {
                 onClick={props.onCreate}
                 className="flex-1 rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] transition hover:bg-[color:var(--color-honey)] disabled:opacity-60"
               >
-                Create room
+                Create
               </button>
               <button
                 type="button"
@@ -105,29 +86,12 @@ export function Lobby(props: LobbyProps) {
                 onClick={props.onJoin}
                 className="flex-1 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-4 py-3 font-semibold transition hover:bg-[color:var(--color-panel-2)] disabled:opacity-60"
               >
-                Join room
+                Join
               </button>
             </>
           )}
         </div>
       </div>
-
-      <details className="mt-8 max-w-prose text-sm text-[color:var(--color-muted)]">
-        <summary className="cursor-pointer select-none text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]">
-          About Ogma
-        </summary>
-        <div className="mt-3 space-y-3 text-xs leading-relaxed">
-          <p>
-            In Celtic myth, the god of speech and open dialogue — connecting speaker to listener with
-            invisible golden threads. Peer-to-peer video and text in the browser.
-          </p>
-          <p>
-            Video, audio, and live chat stay between peers. Ogma runs no media or chat server. Public
-            trackers only help you meet; STUN may be used for connectivity. Anyone with the room link
-            can join. Keep this tab open to stay in the call.
-          </p>
-        </div>
-      </details>
     </div>
   );
 }

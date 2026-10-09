@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MicOff, User, Volume2 } from 'lucide-react';
+import { MicOff, Pin, User, Volume2 } from 'lucide-react';
 import { isAudioInputOff } from '../domain/media/audioInput';
 import {
   isRemoteAudioUnlocked,
@@ -17,6 +17,8 @@ interface VideoTileProps {
   mirrored?: boolean;
   micOff?: boolean;
   showMicLevel?: boolean;
+  pinned?: boolean;
+  onTogglePin?: () => void;
   applyAudioOutput?: (el: HTMLMediaElement | null) => void | Promise<void>;
 }
 
@@ -63,6 +65,8 @@ export function VideoTile({
   mirrored = false,
   micOff,
   showMicLevel = false,
+  pinned = false,
+  onTogglePin,
   applyAudioOutput,
 }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -144,15 +148,30 @@ export function VideoTile({
           className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/55 px-4 text-center backdrop-blur-[1px]"
         >
           <Volume2 className="h-10 w-10 text-[color:var(--color-gold)]" aria-hidden />
-          <span className="text-sm font-semibold text-white">Click to enable sound</span>
-          <span className="max-w-xs text-xs text-white/80">
-            Browsers block call audio until you click (same as popping the video out).
-          </span>
+          <span className="text-sm font-semibold text-white">Enable sound</span>
         </button>
       ) : null}
       <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
         <span className="truncate text-sm font-medium">{label}</span>
         <div className="flex shrink-0 items-center gap-2">
+          {onTogglePin ? (
+            <button
+              type="button"
+              data-testid="toggle-pin"
+              aria-label={pinned ? 'Unpin video' : 'Pin video'}
+              title={pinned ? 'Unpin' : 'Pin'}
+              aria-pressed={pinned}
+              onClick={onTogglePin}
+              className={[
+                'rounded p-1 transition',
+                pinned
+                  ? 'bg-[color:var(--color-gold)] text-[color:var(--color-on-gold)]'
+                  : 'bg-black/40 text-white hover:bg-black/60',
+              ].join(' ')}
+            >
+              <Pin className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          ) : null}
           {showMicLevel ? <MicLevel stream={stream} active={!effectiveMicOff} /> : null}
           {effectiveMicOff ? (
             <span data-testid="mic-off" title="Microphone off" aria-label="Microphone off">

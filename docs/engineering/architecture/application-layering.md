@@ -35,11 +35,14 @@
 | Layer | Ogma folders |
 |-------|----------------|
 | **UI / page / route shell** | `src/app/`, `src/components/` — wire hooks, layout, drawers |
-| **Domain: media** | `src/domain/media/` — capture, devices, track swap |
-| **Domain: thread** | `src/domain/thread/` — Trystero room, streams, live text actions |
+| **Domain: media** | `src/domain/media/` — capture, devices, track swap, send quality |
+| **Domain: thread** | `src/domain/thread/` — session, streams, live text, subscribe/speaking |
+| **Domain: media plane** | `src/domain/thread/mediaPlane.ts` — narrow publish/subscribe port; mesh adapter now, SFU later |
+| **Domain: chat wire** | `src/domain/thread/chatEnvelope.ts` — typed payloads (`text` now; `image-ref` reserved) |
+| **Domain: room mode** | `src/domain/thread/roomMode.ts` — `free` vs `team` (team unused until paid) |
 | **Domain: crypto / loom** | `src/domain/crypto/`, later loom store — seal/open, sync (M2) |
 | **Domain: signaling URLs** | `src/domain/signaling/` — capability hash parse/format |
 | **Shared contracts** | `src/domain/types.ts` — peer/room/message shapes |
-| **Infra adapters** | Browser APIs + public trackers / STUN (no Ogma backend) |
+| **Infra adapters** | Browser APIs + public trackers / STUN; later paid SFU/TURN behind media plane |
 
-No HTTP API layer — unhosted static host. Protocols under `docs/engineering/protocols/`.
+No HTTP API layer on free path — unhosted static host. Paid team credentials (later) stay behind thin ports. Protocols under `docs/engineering/protocols/`.
