@@ -35,17 +35,6 @@ body {
   box-sizing: border-box;
 }
 
-@keyframes thread-draw {
-  from {
-    stroke-dashoffset: 120;
-    opacity: 0.2;
-  }
-  to {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-}
-
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -57,25 +46,6 @@ body {
   }
 }
 
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.thread-line {
-  stroke-dasharray: 120;
-  animation: thread-draw 1.4s ease forwards;
-}
-
 .fade-up {
   animation: fade-up 0.55s ease both;
-}
-
-.pulse-soft {
-  animation: pulse-soft 2.2s ease-in-out infinite;
 }
