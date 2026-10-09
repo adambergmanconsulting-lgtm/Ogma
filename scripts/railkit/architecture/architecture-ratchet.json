@@ -1,0 +1,5 @@
+{
+  "maxFilesOverWarn": 0,
+  "maxLargestFileLines": 207,
+  "policy": "Ceilings only tighten. Extract and fix; do not raise to unblock CI."
+}

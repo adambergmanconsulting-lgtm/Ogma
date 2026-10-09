@@ -1,0 +1,45 @@
+{
+  "name": "ogma",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ogma — unhosted P2P video calling and text chat (static PWA, Trystero torrent rendezvous)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:documentation": "node scripts/railkit/documentation/check-documentation.js",
+    "check:documentation:ownership": "node scripts/railkit/documentation/check-documentation-ownership.js",
+    "check:architecture": "node scripts/railkit/architecture/check-architecture.js",
+    "check:architecture:ratchet": "node scripts/railkit/architecture/check-architecture-ratchet.js",
+    "check:unused-export": "node scripts/railkit/unused-export/check-unused-export.js",
+    "check:railkit": "npm run check:documentation && npm run check:documentation:ownership && npm run check:architecture && npm run check:architecture:ratchet"
+  },
+  "dependencies": {
+    "@trystero-p2p/torrent": "^0.26.0",
+    "buffer": "^6.0.3",
+    "events": "^3.3.0",
+    "lucide-react": "^0.544.0",
+    "process": "^0.11.10",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5",
+    "vite-plugin-pwa": "^1.0.3",
+    "vitest": "^3.2.4"
+  }
+}

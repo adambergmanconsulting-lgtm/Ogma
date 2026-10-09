@@ -1,0 +1,7 @@
+{
+  "roots": ["src"],
+  "extensions": [".js", ".ts", ".tsx", ".mjs", ".cjs"],
+  "warnLines": 400,
+  "maxLines": 800,
+  "ignore": ["node_modules/**"]
+}

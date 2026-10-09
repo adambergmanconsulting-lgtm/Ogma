@@ -1,0 +1,25 @@
+{
+  "$schemaComment": "Ogma default static host. Secrets not required for Pages. Assert/apply scripts still Rank 7 queued.",
+  "name": "ogma-static",
+  "provider": "github-pages",
+  "default": true,
+  "publicHostnames": ["<github-user>.github.io"],
+  "siteKind": "project",
+  "basePath": "/<repo-name>/",
+  "basePathNotes": "Project site: BASE_PATH=/<repo>/ at build. User site repo (user.github.io): BASE_PATH=/. Workflow sets BASE_PATH from github.event.repository.name.",
+  "artifactDir": "dist",
+  "buildCommand": "npm run build",
+  "requiredEnvKeys": [],
+  "workflow": ".github/workflows/deploy-pages.yml",
+  "dns": {
+    "managedInRepo": false,
+    "notes": "Optional custom domain later via GitHub Pages settings; keep capability URLs on HTTPS origin + hash."
+  },
+  "edge": {
+    "cdn": true,
+    "accessGate": false,
+    "notes": "GitHub Pages CDN; not an Ogma media plane."
+  },
+  "alternatives": ["vercel", "netlify", "cloudflare-pages"],
+  "decision": "Default to GitHub Pages unless a custom domain or preview-per-PR workflow forces another static host."
+}

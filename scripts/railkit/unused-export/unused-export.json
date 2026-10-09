@@ -1,0 +1,7 @@
+{
+  "mode": "queued",
+  "tool": "knip",
+  "owner": "Adam Bergman",
+  "due": "2026-11-09",
+  "notes": "Wire knip after SPA domain + Vitest foundation stabilize."
+}

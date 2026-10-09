@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --color-ink: #e8eef8;
+  --color-muted: #9aabbf;
+  --color-panel: #121a2b;
+  --color-panel-2: #182338;
+  --color-line: #2a3a55;
+  --color-gold: #d4a24c;
+  --color-gold-soft: #e8c97a;
+  --color-danger: #e35d6a;
+  --color-ok: #3ecf8e;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(212, 162, 76, 0.14), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(70, 120, 200, 0.16), transparent 50%),
+    linear-gradient(165deg, #0b1220 0%, #10182a 45%, #0a101c 100%);
+  background-attachment: fixed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@keyframes thread-draw {
+  from {
+    stroke-dashoffset: 120;
+    opacity: 0.2;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.thread-line {
+  stroke-dasharray: 120;
+  animation: thread-draw 1.4s ease forwards;
+}
+
+.fade-up {
+  animation: fade-up 0.55s ease both;
+}
+
+.pulse-soft {
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}

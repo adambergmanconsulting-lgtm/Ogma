@@ -1,0 +1,21 @@
+# Customer targets
+
+**Purpose:** Who we serve and Primary jobs. Fill during adopt. Skill `fit-review` reads this before [customer-fit.md](customer-fit.md).
+
+## Fast path (read first)
+
+- Name buyers and not-buyers.
+- One Primary job per segment.
+- Defer larger bands until locked.
+
+## Who / job (fill-in)
+
+| Segment | Primary job | Not these buyers |
+|---------|-------------|------------------|
+| Small team / friends | Instant link-based video + side chat without accounts | Enterprises needing SSO/recording |
+| Conference room operator | Pick USB camera/mic/speaker and hot-swap mid-call | Broadcast/webinar hosts (SFU scale) |
+| Privacy-minded group | Stay on P2P data channels; no central chat DB | Teams needing compliance archives |
+
+## App core (index)
+
+Point each row at one deciding owner (fit, pricing, modes). Do not restate matrices here.
