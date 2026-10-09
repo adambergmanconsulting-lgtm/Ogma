@@ -1,7 +1,35 @@
-import { joinRoom, selfId, type Room } from '@trystero-p2p/torrent';
+import {
+  defaultRelayUrls,
+  getRelaySockets,
+  joinRoom,
+  selfId,
+  type Room,
+} from '@trystero-p2p/torrent';
 import { ICE_SERVERS, MAX_PEERS } from '../types';
 
 export const TRYSTERO_APP_ID = 'ogma-thread-v1';
+
+/** Use the full public tracker list so both peers announce to the same relays. */
+export const THREAD_TRACKER_URLS = [...defaultRelayUrls];
+
+export type RelayHealth = {
+  url: string;
+  readyState: number;
+};
+
+export function listRelayHealth(): RelayHealth[] {
+  const sockets = getRelaySockets() as Record<string, WebSocket | undefined>;
+  return Object.entries(sockets).map(([url, socket]) => ({
+    url,
+    readyState: socket?.readyState ?? WebSocket.CLOSED,
+  }));
+}
+
+const WS_OPEN = 1;
+
+export function countOpenRelays(health = listRelayHealth()): number {
+  return health.filter((h) => h.readyState === WS_OPEN).length;
+}
 
 export type ChatWire = {
   id: string;
@@ -44,6 +72,8 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
     {
       appId: TRYSTERO_APP_ID,
       rtcConfig: { iceServers: ICE_SERVERS },
+      // Explicit urls → both clients use every tracker (redundancy slice skipped).
+      relayConfig: { urls: THREAD_TRACKER_URLS },
     },
     roomSecret,
     {

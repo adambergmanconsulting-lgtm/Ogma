@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listRemotePeers, syncLocalStream } from '../domain/thread/peerState';
-import { openThreadSession, type ThreadSession } from '../domain/thread/session';
+import {
+  countOpenRelays,
+  openThreadSession,
+  type ThreadSession,
+} from '../domain/thread/session';
 import type { ChatMessage, ConnectionState } from '../domain/types';
 
 export interface UseWebRTCOptions {
@@ -18,6 +22,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [openRelays, setOpenRelays] = useState(0);
 
   const sessionRef = useRef<ThreadSession | null>(null);
   const namesRef = useRef<Map<string, string>>(new Map());
@@ -151,9 +156,16 @@ export function useWebRTC(options: UseWebRTCOptions) {
     setPeerId(session.selfId);
     void session.sendMeta({ displayName: displayNameRef.current.trim() || 'Guest' });
     setConnectionState('connected');
+    setOpenRelays(countOpenRelays());
+
+    const relayPoll = window.setInterval(() => {
+      if (cancelled) return;
+      setOpenRelays(countOpenRelays());
+    }, 2000);
 
     return () => {
       cancelled = true;
+      window.clearInterval(relayPoll);
       sessionRef.current = null;
       localStreamRef.current = null;
       void session.leave();
@@ -180,6 +192,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
     messages,
     connectionState,
     error,
+    openRelays,
     sendChat,
     leave,
     replaceTrack,

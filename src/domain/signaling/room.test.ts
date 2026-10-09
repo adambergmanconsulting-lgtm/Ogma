@@ -3,6 +3,7 @@ import {
   createRoomSecret,
   parseCapabilityFromHash,
   parseRoomIdFromHash,
+  roomDisplayCode,
   roomHash,
   spaceHash,
 } from './room';
@@ -43,5 +44,11 @@ describe('createRoomSecret', () => {
     const s = createRoomSecret();
     expect(s.length).toBeGreaterThanOrEqual(16);
     expect(s).toMatch(/^[A-Za-z0-9_-]+$/);
+  });
+});
+
+describe('roomDisplayCode', () => {
+  it('shows a short uppercase prefix', () => {
+    expect(roomDisplayCode('7Di9LHXvokdxZKx5P3gYTA')).toBe('7DI9LH');
   });
 });

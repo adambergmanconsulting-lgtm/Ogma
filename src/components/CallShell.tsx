@@ -2,6 +2,7 @@ import type { ChatMessage, RemotePeer } from '../domain/types';
 import type { MediaDeviceOption } from '../domain/types';
 import { ChatDrawer } from './ChatDrawer';
 import { ControlBar } from './ControlBar';
+import { OghamMark } from './OghamMark';
 import { SettingsDrawer } from './SettingsDrawer';
 import { VideoGrid } from './VideoGrid';
 
@@ -10,6 +11,7 @@ type Drawer = 'none' | 'chat' | 'settings';
 interface CallShellProps {
   displayName: string;
   connectionLabel: string;
+  roomCode: string;
   linkHint: string;
   error: string | null;
   localStream: MediaStream | null;
@@ -46,12 +48,21 @@ export function CallShell(props: CallShellProps) {
       <header className="flex flex-col gap-1 border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-4 py-2.5 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-[family-name:var(--font-display)] text-xl tracking-tight">Ogma</div>
+            <div className="flex items-center gap-2 font-[family-name:var(--font-display)] text-xl tracking-tight">
+              <OghamMark className="h-5 w-auto shrink-0 text-[color:var(--color-gold)]" />
+              <span>Ogma</span>
+            </div>
             <div
               data-testid="connection-label"
               className="truncate text-xs text-[color:var(--color-muted)]"
             >
               {props.connectionLabel}
+              {props.roomCode ? (
+                <>
+                  {' · '}
+                  <span data-testid="room-code">Room {props.roomCode}</span>
+                </>
+              ) : null}
             </div>
           </div>
           <button

@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CallShell } from '../components/CallShell';
 import { Lobby } from '../components/Lobby';
 import {
+  clearRoomFromUrl,
   createRoomSecret,
   parseRoomIdFromHash,
-  roomHash,
+  replaceUrlWithRoom,
+  roomDisplayCode,
   roomShareUrl,
 } from '../domain/signaling/room';
 import { extractRoomSecret, shareRoomLink } from '../domain/signaling/share';
@@ -70,9 +72,9 @@ export default function App() {
       try {
         await media.start();
         setActiveRoom(roomId);
-        window.history.replaceState(null, '', roomHash(roomId));
+        replaceUrlWithRoom(roomId);
         setInCall(true);
-        setDrawer('none');
+        setDrawer('chat');
       } finally {
         setBusy(false);
       }
@@ -98,7 +100,7 @@ export default function App() {
     setActiveRoom(null);
     setDrawer('none');
     setLinkHint(null);
-    window.history.replaceState(null, '', window.location.pathname);
+    clearRoomFromUrl();
   }, [media, webrtc]);
 
   const shareUrl = useMemo(
@@ -106,11 +108,15 @@ export default function App() {
     [activeRoom],
   );
 
+  const roomCode = activeRoom ? roomDisplayCode(activeRoom) : '';
+
   const connectionLabel =
     webrtc.connectionState === 'connected'
       ? webrtc.remotePeers.length
         ? 'Connected'
-        : 'Waiting for others…'
+        : webrtc.openRelays > 0
+          ? 'Waiting for others…'
+          : 'Connecting to trackers…'
       : webrtc.connectionState;
 
   if (!inCall) {
@@ -133,7 +139,11 @@ export default function App() {
     <CallShell
       displayName={displayName.trim() || 'Guest'}
       connectionLabel={connectionLabel}
-      linkHint={linkHint ?? 'Anyone with this link can join. Keep this tab open to stay in the call.'}
+      roomCode={roomCode}
+      linkHint={
+        linkHint ??
+        `Room ${roomCode} — both people must see the same code. Anyone with this link can join.`
+      }
       error={webrtc.error || media.error}
       localStream={media.stream}
       localMicOff={!media.micEnabled}

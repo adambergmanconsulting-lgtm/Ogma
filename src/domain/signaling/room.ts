@@ -48,8 +48,38 @@ export function spaceHash(spaceSecret: string): string {
   return `#space=${encodeURIComponent(spaceSecret)}`;
 }
 
-export function roomShareUrl(roomId: string, origin = globalThis.location?.origin ?? ''): string {
-  return `${origin}${globalThis.location?.pathname ?? '/'}${roomHash(roomId)}`;
+/** App base path from Vite (`/` locally, `/Ogma/` on GitHub Pages). */
+function appBaseUrl(): URL {
+  const base = import.meta.env.BASE_URL || '/';
+  return new URL(base, globalThis.location?.origin ?? 'http://localhost');
+}
+
+/**
+ * Canonical share link — always includes the Vite base path so GH Pages
+ * project sites (`/Ogma/`) do not drop the repo segment.
+ */
+export function roomShareUrl(roomId: string): string {
+  const url = appBaseUrl();
+  url.hash = `room=${encodeURIComponent(roomId)}`;
+  return url.href;
+}
+
+/** Keep path + set room hash (does not drop `/Ogma/`). */
+export function replaceUrlWithRoom(roomId: string): void {
+  const url = appBaseUrl();
+  url.hash = `room=${encodeURIComponent(roomId)}`;
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+export function clearRoomFromUrl(): void {
+  const url = appBaseUrl();
+  url.hash = '';
+  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+}
+
+/** Short code both people can read aloud to confirm same room. */
+export function roomDisplayCode(roomId: string): string {
+  return roomId.slice(0, 6).toUpperCase();
 }
 
 /** 128-bit URL-safe secret for Thread rooms. */

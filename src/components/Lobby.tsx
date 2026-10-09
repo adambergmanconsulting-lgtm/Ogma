@@ -1,3 +1,5 @@
+import { OghamMark } from './OghamMark';
+
 interface LobbyProps {
   displayName: string;
   roomInput: string;
@@ -14,31 +16,16 @@ export function Lobby(props: LobbyProps) {
   return (
     <div className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-5 py-10 fade-up">
       <div className="mb-8">
-        <svg viewBox="0 0 280 48" className="mb-5 h-10 w-auto text-[color:var(--color-gold)]" aria-hidden>
-          <path
-            className="thread-line"
-            d="M8 28 C70 8, 210 8, 272 28"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <circle cx="8" cy="28" r="4" fill="currentColor" className="pulse-soft" />
-          <circle cx="272" cy="28" r="4" fill="currentColor" className="pulse-soft" />
-        </svg>
-        <h1 className="font-[family-name:var(--font-display)] text-5xl tracking-tight text-[color:var(--color-ink)] md:text-6xl">
-          Ogma
+        <h1 className="flex items-center gap-3 font-[family-name:var(--font-display)] text-5xl tracking-tight text-[color:var(--color-ink)] md:text-6xl">
+          <OghamMark className="h-10 w-auto shrink-0 text-[color:var(--color-gold)] md:h-12" />
+          <span>Ogma</span>
         </h1>
-        <p className="mt-3 max-w-prose text-[color:var(--color-muted)]">
-          {props.inviteMode
-            ? 'You’ve been invited to a room. Enter your name and join — video and text stay peer to peer.'
-            : 'In Celtic myth, the god of speech and open dialogue — connecting speaker to listener with invisible golden threads. Peer-to-peer video and text in the browser.'}
-        </p>
-        <p className="mt-3 max-w-prose text-xs leading-relaxed text-[color:var(--color-muted)]">
-          Video, audio, and live chat stay between peers. Ogma runs no media or chat server. Public
-          trackers only help you meet; STUN may be used for connectivity. Anyone with the room link
-          can join. Keep this tab open to stay in the call.
-        </p>
+        {props.inviteMode ? (
+          <p className="mt-3 max-w-prose text-[color:var(--color-muted)]">
+            You’ve been invited. Enter your name and tap Join this room — do not Create a new room or
+            you’ll be alone.
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-3">
@@ -73,7 +60,7 @@ export function Lobby(props: LobbyProps) {
                 data-testid="join-room"
                 disabled={props.busy || !props.roomInput.trim()}
                 onClick={props.onJoin}
-                className="flex-1 rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[#1a1408] transition hover:brightness-105 disabled:opacity-60"
+                className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[#1a1408] transition hover:brightness-105 disabled:opacity-60 sm:flex-1"
               >
                 Join this room
               </button>
@@ -82,9 +69,9 @@ export function Lobby(props: LobbyProps) {
                 data-testid="create-room"
                 disabled={props.busy}
                 onClick={props.onCreate}
-                className="flex-1 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-4 py-3 font-semibold transition hover:bg-[color:var(--color-panel-2)] disabled:opacity-60"
+                className="w-full px-2 py-2 text-sm text-[color:var(--color-muted)] underline-offset-2 hover:underline disabled:opacity-60 sm:w-auto"
               >
-                Create new instead
+                Create a different room instead
               </button>
             </>
           ) : (
@@ -111,6 +98,23 @@ export function Lobby(props: LobbyProps) {
           )}
         </div>
       </div>
+
+      <details className="mt-8 max-w-prose text-sm text-[color:var(--color-muted)]">
+        <summary className="cursor-pointer select-none text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]">
+          About Ogma
+        </summary>
+        <div className="mt-3 space-y-3 text-xs leading-relaxed">
+          <p>
+            In Celtic myth, the god of speech and open dialogue — connecting speaker to listener with
+            invisible golden threads. Peer-to-peer video and text in the browser.
+          </p>
+          <p>
+            Video, audio, and live chat stay between peers. Ogma runs no media or chat server. Public
+            trackers only help you meet; STUN may be used for connectivity. Anyone with the room link
+            can join. Keep this tab open to stay in the call.
+          </p>
+        </div>
+      </details>
     </div>
   );
 }
