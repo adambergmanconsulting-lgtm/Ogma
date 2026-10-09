@@ -1,11 +1,13 @@
-import { parseCapabilityFromHash } from './room';
+import { parseCapabilityFromHash, parseRoomIdFromLocation } from './room';
 
 export function extractRoomSecret(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
   try {
-    if (trimmed.includes('#')) {
+    if (/^https?:\/\//i.test(trimmed) || trimmed.includes('?') || trimmed.includes('#')) {
       const url = new URL(trimmed, globalThis.location?.origin ?? 'http://local');
+      const fromLoc = parseRoomIdFromLocation(url);
+      if (fromLoc) return fromLoc;
       const parsed = parseCapabilityFromHash(url.hash);
       return parsed?.kind === 'room' ? parsed.secret : null;
     }
@@ -23,7 +25,6 @@ export type ShareResult =
 
 function prefersNativeShare(): boolean {
   if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;
-  // Desktop "Share link" almost always means copy; native share sheets feel broken there.
   const coarse = globalThis.matchMedia?.('(pointer: coarse)').matches;
   return Boolean(coarse);
 }
@@ -55,10 +56,7 @@ function copyWithExecCommand(url: string): boolean {
   }
 }
 
-/**
- * Copy the room link (desktop). On phones, offer the system share sheet first.
- * Always returns a result so the UI can confirm or show the URL for manual copy.
- */
+/** Copy the invite URL (desktop). On phones, try the system share sheet first. */
 export async function shareRoomLink(url: string): Promise<ShareResult> {
   if (prefersNativeShare()) {
     try {
@@ -70,11 +68,10 @@ export async function shareRoomLink(url: string): Promise<ShareResult> {
     } catch (err) {
       const name = err instanceof DOMException ? err.name : '';
       if (name === 'AbortError') return { ok: false, reason: 'cancelled', url };
-      // fall through to clipboard
     }
   }
 
-  if (await copyWithClipboardApi(url) || copyWithExecCommand(url)) {
+  if ((await copyWithClipboardApi(url)) || copyWithExecCommand(url)) {
     return { ok: true, method: 'clipboard' };
   }
 

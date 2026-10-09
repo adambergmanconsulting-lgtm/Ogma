@@ -40,6 +40,19 @@ export function parseRoomIdFromHash(hash: string): string | null {
   return parsed?.kind === 'room' ? parsed.secret : null;
 }
 
+/**
+ * Room secret from the current location.
+ * Prefer `?room=` (survives Slack/WhatsApp/etc., which often strip hashes).
+ * Fall back to `#room=` for older links.
+ */
+export function parseRoomIdFromLocation(
+  loc: Pick<Location, 'search' | 'hash'> = globalThis.location,
+): string | null {
+  const fromQuery = new URLSearchParams(loc.search).get('room')?.trim();
+  if (fromQuery) return fromQuery;
+  return parseRoomIdFromHash(loc.hash);
+}
+
 export function roomHash(roomId: string): string {
   return `#room=${encodeURIComponent(roomId)}`;
 }
@@ -55,24 +68,26 @@ function appBaseUrl(): URL {
 }
 
 /**
- * Canonical share link — always includes the Vite base path so GH Pages
- * project sites (`/Ogma/`) do not drop the repo segment.
+ * Canonical invite link — `?room=` so messengers that strip `#…` still carry the secret.
  */
 export function roomShareUrl(roomId: string): string {
   const url = appBaseUrl();
-  url.hash = `room=${encodeURIComponent(roomId)}`;
+  url.searchParams.set('room', roomId);
+  url.hash = '';
   return url.href;
 }
 
-/** Keep path + set room hash (does not drop `/Ogma/`). */
+/** Keep path + set `?room=` (clears legacy hash). */
 export function replaceUrlWithRoom(roomId: string): void {
   const url = appBaseUrl();
-  url.hash = `room=${encodeURIComponent(roomId)}`;
-  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  url.searchParams.set('room', roomId);
+  url.hash = '';
+  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
 }
 
 export function clearRoomFromUrl(): void {
   const url = appBaseUrl();
+  url.searchParams.delete('room');
   url.hash = '';
   window.history.replaceState(null, '', `${url.pathname}${url.search}`);
 }

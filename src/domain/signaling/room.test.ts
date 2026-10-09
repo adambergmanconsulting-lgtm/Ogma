@@ -3,6 +3,7 @@ import {
   createRoomSecret,
   parseCapabilityFromHash,
   parseRoomIdFromHash,
+  parseRoomIdFromLocation,
   roomDisplayCode,
   roomHash,
   roomShareUrl,
@@ -33,6 +34,18 @@ describe('parseCapabilityFromHash', () => {
   });
 });
 
+describe('parseRoomIdFromLocation', () => {
+  it('prefers query over hash', () => {
+    expect(
+      parseRoomIdFromLocation({ search: '?room=from-query', hash: '#room=from-hash' }),
+    ).toBe('from-query');
+  });
+
+  it('falls back to hash', () => {
+    expect(parseRoomIdFromLocation({ search: '', hash: '#room=legacy' })).toBe('legacy');
+  });
+});
+
 describe('hashes', () => {
   it('encodes room and space', () => {
     expect(roomHash('a b')).toBe('#room=a%20b');
@@ -55,11 +68,11 @@ describe('roomDisplayCode', () => {
 });
 
 describe('roomShareUrl', () => {
-  it('keeps base path and room hash', () => {
+  it('uses query room= and keeps an http(s) origin', () => {
     vi.stubGlobal('location', { origin: 'https://host.example' });
-    // BASE_URL is injected by Vite; unit test uses whatever build set (often `/`).
     const href = roomShareUrl('AbCdEf123456');
-    expect(href).toContain('#room=AbCdEf123456');
+    expect(href).toContain('?room=AbCdEf123456');
+    expect(href).not.toContain('#room=');
     expect(href.startsWith('http')).toBe(true);
   });
 });

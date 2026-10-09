@@ -13,7 +13,7 @@ test.describe('Thread lobby', () => {
   test('create room enters the call shell', async ({ page }) => {
     await createRoom(page, 'Host');
     await expect(page.getByTestId('connection-label')).toContainText(/Waiting for others|Connected/);
-    await expect(page).toHaveURL(/#room=/);
+    await expect(page).toHaveURL(/[?&]room=/);
     await expect(page.getByTestId('chat-input')).toBeVisible();
   });
 });
@@ -27,7 +27,7 @@ test.describe('Thread two-peer', () => {
 
     await createRoom(host, 'Host');
     const roomUrl = host.url();
-    expect(roomUrl).toMatch(/#room=/);
+    expect(roomUrl).toMatch(/[?&]room=/);
     await expect(host.getByTestId('chat-input')).toBeVisible();
 
     await joinRoom(guest, 'Guest', roomUrl);

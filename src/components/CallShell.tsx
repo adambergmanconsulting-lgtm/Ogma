@@ -12,6 +12,7 @@ interface CallShellProps {
   displayName: string;
   connectionLabel: string;
   roomCode: string;
+  inviteUrl: string;
   linkHint: string;
   error: string | null;
   localStream: MediaStream | null;
@@ -28,7 +29,7 @@ interface CallShellProps {
   videoDeviceId: string;
   audioDeviceId: string;
   audioOutputId: string;
-  onShareLink: () => void;
+  onCopyInvite: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleChat: () => void;
@@ -45,7 +46,7 @@ interface CallShellProps {
 export function CallShell(props: CallShellProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex flex-col gap-1 border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-4 py-2.5 backdrop-blur">
+      <header className="flex flex-col gap-2 border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-4 py-2.5 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 font-[family-name:var(--font-display)] text-xl tracking-tight">
@@ -69,11 +70,25 @@ export function CallShell(props: CallShellProps) {
             type="button"
             data-testid="share-link"
             className="shrink-0 rounded-lg border border-[color:var(--color-line)] px-3 py-1.5 text-xs hover:bg-[color:var(--color-panel-2)]"
-            onClick={props.onShareLink}
+            onClick={props.onCopyInvite}
           >
-            Share link
+            Copy invite link
           </button>
         </div>
+        {props.inviteUrl ? (
+          <label className="block space-y-1">
+            <span className="text-[11px] text-[color:var(--color-muted)]">
+              Invite link (send this — it is the room)
+            </span>
+            <input
+              data-testid="invite-url"
+              readOnly
+              value={props.inviteUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-full truncate rounded-lg border border-[color:var(--color-line)] bg-[color:var(--color-panel-2)] px-2 py-1.5 font-mono text-[11px] text-[color:var(--color-ink)] outline-none focus:border-[color:var(--color-gold)]"
+            />
+          </label>
+        ) : null}
         <p className="text-[11px] text-[color:var(--color-muted)]">{props.linkHint}</p>
       </header>
 

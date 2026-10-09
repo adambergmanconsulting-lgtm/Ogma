@@ -6,6 +6,7 @@ interface LobbyProps {
   mediaError: string | null;
   busy: boolean;
   inviteMode: boolean;
+  inviteCode: string;
   onDisplayName: (v: string) => void;
   onRoomInput: (v: string) => void;
   onCreate: () => void;
@@ -21,10 +22,18 @@ export function Lobby(props: LobbyProps) {
           <span>Ogma</span>
         </h1>
         {props.inviteMode ? (
-          <p className="mt-3 max-w-prose text-[color:var(--color-muted)]">
-            You’ve been invited. Enter your name and tap Join this room — do not Create a new room or
-            you’ll be alone.
-          </p>
+          <div className="mt-3 space-y-2">
+            <p className="max-w-prose text-[color:var(--color-muted)]">
+              You’ve been invited
+              {props.inviteCode ? (
+                <>
+                  {' '}
+                  to room <span data-testid="lobby-room-code">{props.inviteCode}</span>
+                </>
+              ) : null}
+              . Enter your name and join — do not create a new room or you’ll be alone.
+            </p>
+          </div>
         ) : null}
       </div>
 
@@ -39,20 +48,24 @@ export function Lobby(props: LobbyProps) {
             className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
           />
         </label>
-        <label className="block space-y-1.5">
-          <span className="text-sm text-[color:var(--color-muted)]">Room link or id</span>
-          <input
-            data-testid="room-input"
-            value={props.roomInput}
-            onChange={(e) => props.onRoomInput(e.target.value)}
-            placeholder="Paste a room link to join"
-            className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
-          />
-        </label>
+        {!props.inviteMode ? (
+          <label className="block space-y-1.5">
+            <span className="text-sm text-[color:var(--color-muted)]">Room link or id</span>
+            <input
+              data-testid="room-input"
+              value={props.roomInput}
+              onChange={(e) => props.onRoomInput(e.target.value)}
+              placeholder="Paste an invite link to join"
+              className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
+            />
+          </label>
+        ) : (
+          <input data-testid="room-input" type="hidden" value={props.roomInput} readOnly />
+        )}
         {props.mediaError ? (
           <p className="text-sm text-[color:var(--color-danger)]">{props.mediaError}</p>
         ) : null}
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+        <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center">
           {props.inviteMode ? (
             <>
               <button

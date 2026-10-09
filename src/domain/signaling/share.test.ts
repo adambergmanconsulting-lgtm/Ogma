@@ -2,6 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { extractRoomSecret, shareRoomLink } from './share';
 
 describe('extractRoomSecret', () => {
+  it('parses full URL with room query', () => {
+    expect(extractRoomSecret('https://ogma.example/Ogma/?room=abc123def')).toBe('abc123def');
+  });
+
   it('parses full URL with room hash', () => {
     expect(extractRoomSecret('https://ogma.example/#room=abc123def')).toBe('abc123def');
   });
@@ -35,14 +39,11 @@ describe('shareRoomLink', () => {
       share: vi.fn(),
       clipboard: { writeText },
     });
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn().mockReturnValue({ matches: false }),
-    );
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }));
 
-    const result = await shareRoomLink('https://example.com/#room=abc');
+    const result = await shareRoomLink('https://example.com/?room=abc');
     expect(result).toEqual({ ok: true, method: 'clipboard' });
-    expect(writeText).toHaveBeenCalledWith('https://example.com/#room=abc');
+    expect(writeText).toHaveBeenCalledWith('https://example.com/?room=abc');
     expect(navigator.share).not.toHaveBeenCalled();
   });
 });

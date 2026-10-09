@@ -4,7 +4,7 @@ import { Lobby } from '../components/Lobby';
 import {
   clearRoomFromUrl,
   createRoomSecret,
-  parseRoomIdFromHash,
+  parseRoomIdFromLocation,
   replaceUrlWithRoom,
   roomDisplayCode,
   roomShareUrl,
@@ -16,7 +16,7 @@ import { useWebRTC } from '../hooks/useWebRTC';
 type Drawer = 'none' | 'chat' | 'settings';
 
 export default function App() {
-  const initialRoom = parseRoomIdFromHash(window.location.hash);
+  const initialRoom = parseRoomIdFromLocation(window.location);
   const [displayName, setDisplayName] = useState(
     () => localStorage.getItem('ogma.displayName') || '',
   );
@@ -54,16 +54,20 @@ export default function App() {
   }, [displayName]);
 
   useEffect(() => {
-    const onHash = () => {
-      const id = parseRoomIdFromHash(window.location.hash);
+    const syncFromLocation = () => {
+      const id = parseRoomIdFromLocation(window.location);
       if (id && !inCall) {
         setActiveRoom(id);
         setRoomInput(id);
         setInviteMode(true);
       }
     };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    window.addEventListener('hashchange', syncFromLocation);
+    window.addEventListener('popstate', syncFromLocation);
+    return () => {
+      window.removeEventListener('hashchange', syncFromLocation);
+      window.removeEventListener('popstate', syncFromLocation);
+    };
   }, [inCall]);
 
   const enterRoom = useCallback(
@@ -75,6 +79,7 @@ export default function App() {
         replaceUrlWithRoom(roomId);
         setInCall(true);
         setDrawer('chat');
+        setLinkHint(null);
       } finally {
         setBusy(false);
       }
@@ -110,6 +115,12 @@ export default function App() {
 
   const roomCode = activeRoom ? roomDisplayCode(activeRoom) : '';
 
+  const lobbyInviteCode = useMemo(() => {
+    if (!inviteMode) return '';
+    const id = extractRoomSecret(roomInput) || activeRoom;
+    return id ? roomDisplayCode(id) : '';
+  }, [activeRoom, inviteMode, roomInput]);
+
   const connectionLabel =
     webrtc.connectionState === 'connected'
       ? webrtc.remotePeers.length
@@ -127,6 +138,7 @@ export default function App() {
         mediaError={media.error || webrtc.error}
         busy={busy}
         inviteMode={inviteMode}
+        inviteCode={lobbyInviteCode}
         onDisplayName={setDisplayName}
         onRoomInput={setRoomInput}
         onCreate={onCreate}
@@ -140,9 +152,10 @@ export default function App() {
       displayName={displayName.trim() || 'Guest'}
       connectionLabel={connectionLabel}
       roomCode={roomCode}
+      inviteUrl={shareUrl}
       linkHint={
         linkHint ??
-        `Room ${roomCode} — both people must see the same code. Anyone with this link can join.`
+        `Room ${roomCode} — the other person must see the same code. Copy the invite link below; do not both Create room.`
       }
       error={webrtc.error || media.error}
       localStream={media.stream}
@@ -159,22 +172,22 @@ export default function App() {
       videoDeviceId={media.videoDeviceId}
       audioDeviceId={media.audioDeviceId}
       audioOutputId={media.audioOutputId}
-      onShareLink={() => {
+      onCopyInvite={() => {
         if (!shareUrl) return;
         void shareRoomLink(shareUrl).then((result) => {
           if (result.ok) {
             setLinkHint(
               result.method === 'clipboard'
-                ? 'Link copied — paste it to the other person.'
-                : 'Invite sent. Keep this tab open to stay in the call.',
+                ? 'Invite link copied. They open it and tap Join this room — check Room codes match.'
+                : 'Invite shared. They open it and tap Join this room — check Room codes match.',
             );
             return;
           }
           if (result.reason === 'cancelled') {
-            setLinkHint('Share cancelled. Tap Share link again to copy.');
+            setLinkHint('Cancelled. Use Copy invite link again, or select the URL above.');
             return;
           }
-          setLinkHint(`Copy this link manually: ${result.url}`);
+          setLinkHint('Could not copy — select the invite URL above and copy it yourself.');
         });
       }}
       onToggleMic={media.toggleMic}
