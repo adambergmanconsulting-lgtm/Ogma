@@ -24,6 +24,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.1.0",
     "@trystero-p2p/torrent": "^0.26.0",
     "buffer": "^6.0.3",
     "events": "^3.3.0",

@@ -19,3 +19,8 @@
 ## Adopt
 
 Queue "add living design surface" with owner + due date when UI heuristic docs are enabled. Do not block bootstrap on it.
+
+## Host (Ogma)
+
+- Heuristics owners: [ui-principles.md](ui-principles.md), [ui-naming.md](ui-naming.md), [in-page-layout.md](in-page-layout.md) (top bar, `.app-column`, `.app-gutter-x`).
+- Tokens today live in `src/index.css` (`@theme`). A living `/design` page is **queued** — thin catalog of real tokens + Chat/Call chrome; not a TeamResume-scale `/admin/design`. See [rank7-dated-queue.md](../../ops/rank7-dated-queue.md).

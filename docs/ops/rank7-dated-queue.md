@@ -12,7 +12,8 @@
 |------------|--------------|-------|------------------|--------|
 | Unused-export / Knip-class | 4, 6, 7 | Adam Bergman | 2026-11-09 | queued |
 | Host unit+e2e on CI umbrella | 2, 4, 7 | Adam Bergman | 2026-11-09 | unit shipped; e2e local via `npm run test:e2e`; CI job still to wire |
-| UI heuristics + one ui-review | 7 | Adam Bergman | 2026-11-09 | queued |
+| UI heuristics + one ui-review | 7 | Adam Bergman | 2026-11-09 | heuristics filled (naming/layout/overview); ongoing via ui-review |
+| Living design surface (`/design`, thin) | 7 | Adam Bergman | 2026-12-01 | queued — tokens from `src/index.css`; see [living-design-surface.md](../product/heuristics/living-design-surface.md) |
 | Vendor assert/apply (static host) | 5, 7 | Adam Bergman | 2026-11-09 | queued (GitHub Pages contract + workflow shipped; assert/apply still open) |
 
 Yardstick: [governing-priorities.md](governing-priorities.md). Mechanical unused-export gate: `npm run check:unused-export`.

@@ -51,7 +51,7 @@ Rank **2** says execution truth is code **and** a checkable trail. Without tests
 | E2e command | `npm run test:e2e` |
 | Preferred harness owner (how) | [testing.md](../engineering/testing.md) |
 | Preferred harness (one line) | Vitest next to `src/domain/**`; Playwright under `e2e/` with fake media |
-| When e2e is mandatory vs optional | Lobby + create-room e2e required for Thread UI changes; two-peer mesh required when join/chat/signaling changes (needs tracker network) |
+| When e2e is mandatory vs optional | Call-from-space + join-room e2e required for Thread UI changes; two-peer mesh required when join/chat/signaling changes (needs tracker network) |
 | Quarantine / skip policy | Dated owner only; no silent permanent skip — Rank 4 |
 
 ## Fail if

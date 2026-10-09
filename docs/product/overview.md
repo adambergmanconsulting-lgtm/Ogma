@@ -9,7 +9,8 @@
 - **Free core (no cost):** static app shell; link → live A/V + text → leave. Ogma holds no free-user media/chat DB.
 - **Thread (now):** rendezvous via BitTorrent trackers (`@trystero-p2p/torrent`); media over WebRTC **P2P mesh** (selective subscribe; hub later).
 - **Paid team (later, optional):** images in chat, SFU streaming, related team extras — opt-in infra; honest copy when active.
-- **Loom (later):** encrypted peer-seeded **text** spaces; same capability mindset.
+- **Loom / Chat:** encrypted peer-seeded **text** on device; **name** to use; **vault optional** (cold **Use a vault**, or Settings **Add vault key**) for Log out / retrieve / move.
+- **Shell:** permanent top bar — **Ogma** · **Chat** · **Call** · Settings gear; shared `.app-column` + `.app-gutter-x`.
 - **1:1 video must work** (incl. phone foreground). 3 = mesh. 4+ = client hub + selective video on free path.
 - **Phones:** participants yes; hubs/seeders last resort.
 - **Room size (free):** warn at 5, refuse at 6 until hub; see [thread-topology.md](../engineering/protocols/thread-topology.md).
@@ -29,10 +30,15 @@
 
 | Job | Outcome |
 |-----|---------|
-| Create / join Thread | `#room=<secret>`; copy/share link out of band |
-| Call | Mute, camera, leave; device hot-swap; truthful connection state |
-| Side text | Data-channel text only (no images) |
-| Loom (later) | `#space=<secret>`; encrypted text history; start Thread from space |
+| Name | Required once per browser profile to chat/call |
+| Vault (optional) | Cold **Use a vault** splash → **Create vault** / **Open vault**; or Settings **Add vault key**; session until **Log out** |
+| Chat (Loom) | `#space=<secret>`; sealed history; list **Hide** / **Hidden** (not message retention); warm sync while tab open; titles from other participants or **New chat** |
+| **Host Call** | Open a chat → top-bar **Call** — same Loom log in the call drawer; invite `?room=` + `#space=` |
+| Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
+| In call | Mute, camera, background blur, leave; device hot-swap; truthful connection state |
+| Move device | Export file → Import (+ vault key if one was added) |
+
+**First visit:** Top bar always visible. Empty Chat: create a chat to message and Call. **Call** needs an open chat (else returns to the list). Vault is optional behind **Use a vault**.
 
 ## Honest copy (ship in UI)
 
@@ -67,7 +73,7 @@ Forced accounts to join, Ogma-sent invites, SFU on free path, images in free syn
 
 | Feature | Intent |
 |---------|--------|
-| Background blur (toggle) | Optional local effect; peers see blur via processed track + `replaceTrack`. Not preview-only CSS. Keep phone CPU and bundle size honest. Yield under CPU/N pressure. |
+| Background blur (shipped) | Optional local effect; peers see blur via processed track + `replaceTrack` (or OS blur when controllable). Not preview-only CSS. Model/WASM loads on first toggle. Yields under CPU/N pressure. |
 
 ## Related
 

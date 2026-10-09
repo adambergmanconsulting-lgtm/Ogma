@@ -69,7 +69,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
   return (
     <aside className="flex w-full max-w-md flex-col border-l border-[color:var(--color-line)] bg-[color:var(--color-panel)]/95 backdrop-blur md:w-80">
       <div className="flex items-center justify-between px-3 py-2">
-        <h2 className="font-[family-name:var(--font-display)] text-base">Devices</h2>
+        <h2 className="text-sm font-semibold">Devices</h2>
         <button
           type="button"
           aria-label="Close settings"

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createBackgroundBlurController } from '../domain/media/backgroundBlurController';
+import { isSoftwareBackgroundBlurSupported } from '../domain/media/backgroundBlurSupport';
 import type { SendQualityTier } from '../domain/media/constraints';
 import { devicesByKind, listMediaDevices, setAudioOutput } from '../domain/media/devices';
+import {
+  setAudioTracksEnabled,
+  setVideoTracksEnabled,
+} from '../domain/media/publishStream';
 import {
   applyLiveVideoQuality,
   pickDefaultDeviceIds,
@@ -30,8 +36,25 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const [audioOutputId, setAudioOutputId] = useState('');
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [backgroundBlur, setBackgroundBlur] = useState(false);
+  const [backgroundBlurSupported] = useState(() => isSoftwareBackgroundBlurSupported());
   const [error, setError] = useState<string | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const blurBusyRef = useRef(false);
+  const onTrackReplacedRef = useRef(onTrackReplaced);
+  onTrackReplacedRef.current = onTrackReplaced;
+
+  const blurRef = useRef(
+    createBackgroundBlurController({
+      getCameraStream: () => cameraStreamRef.current,
+      onPublishStream: (next) => {
+        streamRef.current = next;
+        setStream(next);
+      },
+      onTrackReplaced: (track) => onTrackReplacedRef.current?.(track),
+    }),
+  );
 
   const refreshDevices = useCallback(async () => {
     const list = await listMediaDevices();
@@ -51,7 +74,10 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
           audioDeviceId,
           config,
         });
-        streamRef.current?.getTracks().forEach((t) => t.stop());
+        blurRef.current.stop();
+        setBackgroundBlur(false);
+        cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+        cameraStreamRef.current = next;
         streamRef.current = next;
         setStream(next);
         const list = await refreshDevices();
@@ -82,9 +108,9 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   );
 
   useEffect(() => {
-    if (!streamRef.current) return;
+    if (!cameraStreamRef.current) return;
     applyLiveVideoQuality(
-      streamRef.current,
+      cameraStreamRef.current,
       peerCount,
       qualityTier,
       congested,
@@ -93,8 +119,22 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     );
   }, [audioDeviceId, congested, peerCount, qualityTier, videoDeviceId]);
 
+  useEffect(() => {
+    void blurRef.current
+      .applyPressure({ peerCount, congested, qualityTier })
+      .then((yielded) => {
+        if (yielded) {
+          setBackgroundBlur(false);
+          setError('Background blur paused — call under load');
+        }
+      });
+  }, [congested, peerCount, qualityTier]);
+
   const stop = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    blurRef.current.stop();
+    setBackgroundBlur(false);
+    cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+    cameraStreamRef.current = null;
     streamRef.current = null;
     setStream(null);
   }, []);
@@ -102,35 +142,45 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const switchVideoDevice = useCallback(
     async (deviceId: string) => {
       setVideoDeviceId(deviceId);
-      if (!streamRef.current) return;
-      const track = await switchVideoTrack(streamRef.current, deviceId);
-      if (!track || !streamRef.current) return;
-      setStream(new MediaStream(streamRef.current.getTracks()));
-      onTrackReplaced?.(track);
+      if (!cameraStreamRef.current) return;
+      const track = await switchVideoTrack(cameraStreamRef.current, deviceId);
+      if (!track || !cameraStreamRef.current) return;
+      cameraStreamRef.current = new MediaStream(cameraStreamRef.current.getTracks());
+      await blurRef.current.onCameraTrackChanged();
+      if (!blurRef.current.enabled) {
+        streamRef.current = cameraStreamRef.current;
+        setStream(cameraStreamRef.current);
+        onTrackReplacedRef.current?.(track);
+      }
       await refreshDevices();
     },
-    [onTrackReplaced, refreshDevices],
+    [refreshDevices],
   );
 
   const switchAudioDevice = useCallback(
     async (deviceId: string) => {
       setAudioDeviceId(deviceId);
-      if (!streamRef.current) return;
-      const track = await switchAudioTrack(streamRef.current, deviceId, micEnabled);
-      if (!track || !streamRef.current) return;
-      setStream(new MediaStream(streamRef.current.getTracks()));
-      onTrackReplaced?.(track);
+      if (!cameraStreamRef.current) return;
+      const track = await switchAudioTrack(cameraStreamRef.current, deviceId, micEnabled);
+      if (!track || !cameraStreamRef.current) return;
+      cameraStreamRef.current = new MediaStream(cameraStreamRef.current.getTracks());
+      if (blurRef.current.enabled && blurRef.current.mode === 'software') {
+        await blurRef.current.onCameraTrackChanged();
+      } else {
+        streamRef.current = cameraStreamRef.current;
+        setStream(cameraStreamRef.current);
+        onTrackReplacedRef.current?.(track);
+      }
       await refreshDevices();
     },
-    [micEnabled, onTrackReplaced, refreshDevices],
+    [micEnabled, refreshDevices],
   );
 
   const toggleMic = useCallback(() => {
     setMicEnabled((prev) => {
       const next = !prev;
-      streamRef.current?.getAudioTracks().forEach((t) => {
-        t.enabled = next;
-      });
+      setAudioTracksEnabled(cameraStreamRef.current, next);
+      setAudioTracksEnabled(streamRef.current, next);
       return next;
     });
   }, []);
@@ -138,11 +188,27 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const toggleCamera = useCallback(() => {
     setCameraEnabled((prev) => {
       const next = !prev;
-      streamRef.current?.getVideoTracks().forEach((t) => {
-        t.enabled = next;
-      });
+      setVideoTracksEnabled([cameraStreamRef.current, streamRef.current], next);
       return next;
     });
+  }, []);
+
+  const toggleBackgroundBlur = useCallback(async () => {
+    if (blurBusyRef.current) return;
+    blurBusyRef.current = true;
+    setError(null);
+    try {
+      if (blurRef.current.enabled) {
+        await blurRef.current.disable();
+        setBackgroundBlur(false);
+        return;
+      }
+      const result = await blurRef.current.enable();
+      setBackgroundBlur(result.ok);
+      if (!result.ok && result.reason) setError(result.reason);
+    } finally {
+      blurBusyRef.current = false;
+    }
   }, []);
 
   const applyAudioOutput = useCallback(
@@ -158,7 +224,8 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     navigator.mediaDevices?.addEventListener?.('devicechange', onChange);
     return () => {
       navigator.mediaDevices?.removeEventListener?.('devicechange', onChange);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      blurRef.current.stop();
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, [refreshDevices]);
 
@@ -170,6 +237,9 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     audioOutputId,
     micEnabled,
     cameraEnabled,
+    backgroundBlur,
+    backgroundBlurSupported:
+      backgroundBlurSupported || blurRef.current.supported,
     error,
     start,
     stop,
@@ -178,6 +248,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     setAudioOutputId,
     toggleMic,
     toggleCamera,
+    toggleBackgroundBlur,
     applyAudioOutput,
     videoDevices: devicesByKind(devices, 'videoinput'),
     audioDevices: devicesByKind(devices, 'audioinput'),

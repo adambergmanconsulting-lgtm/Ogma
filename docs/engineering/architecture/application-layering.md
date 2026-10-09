@@ -40,7 +40,8 @@
 | **Domain: media plane** | `src/domain/thread/mediaPlane.ts` — narrow publish/subscribe port; mesh adapter now, SFU later |
 | **Domain: chat wire** | `src/domain/thread/chatEnvelope.ts` — typed payloads (`text` now; `image-ref` reserved) |
 | **Domain: room mode** | `src/domain/thread/roomMode.ts` — `free` vs `team` (team unused until paid) |
-| **Domain: crypto / loom** | `src/domain/crypto/`, later loom store — seal/open, sync (M2) |
+| **Domain: crypto / loom** | `src/domain/crypto/`, `src/domain/loom/` — seal/open, IndexedDB store, sync, vault, export |
+| **Shell chrome** | `src/components/AppNav.tsx` — top bar only; Call starts open Loom space via `src/app/App.tsx` |
 | **Domain: signaling URLs** | `src/domain/signaling/` — capability hash parse/format |
 | **Shared contracts** | `src/domain/types.ts` — peer/room/message shapes |
 | **Infra adapters** | Browser APIs + public trackers / STUN; later paid SFU/TURN behind media plane |

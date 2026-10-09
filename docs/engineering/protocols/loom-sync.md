@@ -4,9 +4,11 @@
 
 ## Fast path (read first)
 
-- Text-only sealed append log in IndexedDB; sync over WebRTC when space open.
-- Space secret → HKDF → AES-256-GCM (Web Crypto).
+- Text-only sealed append log in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
+- Space secret → UTF-8 bytes → HKDF → AES-256-GCM (Web Crypto). **Locked:** UTF-8 of `#space=` string (never change).
 - Availability = members online; Ogma stores nothing.
+- Display **name** required before Chat / Call. **Vault key optional** (cold **Use a vault** or Settings **Add vault key**): wraps Remembered secrets + Log out / retrieve; not required to use the app.
+- Host Call binds Thread room + `#space=` so in-call text is this Loom log ([capability-urls.md](capability-urls.md), [overview.md](../../product/overview.md)).
 
 ## Envelope (wire + disk)
 
@@ -27,9 +29,10 @@
 
 ## Keying
 
-- `spaceSecret` from `#space=` (raw bytes after base64url decode, or UTF-8 bytes of secret string — pick one in impl and never change).
+- `spaceSecret` from `#space=` — **UTF-8 bytes of the secret string** (locked).
 - `encKey = HKDF-SHA-256(ikm=spaceSecret, salt=empty, info="ogma-loom-enc-v1", len=32)`.
 - AES-GCM 256; 96-bit random nonce per message.
+- Optional **device key** (PBKDF2-SHA-256 → AES-GCM) wraps remembered space secrets on one vault; not membership.
 
 **v1 trust:** anyone with the space link can decrypt. No member removal / FS.
 
@@ -46,7 +49,9 @@
 
 ## Size guards
 
-- Warn at 50 MB local; strongly warn 100 MB; suggest export/trim.
+- **Keep-last-N (locked):** each space keeps the newest **500** messages hot (`MESSAGE_KEEP_CAP`); older envelopes move to a local **cold** store on ingest/open. Sync `have`/`need` includes cold ids.
+- **Load older:** UI restores cold in batches of **50** (`MESSAGE_LOAD_OLDER_BATCH`) without promoting them back to hot.
+- Warn at 50 MB local (hot + cold); strongly warn 100 MB; suggest export.
 - Export (M2+): decrypt locally to JSON download for holder with secret.
 
 ## Non-goals (M2)

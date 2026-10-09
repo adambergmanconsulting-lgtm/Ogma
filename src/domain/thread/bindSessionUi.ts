@@ -1,4 +1,5 @@
 import { MAX_PEERS, type ChatMessage } from '../types';
+import { roomFullLabel } from './capacityCopy';
 import type { TextChatPayload } from './chatEnvelope';
 import type { ControlWire, MetaWire, ThreadSessionHandlers } from './sessionTypes';
 
@@ -74,7 +75,7 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
     },
     onRoomFull: () => {
       if (ui.cancelled()) return;
-      ui.setError(`Room is full (max ${MAX_PEERS} people).`);
+      ui.setError(roomFullLabel(MAX_PEERS));
       ui.setConnectionState('error');
       ui.clearSessionRefs();
     },

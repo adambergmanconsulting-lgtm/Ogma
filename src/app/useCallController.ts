@@ -3,6 +3,7 @@ import {
   clearRoomFromUrl,
   createRoomSecret,
   parseRoomIdFromLocation,
+  parseSpaceSecretFromLocation,
   replaceUrlWithRoom,
   roomDisplayCode,
   roomShareUrl,
@@ -14,12 +15,18 @@ import { useWebRTC } from '../hooks/useWebRTC';
 
 type Drawer = 'none' | 'chat' | 'settings';
 
+type CallControllerOpts = {
+  /** Vault display name (required before call). */
+  displayName: string;
+  /** When false, ignore URL auto-join until user opens Call from Chats. */
+  enabled?: boolean;
+};
+
 /** Lobby + in-call state wiring for App shell. */
-export function useCallController() {
-  const initialRoom = parseRoomIdFromLocation(window.location);
-  const [displayName, setDisplayName] = useState(
-    () => localStorage.getItem('ogma.displayName') || '',
-  );
+export function useCallController(opts: CallControllerOpts) {
+  const displayName = opts.displayName;
+  const enabled = opts.enabled !== false;
+  const initialRoom = enabled ? parseRoomIdFromLocation(window.location) : null;
   const [roomInput, setRoomInput] = useState(() => initialRoom ?? '');
   const [activeRoom, setActiveRoom] = useState<string | null>(() => initialRoom);
   const [inviteMode, setInviteMode] = useState(() => Boolean(initialRoom));
@@ -27,6 +34,10 @@ export function useCallController() {
   const [busy, setBusy] = useState(false);
   const [drawer, setDrawer] = useState<Drawer>('none');
   const [linkHint, setLinkHint] = useState<string | null>(null);
+  /** Loom space secret for this call's chat (Call-from-chat / invite with #space=). */
+  const [boundSpaceSecret, setBoundSpaceSecret] = useState<string | null>(() =>
+    initialRoom ? parseSpaceSecretFromLocation() : null,
+  );
   const replaceTrackRef = useRef<(track: MediaStreamTrack) => void>(() => undefined);
   const [peerCount, setPeerCount] = useState(1);
   const [qualityTier, setQualityTier] = useState<'high' | 'low'>('high');
@@ -60,10 +71,7 @@ export function useCallController() {
   }, [webrtc.peerCount]);
 
   useEffect(() => {
-    localStorage.setItem('ogma.displayName', displayName);
-  }, [displayName]);
-
-  useEffect(() => {
+    if (!enabled) return;
     const syncFromLocation = () => {
       const id = parseRoomIdFromLocation(window.location);
       if (id && !inCall) {
@@ -78,15 +86,17 @@ export function useCallController() {
       window.removeEventListener('hashchange', syncFromLocation);
       window.removeEventListener('popstate', syncFromLocation);
     };
-  }, [inCall]);
+  }, [enabled, inCall]);
 
   const enterRoom = useCallback(
-    async (roomId: string) => {
+    async (roomId: string, spaceSecret?: string | null) => {
       setBusy(true);
       try {
         await media.start();
         setActiveRoom(roomId);
-        replaceUrlWithRoom(roomId);
+        const space = spaceSecret?.trim() || null;
+        setBoundSpaceSecret(space);
+        replaceUrlWithRoom(roomId, space ? { spaceSecret: space } : undefined);
         setInCall(true);
         setDrawer('none');
         setLinkHint(null);
@@ -105,7 +115,8 @@ export function useCallController() {
   const onJoin = useCallback(() => {
     const id = extractRoomSecret(roomInput);
     if (!id) return;
-    void enterRoom(id);
+    const space = parseSpaceSecretFromLocation();
+    void enterRoom(id, space);
   }, [enterRoom, roomInput]);
 
   const onLeave = useCallback(() => {
@@ -113,19 +124,24 @@ export function useCallController() {
     media.stop();
     setInCall(false);
     setActiveRoom(null);
+    setBoundSpaceSecret(null);
     setDrawer('none');
     setLinkHint(null);
     clearRoomFromUrl();
   }, [media, webrtc]);
 
   const shareUrl = useMemo(
-    () => (activeRoom ? roomShareUrl(activeRoom) : ''),
-    [activeRoom],
+    () =>
+      activeRoom
+        ? roomShareUrl(
+            activeRoom,
+            boundSpaceSecret ? { spaceSecret: boundSpaceSecret } : undefined,
+          )
+        : '',
+    [activeRoom, boundSpaceSecret],
   );
 
   return {
-    displayName,
-    setDisplayName,
     roomInput,
     setRoomInput,
     inviteMode,
@@ -139,6 +155,10 @@ export function useCallController() {
     webrtc,
     onCreate,
     onJoin,
+    /** Join/create a Thread; pass spaceSecret so Call chat is that Loom log. */
+    startCall: (roomId: string, spaceSecret?: string) => void enterRoom(roomId, spaceSecret),
+    /** Space secret bound to this call (Loom chat), if any. */
+    boundSpaceSecret,
     onLeave,
     shareUrl,
     roomCode: activeRoom ? roomDisplayCode(activeRoom) : '',

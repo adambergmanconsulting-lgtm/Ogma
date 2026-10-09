@@ -1,14 +1,14 @@
 # Ogma
 
-Peer-to-peer video calls and side text in the browser. Static PWA — Ogma holds no user media or chat database.
+Peer-to-peer chat and video in the browser. Static PWA — Ogma holds no user media or chat database.
 
-**Start a call:** [https://adambergmanconsulting-lgtm.github.io/Ogma/](https://adambergmanconsulting-lgtm.github.io/Ogma/)
+**Try it:** [https://adambergmanconsulting-lgtm.github.io/Ogma/](https://adambergmanconsulting-lgtm.github.io/Ogma/)
 
-Open or share a capability link (`#room=…`). Public BitTorrent trackers only help peers meet; live audio, video, and chat stay on WebRTC between browsers. Anyone with the link can join. There are no accounts.
+Create a chat, Call from the top bar, or join a capability link (`?room=` / `#space=`). Public BitTorrent trackers only help peers meet; live audio, video, and chat stay on WebRTC between browsers. Anyone with the link can join. There are no accounts.
 
-**Name.** In Celtic myth, Ogma is the god of speech and open dialogue. Legend pictured him linking the speaker’s tongue to the listener’s ear with invisible golden threads — a metaphor for a serverless video stream.
+**Name.** In Celtic myth, Ogma is the god of speech and open dialogue. Legend pictured him linking the speaker’s tongue to the listener’s ear with invisible golden threads — a metaphor for peer-to-peer video.
 
-**Product spine:** [docs/product/overview.md](docs/product/overview.md) — Thread (now), Loom (later), invariants, honest copy, milestones.
+**Product spine:** [docs/product/overview.md](docs/product/overview.md) — Thread + Loom (now), invariants, honest copy, milestones.
 
 **Stack:** Vite, React, TypeScript, PWA; rendezvous via [`@trystero-p2p/torrent`](https://www.npmjs.com/package/@trystero-p2p/torrent); media over WebRTC.
 
@@ -41,7 +41,7 @@ Pick one row. Name the task; open only that owner’s Fast path before the first
 | Capability / room links | [docs/engineering/protocols/capability-urls.md](docs/engineering/protocols/capability-urls.md) |
 | Video topology / hub | [docs/engineering/protocols/thread-topology.md](docs/engineering/protocols/thread-topology.md) |
 | Connectivity / TURN | [docs/engineering/protocols/connectivity.md](docs/engineering/protocols/connectivity.md) |
-| Loom sync (later) | [docs/engineering/protocols/loom-sync.md](docs/engineering/protocols/loom-sync.md) |
+| Loom sync | [docs/engineering/protocols/loom-sync.md](docs/engineering/protocols/loom-sync.md) |
 | Implement / fix / refactor | [AGENTS.md](AGENTS.md) → [docs/CANONICAL-SOURCES.md](docs/CANONICAL-SOURCES.md) |
 | Tests when behavior moves | [docs/ops/testing-bar.md](docs/ops/testing-bar.md) → [docs/engineering/testing.md](docs/engineering/testing.md) |
 | CI / merge | [docs/ops/ci-flow.md](docs/ops/ci-flow.md) |

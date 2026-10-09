@@ -18,6 +18,31 @@
   /* Moss / sacred-tree connected */
   --color-ok: #10b981;
   --color-danger: #e35d6a;
+  /* Shell gutters + column — top bar and chat canvas share these (in-page-layout). */
+  --spacing-gutter: 1.25rem;
+  --spacing-gutter-lg: 1.75rem;
+  --width-app-column: 32rem; /* ~max-w-lg */
+}
+
+/** Horizontal inset for top chrome and primary canvas. */
+.app-gutter-x {
+  padding-left: var(--spacing-gutter);
+  padding-right: var(--spacing-gutter);
+}
+
+/** Centered content column (nav inner + Chat / Space). Call video stays full-bleed. */
+.app-column {
+  width: 100%;
+  max-width: var(--width-app-column);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .app-gutter-x {
+    padding-left: var(--spacing-gutter-lg);
+    padding-right: var(--spacing-gutter-lg);
+  }
 }
 
 html,

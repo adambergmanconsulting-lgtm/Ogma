@@ -6,6 +6,7 @@ import {
   MicOff,
   PhoneOff,
   Settings,
+  Sparkles,
   Video,
   VideoOff,
 } from 'lucide-react';
@@ -13,10 +14,13 @@ import {
 interface ControlBarProps {
   micEnabled: boolean;
   cameraEnabled: boolean;
+  backgroundBlur?: boolean;
+  backgroundBlurSupported?: boolean;
   chatOpen: boolean;
   showAllVideos?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
+  onToggleBackgroundBlur?: () => void;
   onToggleChat: () => void;
   onToggleShowAllVideos?: () => void;
   onOpenSettings: () => void;
@@ -77,6 +81,16 @@ export function ControlBar(props: ControlBarProps) {
       >
         {props.cameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
       </CtrlButton>
+      {props.backgroundBlurSupported && props.onToggleBackgroundBlur ? (
+        <CtrlButton
+          label={props.backgroundBlur ? 'Clear background' : 'Blur background'}
+          onClick={props.onToggleBackgroundBlur}
+          active={props.backgroundBlur}
+          testId="toggle-background-blur"
+        >
+          <Sparkles className="h-5 w-5" />
+        </CtrlButton>
+      ) : null}
       <CtrlButton
         label={props.chatOpen ? 'Hide chat' : 'Show chat'}
         onClick={props.onToggleChat}

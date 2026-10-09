@@ -23,9 +23,14 @@ interface CallShellProps {
   remotePeers: RemotePeer[];
   messages: ChatMessage[];
   selfId: string;
+  hasMoreOlder?: boolean;
+  loadingOlder?: boolean;
+  onLoadOlder?: () => void;
   drawer: Drawer;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  backgroundBlur?: boolean;
+  backgroundBlurSupported?: boolean;
   pinnedPeerIds?: string[];
   showAllVideos?: boolean;
   capacityWarning?: string | null;
@@ -38,6 +43,7 @@ interface CallShellProps {
   onCopyInvite: () => Promise<ShareResult>;
   onToggleMic: () => void;
   onToggleCamera: () => void;
+  onToggleBackgroundBlur?: () => void;
   onToggleChat: () => void;
   onTogglePin?: (peerId: string) => void;
   onToggleShowAllVideos?: () => void;
@@ -65,7 +71,7 @@ export function CallShell(props: CallShellProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="px-3 pt-2 pb-1">
+      <header className="app-gutter-x pt-3 pb-1">
         <div className="flex min-w-0 items-center gap-2 text-xs text-[color:var(--color-muted)]">
           <span data-testid="connection-label" className="min-w-0 truncate">
             {props.connectionLabel}
@@ -103,21 +109,24 @@ export function CallShell(props: CallShellProps) {
             <p
               role="status"
               data-testid="capacity-warning"
-              className="px-4 pb-1 text-xs text-[color:var(--color-muted)]"
+              className="app-gutter-x pb-1 text-xs text-[color:var(--color-muted)]"
             >
               {props.capacityWarning}
             </p>
           ) : null}
           {props.error ? (
-            <p className="px-4 pb-2 text-sm text-[color:var(--color-danger)]">{props.error}</p>
+            <p className="app-gutter-x pb-2 text-sm text-[color:var(--color-danger)]">{props.error}</p>
           ) : null}
           <ControlBar
             micEnabled={props.micEnabled}
             cameraEnabled={props.cameraEnabled}
+            backgroundBlur={props.backgroundBlur}
+            backgroundBlurSupported={props.backgroundBlurSupported}
             chatOpen={props.drawer === 'chat'}
             showAllVideos={props.showAllVideos}
             onToggleMic={props.onToggleMic}
             onToggleCamera={props.onToggleCamera}
+            onToggleBackgroundBlur={props.onToggleBackgroundBlur}
             onToggleChat={props.onToggleChat}
             onToggleShowAllVideos={
               !waitingAlone ? props.onToggleShowAllVideos : undefined
@@ -131,6 +140,9 @@ export function CallShell(props: CallShellProps) {
           open={props.drawer === 'chat'}
           messages={props.messages}
           selfId={props.selfId}
+          hasMoreOlder={props.hasMoreOlder}
+          loadingOlder={props.loadingOlder}
+          onLoadOlder={props.onLoadOlder}
           onClose={props.onCloseDrawer}
           onSend={props.onSendChat}
         />

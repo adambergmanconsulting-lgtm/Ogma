@@ -13,8 +13,9 @@
 
 | Kind | Preferred share | Also accepted | Used for |
 |------|-----------------|---------------|----------|
-| Thread room | `?room=<secret>` | `#room=<secret>`, bare `#id` | Live call + ephemeral text |
-| Loom space | `#space=<secret>` | — | Persistent encrypted text + start Thread |
+| Thread room | `?room=<secret>` | `#room=<secret>`, bare `#id` | Live A/V; ephemeral text only if no space |
+| Loom space | `#space=<secret>` | `?space=` | Persistent encrypted text + Call |
+| Call from chat | `?room=<thread>&` `#space=<space>` | — | Same Loom chat in the call drawer |
 
 **Secret generation (Thread M1):** 96+ bits entropy, URL-safe base64 or hex (12+ chars opaque id minimum; prefer 16+ bytes random → base64url).
 
@@ -28,9 +29,11 @@
 
 ## UI copy
 
-- Always show the full invite URL in-call and a **Copy invite link** control (copy ≠ join).
-- Always show: “Anyone with this link can join” (room) / “Anyone with this link can read history” (space).
-- Show a short room code so both people can confirm they match.
+- Share controls use **InviteLinkBar** (**Copy** → **Copied**; share sheet on phone) in-call and on the open chat — copy ≠ join.
+- Space-bound Call invites: `?room=<thread>#space=<space>` so guests get A/V and the same Loom log.
+- Show a short room code in-call so both people can confirm they match.
+- Labels: [ui-naming.md](../../product/heuristics/ui-naming.md).
+
 ## Non-goals
 
 Short links via Ogma redirect service; email invite tokens; revocable links without rotating the secret (v1: rotate = new room/space).

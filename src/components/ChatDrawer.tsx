@@ -1,16 +1,29 @@
 import { useState, type FormEvent } from 'react';
 import { Send, X } from 'lucide-react';
 import type { ChatMessage } from '../domain/types';
+import { ChatMessageText } from './ChatMessageText';
 
 interface ChatDrawerProps {
   open: boolean;
   messages: ChatMessage[];
   selfId: string;
+  hasMoreOlder?: boolean;
+  loadingOlder?: boolean;
+  onLoadOlder?: () => void;
   onClose: () => void;
   onSend: (text: string) => void;
 }
 
-export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDrawerProps) {
+export function ChatDrawer({
+  open,
+  messages,
+  selfId,
+  hasMoreOlder,
+  loadingOlder,
+  onLoadOlder,
+  onClose,
+  onSend,
+}: ChatDrawerProps) {
   const [draft, setDraft] = useState('');
 
   if (!open) return null;
@@ -25,7 +38,7 @@ export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDraw
   return (
     <aside className="flex w-full max-w-md flex-col border-l border-[color:var(--color-line)] bg-[color:var(--color-panel)]/95 backdrop-blur md:w-80">
       <div className="flex items-center justify-between px-3 py-2">
-        <h2 className="font-[family-name:var(--font-display)] text-base">Chat</h2>
+        <h2 className="text-sm font-semibold">Chat</h2>
         <button
           type="button"
           aria-label="Close chat"
@@ -36,27 +49,40 @@ export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDraw
         </button>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-2">
-        {messages.map((m) => {
-          const mine = m.peerId === selfId;
-          return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+      <div className="flex-1 space-y-2.5 overflow-y-auto px-3 py-2">
+        {hasMoreOlder ? (
+          <div className="flex justify-center py-1">
+            <button
+              type="button"
+              data-testid="load-older"
+              disabled={loadingOlder}
+              onClick={() => onLoadOlder?.()}
+              className="text-sm text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)] disabled:opacity-60"
+            >
+              {loadingOlder ? 'Loading…' : 'Load older'}
+            </button>
+          </div>
+        ) : null}
+        {messages.length === 0 ? (
+          <p className="pt-6 text-center text-sm text-[color:var(--color-muted)]">No messages yet</p>
+        ) : (
+          messages.map((m) => {
+            const mine = m.peerId === selfId;
+            return (
               <div
-                className={[
-                  'max-w-[85%] rounded-2xl px-3 py-2 text-sm',
-                  mine
-                    ? 'bg-[color:var(--color-gold)] text-[color:var(--color-on-gold)]'
-                    : 'bg-[color:var(--color-panel-2)] ring-1 ring-[color:var(--color-line)]',
-                ].join(' ')}
+                key={m.id}
+                className={`max-w-[90%] text-sm ${mine ? 'ml-auto text-right' : ''}`}
               >
                 {!mine ? (
-                  <div className="mb-0.5 text-[11px] font-semibold opacity-80">{m.displayName}</div>
+                  <div className="mb-0.5 text-[11px] text-[color:var(--color-muted)]">
+                    {m.displayName}
+                  </div>
                 ) : null}
-                <div>{m.text}</div>
+                <ChatMessageText text={m.text} />
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       <form onSubmit={submit} className="flex gap-2 border-t border-[color:var(--color-line)] p-3">

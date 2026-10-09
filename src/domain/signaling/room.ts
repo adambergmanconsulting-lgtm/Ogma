@@ -61,35 +61,72 @@ export function spaceHash(spaceSecret: string): string {
   return `#space=${encodeURIComponent(spaceSecret)}`;
 }
 
+/** Loom space secret from location (`#space=` or `?space=`). */
+export function parseSpaceSecretFromLocation(
+  loc: Pick<Location, 'search' | 'hash'> = globalThis.location,
+): string | null {
+  const fromQuery = new URLSearchParams(loc.search).get('space')?.trim();
+  if (fromQuery) return fromQuery;
+  const parsed = parseCapabilityFromHash(loc.hash);
+  return parsed?.kind === 'space' ? parsed.secret : null;
+}
+
+/** Share URL for a Loom space (`#space=` — capability in fragment). */
+export function spaceShareUrl(spaceSecret: string): string {
+  const url = appBaseUrl();
+  url.search = '';
+  url.hash = `space=${encodeURIComponent(spaceSecret)}`;
+  return url.href;
+}
+
+export function replaceUrlWithSpace(spaceSecret: string): void {
+  const url = appBaseUrl();
+  url.search = '';
+  url.hash = `space=${encodeURIComponent(spaceSecret)}`;
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+/** 128-bit URL-safe secret for Loom spaces (same generator as rooms). */
+export function createSpaceSecret(): string {
+  return createRoomSecret();
+}
+
 /** App base path from Vite (`/` locally, `/Ogma/` on GitHub Pages). */
 function appBaseUrl(): URL {
   const base = import.meta.env.BASE_URL || '/';
   return new URL(base, globalThis.location?.origin ?? 'http://localhost');
 }
 
+export type RoomShareOpts = {
+  /** When set, invite also carries `#space=` so Call chat is the Loom log. */
+  spaceSecret?: string;
+};
+
 /**
- * Canonical invite link — `?room=` so messengers that strip `#…` still carry the secret.
+ * Canonical invite — `?room=<secret>` (survives messengers that strip `#…`).
+ * Space-bound calls add `#space=` so guests share the same chat history.
  */
-export function roomShareUrl(roomId: string): string {
+export function roomShareUrl(roomId: string, opts?: RoomShareOpts): string {
   const url = appBaseUrl();
   url.searchParams.set('room', roomId);
-  url.hash = '';
+  url.hash = opts?.spaceSecret ? `space=${encodeURIComponent(opts.spaceSecret)}` : '';
   return url.href;
 }
 
-/** Keep path + set `?room=` (clears legacy hash). */
-export function replaceUrlWithRoom(roomId: string): void {
+/** Keep path + set `?room=` (optional `#space=` for Call-from-chat). */
+export function replaceUrlWithRoom(roomId: string, opts?: RoomShareOpts): void {
   const url = appBaseUrl();
   url.searchParams.set('room', roomId);
-  url.hash = '';
-  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  url.hash = opts?.spaceSecret ? `space=${encodeURIComponent(opts.spaceSecret)}` : '';
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 export function clearRoomFromUrl(): void {
+  const space = parseSpaceSecretFromLocation();
   const url = appBaseUrl();
   url.searchParams.delete('room');
-  url.hash = '';
-  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  url.hash = space ? `space=${encodeURIComponent(space)}` : '';
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 /** Short code both people can read aloud to confirm same room. */

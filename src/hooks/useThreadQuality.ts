@@ -5,6 +5,7 @@ import {
   maxVideoBitrateBps,
   sampleOutboundCongestion,
 } from '../domain/media/sendQuality';
+import { capacityWarningLabel } from '../domain/thread/capacityCopy';
 import type { ControlWire, ThreadSession } from '../domain/thread/session';
 import {
   computeWantVideoFrom,
@@ -106,11 +107,7 @@ export function useThreadQuality(options: {
       setLocalSpeaking(isSpeakingLevel(level));
       void sessionRef.current?.sendSpeaking(level);
       const peerCount = sessionRef.current?.peerCount() ?? 1;
-      setCapacityWarning(
-        peerCount >= WARN_PEERS
-          ? `Room is getting full (${peerCount} of ${MAX_PEERS}). Quality may drop.`
-          : null,
-      );
+      setCapacityWarning(capacityWarningLabel(peerCount, MAX_PEERS, WARN_PEERS));
     }, 400);
     return () => {
       window.clearInterval(id);

@@ -22,5 +22,5 @@ Mock browser APIs at the domain boundary for unit proof. Prefer `data-testid` ov
 ## E2e notes
 
 - Config: [playwright.config.ts](../../playwright.config.ts) — builds app, serves preview, fake media.
-- Lobby/create-room should stay green offline-ish (except getUserMedia fakes).
+- Call-from-chat (create space → top-bar / flow **Call**) and invite **Join** should stay green offline-ish (except getUserMedia fakes).
 - Two-peer chat needs tracker reachability; flaky tracker outages are infra, not product regressions — retry once in CI.

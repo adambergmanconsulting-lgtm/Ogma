@@ -130,7 +130,7 @@ export function VideoTile({
         playsInline
         muted={muted || needsUnlock}
         className={[
-          'h-full w-full object-cover',
+          'h-full w-full rounded-xl object-cover',
           mirrored ? 'scale-x-[-1]' : '',
           hasVideo ? '' : 'opacity-0',
         ].join(' ')}

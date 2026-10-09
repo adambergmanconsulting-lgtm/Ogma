@@ -1,10 +1,8 @@
 /** Web Crypto seal/open for Loom (and reusable helpers). Spec: docs/engineering/protocols/loom-sync.md */
 
-const INFO_ENC = 'ogma-loom-enc-v1';
+import { b64ToBytes, bytesToB64, toBufferSource } from './bytes';
 
-function toBufferSource(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-}
+const INFO_ENC = 'ogma-loom-enc-v1';
 
 function toBytes(secret: string): Uint8Array {
   return new TextEncoder().encode(secret);
@@ -76,19 +74,4 @@ export async function openText(
     throw new Error('Invalid payload');
   }
   return parsed.text;
-}
-
-function bytesToB64(bytes: Uint8Array): string {
-  let s = '';
-  bytes.forEach((b) => {
-    s += String.fromCharCode(b);
-  });
-  return btoa(s);
-}
-
-function b64ToBytes(b64: string): Uint8Array {
-  const s = atob(b64);
-  const out = new Uint8Array(s.length);
-  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
-  return out;
 }

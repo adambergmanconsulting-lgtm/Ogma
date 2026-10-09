@@ -1,4 +1,8 @@
-import { parseCapabilityFromHash, parseRoomIdFromLocation } from './room';
+import {
+  parseCapabilityFromHash,
+  parseRoomIdFromLocation,
+  parseSpaceSecretFromLocation,
+} from './room';
 
 export function extractRoomSecret(input: string): string | null {
   const trimmed = input.trim();
@@ -16,6 +20,28 @@ export function extractRoomSecret(input: string): string | null {
   }
   const parsed = parseCapabilityFromHash(`#${trimmed}`);
   if (parsed?.kind === 'room') return parsed.secret;
+  return trimmed.match(/^[a-z0-9_-]{6,128}$/i) ? trimmed : null;
+}
+
+export function extractSpaceSecret(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  try {
+    if (/^https?:\/\//i.test(trimmed) || trimmed.includes('?') || trimmed.includes('#')) {
+      const url = new URL(trimmed, globalThis.location?.origin ?? 'http://local');
+      const fromLoc = parseSpaceSecretFromLocation(url);
+      if (fromLoc) return fromLoc;
+      const parsed = parseCapabilityFromHash(url.hash);
+      return parsed?.kind === 'space' ? parsed.secret : null;
+    }
+  } catch {
+    // fall through
+  }
+  if (trimmed.startsWith('space=')) {
+    return decodeURIComponent(trimmed.slice('space='.length)) || null;
+  }
+  const parsed = parseCapabilityFromHash(`#${trimmed}`);
+  if (parsed?.kind === 'space') return parsed.secret;
   return trimmed.match(/^[a-z0-9_-]{6,128}$/i) ? trimmed : null;
 }
 

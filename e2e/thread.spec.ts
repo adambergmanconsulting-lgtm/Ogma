@@ -1,21 +1,49 @@
 import { expect, test } from '@playwright/test';
-import { createRoom, joinRoom, newMediaContext } from './helpers';
+import { createRoom, ensureVault, joinRoom, newMediaContext, openCallChat } from './helpers';
 
-test.describe('Thread lobby', () => {
-  test('shows create and join controls', async ({ page }) => {
+test.describe('Name + Chats', () => {
+  test('name then chats without vault key', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Ogma' })).toBeVisible();
-    await expect(page.getByTestId('create-room')).toBeVisible();
-    await expect(page.getByTestId('join-room')).toBeVisible();
-    await expect(page.getByText(/Anyone with the room link can join/i)).toBeVisible();
+    await expect(page.getByTestId('name-continue')).toBeVisible();
+    await expect(page.getByTestId('vault-splash-open')).toBeVisible();
+    await page.getByTestId('vault-splash-open').click();
+    await expect(page.getByTestId('vault-splash')).toBeVisible();
+    await expect(page.getByTestId('vault-create')).toBeVisible();
+    await expect(page.getByTestId('vault-open')).toBeVisible();
+    await page.getByTestId('vault-splash-close').click();
+    await page.getByTestId('vault-name').fill('Ada');
+    await page.getByTestId('name-continue').click();
+    await expect(page.getByTestId('secret-value')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Chat' })).toBeVisible();
+    await expect(page.getByText(/message and Call/i)).toBeVisible();
+    await expect(page.getByTestId('create-space')).toBeVisible();
+    await expect(page.getByTestId('app-nav')).toBeVisible();
+    await expect(page.getByTestId('app-nav').getByText('Ogma')).toBeVisible();
+    await expect(page.getByTestId('nav-chats')).toBeVisible();
+    await expect(page.getByTestId('nav-call')).toBeVisible();
+    await expect(page.getByTestId('nav-settings')).toBeVisible();
   });
+});
 
-  test('create room enters the call shell', async ({ page }) => {
-    await createRoom(page, 'Host');
+test.describe('Call from chat', () => {
+  test('Call on a space enters the call shell', async ({ page }) => {
+    await ensureVault(page, 'Host');
+    await page.getByTestId('create-space').click();
+    await expect(page.getByTestId('secret-continue')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('secret-continue').click();
+    await expect(page.getByText(/Call when you're ready/)).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('nav-call').click();
+    await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('share-link')).toBeVisible();
     await expect(page.getByTestId('connection-label')).toContainText(/Waiting|Connected/);
     await expect(page).toHaveURL(/[?&]room=/);
-    await expect(page.getByTestId('chat-input')).toBeVisible();
     await expect(page.getByTestId('mic-level')).toBeVisible();
+    await openCallChat(page);
+    const blur = page.getByTestId('toggle-background-blur');
+    if (await blur.count()) {
+      await expect(blur).toBeVisible();
+      await blur.click();
+    }
   });
 });
 
@@ -34,7 +62,6 @@ test.describe('Thread two-peer', () => {
     await joinRoom(guest, 'Guest', roomUrl);
     await expect(guest.getByTestId('chat-input')).toBeVisible();
 
-    // Tracker-assisted mesh: allow time for peer discovery on public relays.
     await expect
       .poll(async () => host.getByTestId('connection-label').innerText(), { timeout: 60_000 })
       .toMatch(/Connected/);
