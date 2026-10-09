@@ -10,8 +10,10 @@ import {
   roomShareUrl,
 } from '../domain/signaling/room';
 import { extractRoomSecret, shareRoomLink } from '../domain/signaling/share';
+import { connectionLabel } from '../domain/thread/connectionLabel';
 import { useUserMedia } from '../hooks/useUserMedia';
 import { useWebRTC } from '../hooks/useWebRTC';
+import { lobbyInviteCode, waitingAloneHint } from './callHints';
 
 type Drawer = 'none' | 'chat' | 'settings';
 
@@ -114,21 +116,12 @@ export default function App() {
   );
 
   const roomCode = activeRoom ? roomDisplayCode(activeRoom) : '';
-
-  const lobbyInviteCode = useMemo(() => {
-    if (!inviteMode) return '';
-    const id = extractRoomSecret(roomInput) || activeRoom;
-    return id ? roomDisplayCode(id) : '';
-  }, [activeRoom, inviteMode, roomInput]);
-
-  const connectionLabel =
-    webrtc.connectionState === 'connected'
-      ? webrtc.remotePeers.length
-        ? 'Connected'
-        : webrtc.openRelays > 0
-          ? 'Waiting for others…'
-          : 'Connecting to trackers…'
-      : webrtc.connectionState;
+  const inviteCode = lobbyInviteCode(inviteMode, roomInput, activeRoom);
+  const statusLabel = connectionLabel(
+    webrtc.connectionState,
+    webrtc.remotePeers.length,
+    webrtc.openRelays,
+  );
 
   if (!inCall) {
     return (
@@ -138,7 +131,7 @@ export default function App() {
         mediaError={media.error || webrtc.error}
         busy={busy}
         inviteMode={inviteMode}
-        inviteCode={lobbyInviteCode}
+        inviteCode={inviteCode}
         onDisplayName={setDisplayName}
         onRoomInput={setRoomInput}
         onCreate={onCreate}
@@ -150,13 +143,10 @@ export default function App() {
   return (
     <CallShell
       displayName={displayName.trim() || 'Guest'}
-      connectionLabel={connectionLabel}
+      connectionLabel={statusLabel}
       roomCode={roomCode}
       inviteUrl={shareUrl}
-      linkHint={
-        linkHint ??
-        `Room ${roomCode} — the other person must see the same code. Copy the invite link below; do not both Create room.`
-      }
+      linkHint={linkHint ?? waitingAloneHint(webrtc.remotePeers.length)}
       error={webrtc.error || media.error}
       localStream={media.stream}
       localMicOff={!media.micEnabled}
@@ -172,23 +162,15 @@ export default function App() {
       videoDeviceId={media.videoDeviceId}
       audioDeviceId={media.audioDeviceId}
       audioOutputId={media.audioOutputId}
-      onCopyInvite={() => {
-        if (!shareUrl) return;
-        void shareRoomLink(shareUrl).then((result) => {
-          if (result.ok) {
-            setLinkHint(
-              result.method === 'clipboard'
-                ? 'Invite link copied. They open it and tap Join this room — check Room codes match.'
-                : 'Invite shared. They open it and tap Join this room — check Room codes match.',
-            );
-            return;
-          }
-          if (result.reason === 'cancelled') {
-            setLinkHint('Cancelled. Use Copy invite link again, or select the URL above.');
-            return;
-          }
-          setLinkHint('Could not copy — select the invite URL above and copy it yourself.');
-        });
+      onCopyInvite={async () => {
+        if (!shareUrl) return { ok: false, reason: 'failed', url: '' };
+        const result = await shareRoomLink(shareUrl);
+        if (result.ok) {
+          setLinkHint(null);
+        } else if (result.reason === 'cancelled') {
+          setLinkHint('Share cancelled — tap Copy link again.');
+        }
+        return result;
       }}
       onToggleMic={media.toggleMic}
       onToggleCamera={media.toggleCamera}

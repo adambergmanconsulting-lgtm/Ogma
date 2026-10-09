@@ -1,7 +1,11 @@
+import { useEffect } from 'react';
+import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
+import type { ShareResult } from '../domain/signaling/share';
 import type { ChatMessage, RemotePeer } from '../domain/types';
 import type { MediaDeviceOption } from '../domain/types';
 import { ChatDrawer } from './ChatDrawer';
 import { ControlBar } from './ControlBar';
+import { InviteLinkBar } from './InviteLinkBar';
 import { OghamMark } from './OghamMark';
 import { SettingsDrawer } from './SettingsDrawer';
 import { VideoGrid } from './VideoGrid';
@@ -13,7 +17,7 @@ interface CallShellProps {
   connectionLabel: string;
   roomCode: string;
   inviteUrl: string;
-  linkHint: string;
+  linkHint: string | null;
   error: string | null;
   localStream: MediaStream | null;
   localMicOff: boolean;
@@ -29,7 +33,7 @@ interface CallShellProps {
   videoDeviceId: string;
   audioDeviceId: string;
   audioOutputId: string;
-  onCopyInvite: () => void;
+  onCopyInvite: () => Promise<ShareResult>;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleChat: () => void;
@@ -44,18 +48,29 @@ interface CallShellProps {
 }
 
 export function CallShell(props: CallShellProps) {
+  const waitingAlone = props.remotePeers.length === 0;
+
+  // Any click in the call shell counts as the autoplay gesture (not only PiP).
+  useEffect(() => {
+    const onPointer = () => {
+      void unlockRemoteAudio();
+    };
+    window.addEventListener('pointerdown', onPointer, { once: true, capture: true });
+    return () => window.removeEventListener('pointerdown', onPointer, true);
+  }, []);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex flex-col gap-2 border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-4 py-2.5 backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 font-[family-name:var(--font-display)] text-xl tracking-tight">
-              <OghamMark className="h-5 w-auto shrink-0 text-[color:var(--color-gold)]" />
-              <span>Ogma</span>
-            </div>
-            <div
+      <header className="border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <OghamMark className="h-4 w-auto shrink-0 text-[color:var(--color-gold)]" />
+            <span className="shrink-0 font-[family-name:var(--font-display)] text-base tracking-tight sm:text-lg">
+              Ogma
+            </span>
+            <span
               data-testid="connection-label"
-              className="truncate text-xs text-[color:var(--color-muted)]"
+              className="min-w-0 truncate text-xs text-[color:var(--color-muted)]"
             >
               {props.connectionLabel}
               {props.roomCode ? (
@@ -64,32 +79,22 @@ export function CallShell(props: CallShellProps) {
                   <span data-testid="room-code">Room {props.roomCode}</span>
                 </>
               ) : null}
-            </div>
+            </span>
           </div>
-          <button
-            type="button"
-            data-testid="share-link"
-            className="shrink-0 rounded-lg border border-[color:var(--color-line)] px-3 py-1.5 text-xs hover:bg-[color:var(--color-panel-2)]"
-            onClick={props.onCopyInvite}
-          >
-            Copy invite link
-          </button>
         </div>
         {props.inviteUrl ? (
-          <label className="block space-y-1">
-            <span className="text-[11px] text-[color:var(--color-muted)]">
-              Invite link (send this — it is the room)
-            </span>
-            <input
-              data-testid="invite-url"
-              readOnly
-              value={props.inviteUrl}
-              onFocus={(e) => e.currentTarget.select()}
-              className="w-full truncate rounded-lg border border-[color:var(--color-line)] bg-[color:var(--color-panel-2)] px-2 py-1.5 font-mono text-[11px] text-[color:var(--color-ink)] outline-none focus:border-[color:var(--color-gold)]"
-            />
-          </label>
+          <div className={waitingAlone ? 'invite-link-bar-wait' : undefined}>
+            <InviteLinkBar inviteUrl={props.inviteUrl} onCopyInvite={props.onCopyInvite} />
+          </div>
         ) : null}
-        <p className="text-[11px] text-[color:var(--color-muted)]">{props.linkHint}</p>
+        {props.linkHint ? (
+          <p
+            role="status"
+            className="mt-1.5 text-[11px] text-[color:var(--color-muted)]"
+          >
+            {props.linkHint}
+          </p>
+        ) : null}
       </header>
 
       <div className="flex min-h-0 flex-1">
@@ -108,6 +113,7 @@ export function CallShell(props: CallShellProps) {
             micEnabled={props.micEnabled}
             cameraEnabled={props.cameraEnabled}
             chatOpen={props.drawer === 'chat'}
+            localStream={props.localStream}
             onToggleMic={props.onToggleMic}
             onToggleCamera={props.onToggleCamera}
             onToggleChat={props.onToggleChat}

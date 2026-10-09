@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 import { MessageSquare, Mic, MicOff, PhoneOff, Settings, Video, VideoOff } from 'lucide-react';
+import { MicLevel } from './MicLevel';
 
 interface ControlBarProps {
   micEnabled: boolean;
   cameraEnabled: boolean;
   chatOpen: boolean;
+  localStream: MediaStream | null;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleChat: () => void;
@@ -18,18 +20,21 @@ function CtrlButton({
   danger,
   label,
   children,
+  testId,
 }: {
   onClick: () => void;
   active?: boolean;
   danger?: boolean;
   label: string;
   children: ReactNode;
+  testId?: string;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
+      data-testid={testId}
       onClick={onClick}
       className={[
         'flex h-12 w-12 items-center justify-center rounded-full transition',
@@ -47,14 +52,22 @@ function CtrlButton({
 
 export function ControlBar(props: ControlBarProps) {
   return (
-    <div className="flex items-center justify-center gap-2 border-t border-[color:var(--color-line)] bg-[color:var(--color-panel)]/90 px-3 py-3 backdrop-blur md:gap-3">
-      <CtrlButton
-        label={props.micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-        onClick={props.onToggleMic}
-        active={!props.micEnabled}
+    <div className="flex flex-wrap items-center justify-center gap-2 border-t border-[color:var(--color-line)] bg-[color:var(--color-panel)]/90 px-3 py-3 backdrop-blur md:gap-3">
+      {/* Mute + level glued together — bottom toolbar, left of camera */}
+      <div
+        data-testid="mic-controls"
+        className="flex items-center gap-2 rounded-full border border-[color:var(--color-gold)]/50 bg-[color:var(--color-panel-2)] py-1.5 pl-2 pr-1.5"
       >
-        {props.micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-      </CtrlButton>
+        <MicLevel stream={props.localStream} active={props.micEnabled} variant="bar" />
+        <CtrlButton
+          label={props.micEnabled ? 'Mute microphone' : 'Unmute microphone'}
+          onClick={props.onToggleMic}
+          active={!props.micEnabled}
+          testId="toggle-mic"
+        >
+          {props.micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+        </CtrlButton>
+      </div>
       <CtrlButton
         label={props.cameraEnabled ? 'Turn camera off' : 'Turn camera on'}
         onClick={props.onToggleCamera}

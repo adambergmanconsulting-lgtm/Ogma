@@ -15,6 +15,7 @@ test.describe('Thread lobby', () => {
     await expect(page.getByTestId('connection-label')).toContainText(/Waiting for others|Connected/);
     await expect(page).toHaveURL(/[?&]room=/);
     await expect(page.getByTestId('chat-input')).toBeVisible();
+    await expect(page.getByTestId('mic-level')).toBeVisible();
   });
 });
 

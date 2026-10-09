@@ -56,3 +56,52 @@ body {
 .fade-up {
   animation: fade-up 0.55s ease both;
 }
+
+@keyframes invite-bar-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes invite-url-flash {
+  0% {
+    background-color: rgba(16, 185, 129, 0.28);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes invite-check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes invite-wait-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.45);
+  }
+}
+
+.invite-link-bar-wait .invite-link-bar:not(.invite-link-bar--ok) {
+  animation: invite-wait-glow 2.4s ease-in-out infinite;
+}

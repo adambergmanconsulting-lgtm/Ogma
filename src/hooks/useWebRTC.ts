@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { bindSessionUi } from '../domain/thread/bindSessionUi';
 import { listRemotePeers, syncLocalStream } from '../domain/thread/peerState';
 import {
   countOpenRelays,
@@ -28,6 +29,8 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const namesRef = useRef<Map<string, string>>(new Map());
   const streamsRef = useRef<Map<string, MediaStream>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
+  const localStreamLiveRef = useRef(localStream);
+  localStreamLiveRef.current = localStream;
   const displayNameRef = useRef(displayName);
   displayNameRef.current = displayName;
 
@@ -73,9 +76,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
     const stream = localStreamRef.current;
     if (!session || !stream) return;
     const old = stream.getTracks().find((t) => t.kind === track.kind);
-    if (old && old !== track) {
-      session.replaceTrack(old, track);
-    }
+    if (old && old !== track) session.replaceTrack(old, track);
   }, []);
 
   useEffect(() => {
@@ -83,9 +84,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
   }, [options, replaceTrack]);
 
   useEffect(() => {
-    if (!enabled || !roomId) {
-      return;
-    }
+    if (!enabled || !roomId) return;
 
     setConnectionState('joining');
     setError(null);
@@ -95,72 +94,43 @@ export function useWebRTC(options: UseWebRTCOptions) {
     setRemotePeers([]);
 
     let cancelled = false;
-
-    const session = openThreadSession(roomId, {
-      onPeerJoin: (id) => {
-        if (cancelled) return;
-        namesRef.current.set(id, namesRef.current.get(id) ?? 'Peer');
-        setConnectionState('connected');
-        publishPeers();
-        void sessionRef.current?.sendMeta({
-          displayName: displayNameRef.current.trim() || 'Guest',
-        });
-      },
-      onPeerLeave: (id) => {
-        if (cancelled) return;
-        namesRef.current.delete(id);
-        streamsRef.current.delete(id);
-        publishPeers();
-      },
-      onPeerStream: (id, stream) => {
-        if (cancelled) return;
-        streamsRef.current.set(id, stream);
-        setConnectionState('connected');
-        publishPeers();
-      },
-      onChat: (id, wire) => {
-        if (cancelled) return;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: wire.id,
-            peerId: id,
-            displayName: wire.displayName || namesRef.current.get(id) || 'Peer',
-            text: wire.text,
-            sentAt: wire.sentAt,
-          },
-        ]);
-      },
-      onMeta: (id, meta) => {
-        if (cancelled) return;
-        if (meta.displayName) {
-          namesRef.current.set(id, meta.displayName);
-          publishPeers();
-        }
-      },
-      onJoinError: (message) => {
-        if (cancelled) return;
-        setError(message || "Couldn't reach peers — network may block P2P.");
-        setConnectionState('error');
-      },
-      onRoomFull: () => {
-        if (cancelled) return;
-        setError('Room is full (max 6 people).');
-        setConnectionState('error');
-        sessionRef.current = null;
-        localStreamRef.current = null;
-      },
-    });
+    const session = openThreadSession(
+      roomId,
+      bindSessionUi({
+        cancelled: () => cancelled,
+        names: namesRef.current,
+        streams: streamsRef.current,
+        displayName: () => displayNameRef.current.trim() || 'Guest',
+        publishPeers,
+        setConnectionState,
+        setError,
+        setMessages,
+        clearSessionRefs: () => {
+          sessionRef.current = null;
+          localStreamRef.current = null;
+        },
+        sendMeta: (meta) => {
+          void sessionRef.current?.sendMeta(meta);
+        },
+      }),
+    );
 
     sessionRef.current = session;
     setPeerId(session.selfId);
     void session.sendMeta({ displayName: displayNameRef.current.trim() || 'Guest' });
+    // Attach current camera/mic now — the stream effect may have run before session existed.
+    const live = localStreamLiveRef.current;
+    if (live) {
+      syncLocalStream(session, null, live);
+      localStreamRef.current = live;
+    } else {
+      localStreamRef.current = null;
+    }
     setConnectionState('connected');
     setOpenRelays(countOpenRelays());
 
     const relayPoll = window.setInterval(() => {
-      if (cancelled) return;
-      setOpenRelays(countOpenRelays());
+      if (!cancelled) setOpenRelays(countOpenRelays());
     }, 2000);
 
     return () => {

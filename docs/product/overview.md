@@ -50,6 +50,12 @@ Accounts, Ogma-sent invites, SFU, images in free sync, cloud recording, screen s
 | M1.5 | Client hub and/or selective video for 4+ |
 | M2 | Loom encrypted text sync |
 
+## Planned (after M1)
+
+| Feature | Intent |
+|---------|--------|
+| Background blur (toggle) | Optional local effect; peers see blur via processed track + `replaceTrack`. Not preview-only CSS. Keep phone CPU and bundle size honest. |
+
 ## Related
 
 - Topology: [thread-topology.md](../engineering/protocols/thread-topology.md)

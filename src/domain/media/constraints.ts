@@ -24,10 +24,11 @@ export function buildUserMediaConstraints(
     video.deviceId = { exact: config.videoDeviceId };
   }
 
+  // AGC often pumps/clips on desktop (esp. two tabs on one machine). Keep AEC; skip AGC.
   const audio: MediaTrackConstraints = {
     echoCancellation: true,
     noiseSuppression: true,
-    autoGainControl: true,
+    autoGainControl: false,
   };
 
   if (config.audioDeviceId) {

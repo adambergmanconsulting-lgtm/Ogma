@@ -33,6 +33,7 @@ export function VideoGrid({
         muted
         mirrored
         micOff={localMicOff}
+        showMicLevel
       />
       {remotePeers.map((peer) => (
         <VideoTile
