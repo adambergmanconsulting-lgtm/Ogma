@@ -96,14 +96,17 @@ export default function App() {
   };
 
   const goCall = () => {
-    if (call.inCall) return;
-    const secret = loom.focusedSecret;
-    if (!secret) {
-      loom.setScreen('chats');
-      return;
-    }
-    setCallReturnScreen('space');
-    void threadSecretFromSpace(secret).then((roomId) => call.startCall(roomId, secret));
+    if (call.inCall || loom.busy) return;
+    void (async () => {
+      let secret = loom.focusedSecret;
+      if (!secret) {
+        secret = await loom.createAndOpenSpace();
+        if (!secret) return;
+      }
+      setCallReturnScreen('space');
+      const roomId = await threadSecretFromSpace(secret);
+      call.startCall(roomId, secret);
+    })();
   };
 
   const openSettings = () => {
@@ -229,7 +232,7 @@ export default function App() {
       <AppNav
         place={place}
         inCall={call.inCall}
-        canCall={Boolean(loom.focusedSecret)}
+        canCall={!call.inCall}
         onChats={goChats}
         onCall={goCall}
         onSettings={openSettings}

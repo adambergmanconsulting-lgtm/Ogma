@@ -19,13 +19,27 @@ test.describe('Name + Chats', () => {
     await page.getByTestId('name-continue').click();
     await expect(page.getByTestId('secret-value')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Chat' })).toBeVisible();
-    await expect(page.getByText(/message and Call/i)).toBeVisible();
+    await expect(page.getByText(/Call to start with video/i)).toBeVisible();
     await expect(page.getByTestId('create-space')).toBeVisible();
     await expect(page.getByTestId('app-nav')).toBeVisible();
     await expect(page.getByTestId('app-nav').getByText('Ogma')).toBeVisible();
     await expect(page.getByTestId('nav-chats')).toBeVisible();
     await expect(page.getByTestId('nav-call')).toBeVisible();
     await expect(page.getByTestId('nav-settings')).toBeVisible();
+  });
+});
+
+test.describe('Call from list', () => {
+  test('Call with no open chat creates a space and enters the call shell', async ({ page }) => {
+    await ensureVault(page, 'Host');
+    await page.getByTestId('nav-call').click();
+    await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('share-link')).toBeVisible();
+    await expect(page.getByTestId('connection-label')).toContainText(/Waiting|Connected/);
+    await expect(page).toHaveURL(/[?&]room=/);
+    await expect(page).toHaveURL(/#space=/);
+    await expect(page.getByTestId('mic-level')).toBeVisible();
+    await openCallChat(page);
   });
 });
 

@@ -37,7 +37,7 @@ Optimize for efficiency: user attention, support load, build energy. Waste = dup
 
 Moments that tilt tensions: first visit, irreversible action, error recovery, empty state, permission denied, success after a long chore. Name the Moment when breaking a default lean.
 
-**Host (Ogma):** First visit / empty Chat — one short line that you create a chat to message and Call ([ui-naming.md](ui-naming.md)). Top-bar **Call** starts the open chat’s Thread (not a lobby; no second Call in the space header). Shell/gutter locks: [in-page-layout.md](in-page-layout.md).
+**Host (Ogma):** First visit / empty Chat — one short line: create a chat, or Call to start with video ([ui-naming.md](ui-naming.md)). Top-bar **Call** starts the open chat’s Thread or creates chat + Thread (not a lobby; no second Call in the space header). Shell/gutter locks: [in-page-layout.md](in-page-layout.md).
 
 ## Ship checklist
 

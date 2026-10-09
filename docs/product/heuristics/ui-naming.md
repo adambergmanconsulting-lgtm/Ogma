@@ -44,14 +44,14 @@
 | Nav **Chat** active | Only on the chat chooser (list) | Gold-active **Chat** while a single thread is open (hides “back to list”) |
 | Display type | Fraunces on **Ogma** brand only | Display face on Chat / Devices / space titles |
 | Chat home title | **Chat** (body font) | "Chats"/"Spaces"/"Contacts"; display face on the title |
-| Call entry | Top bar **Call** when a chat is open | Second **Call** in the space header; cold Call lobby |
+| Call entry | Top bar **Call** — open chat’s Thread, or create chat + Thread when none open | Second **Call** in the space header; cold Create lobby |
 | Chat list title | Other participants' names (comma); custom **label** if set; else **New chat** | Opaque short ids; including yourself in the list title |
-| Chats empty (Moment) | **Create a chat to message and Call** — or paste an invite | "Create or paste an invite" only (hides Call); standing how-to essays; Call back in nav |
+| Chats empty (Moment) | **Create a chat, or Call to start with video** — or paste an invite | Hiding Call from empty state; standing how-to essays |
 | Hide chat (list) | Row **Hide** → collapsed **Hidden (n)**; **Show** to restore | Calling this **Archive** (collides with message retention); always-open section |
 | Older messages | Hot keep-last-**500**; overflow to cold; quiet **Load older** (+50) | Manual archive chore; deleting overflow with no look-back |
 | Space empty (Moment) | Quiet **Call when you’re ready** under the header area when no messages | Long video tutorials; second Create-call path |
-| Call lobby title | **Call** (invite join only) | Standalone Call place in nav; cold Create lobby |
+| Call lobby title | **Call** (invite join only) | Cold Create lobby with paste field |
 | Vault settings | Nav **Settings**; **Save name**; optional **Add vault key**; **Export** / **Import**; **Log out** only with key; **Start over** / **Switch vault** | Vault key required; Log out without a key |
 | Vault scope copy | Without key: chats stay in this browser…; with key: vault session copy | Device-wide / cross-OS claims |
 | Space invite control | Same **InviteLinkBar** as Call: **Copy** → **Copied** (share sheet on phone) | One-off quiet Copy button; fake Copied without clipboard result |
-| Top-bar Call | **Call** — starts Thread for the open chat; same Loom log in the call drawer | Separate Create lobby; Call with no open chat (returns to list) |
+| Top-bar Call | **Call** — Thread for the open chat, or new chat + Thread; same Loom log in the call drawer | Separate Create lobby; silent no-op when no chat open |

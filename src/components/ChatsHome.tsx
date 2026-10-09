@@ -88,7 +88,7 @@ export function ChatsHome(props: ChatsHomeProps) {
       <section className="min-h-0 flex-1 overflow-y-auto">
         {empty ? (
           <p className="text-sm text-[color:var(--color-muted)]">
-            Create a chat to message and Call — or paste an invite
+            Create a chat, or Call to start with video — or paste an invite
           </p>
         ) : (
           <ul>

@@ -205,7 +205,7 @@ export function useLoomController() {
   );
 
   const openSpaceWithSecret = useCallback(
-    async (secret: string) => {
+    async (secret: string): Promise<string | null> => {
       setBusy(true);
       setError(null);
       try {
@@ -235,8 +235,10 @@ export function useLoomController() {
         await ensureSync(row.spaceId, secret);
         setScreen('space');
         await refreshSpaces();
+        return secret;
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not open space');
+        return null;
       } finally {
         setBusy(false);
       }
@@ -579,6 +581,9 @@ export function useLoomController() {
       });
       setScreen('reveal');
     },
+    /** New Loom space (no invite reveal) — used when Call starts chat + Thread together. */
+    createAndOpenSpace: (): Promise<string | null> =>
+      openSpaceWithSecret(createSpaceSecret()),
     onJoinSpace: () => {
       const secret = extractSpaceSecret(spaceInput);
       if (!secret) {

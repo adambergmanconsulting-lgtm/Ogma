@@ -7,7 +7,7 @@ export type AppNavPlace = 'chats' | 'space' | 'call';
 interface AppNavProps {
   place: AppNavPlace;
   inCall: boolean;
-  /** True when Call can start (a chat is open). */
+  /** True when Call can start (not already in a call). */
   canCall: boolean;
   onChats: () => void;
   onCall: () => void;

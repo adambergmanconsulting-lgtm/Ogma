@@ -33,12 +33,12 @@
 | Name | Required once per browser profile to chat/call |
 | Vault (optional) | Cold **Use a vault** splash → **Create vault** / **Open vault**; or Settings **Add vault key**; session until **Log out** |
 | Chat (Loom) | `#space=<secret>`; sealed history; list **Hide** / **Hidden** (not message retention); warm sync while tab open; titles from other participants or **New chat** |
-| **Host Call** | Open a chat → top-bar **Call** — same Loom log in the call drawer; invite `?room=` + `#space=` |
+| **Host Call** | Top-bar **Call** — if no chat open, creates one then starts Thread; same Loom log in the call drawer; invite `?room=` + `#space=` |
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
 | In call | Mute, camera, background blur, leave; device hot-swap; truthful connection state |
 | Move device | Export file → Import (+ vault key if one was added) |
 
-**First visit:** Top bar always visible. Empty Chat: create a chat to message and Call. **Call** needs an open chat (else returns to the list). Vault is optional behind **Use a vault**.
+**First visit:** Top bar always visible. Empty Chat: create a chat, or **Call** to start chat + video. Vault is optional behind **Use a vault**.
 
 ## Honest copy (ship in UI)
 
@@ -50,7 +50,7 @@
 
 ## Non-goals (free core)
 
-Forced accounts to join, Ogma-sent invites, SFU on free path, images in free sync, cloud recording, screen share (v1), waiting room, background mobile VoIP, store app required to join.
+Forced accounts to join, Ogma-sent invites, public room directory / open hangouts, SFU on free path, images in free sync, cloud recording, screen share (v1), waiting room, background mobile VoIP, store app required to join.
 
 ## Paid team (later SKU — seams only until built)
 

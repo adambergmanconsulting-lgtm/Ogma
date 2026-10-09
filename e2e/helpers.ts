@@ -36,13 +36,9 @@ export async function openCallChat(page: Page) {
   await expect(page.getByTestId('chat-input')).toBeVisible();
 }
 
-/** Create a chat then Call — the only host path into a Thread. */
+/** Top-bar Call creates a chat and enters the Thread. */
 export async function createRoom(page: Page, name: string) {
   await ensureVault(page, name);
-  await page.getByTestId('create-space').click();
-  await expect(page.getByTestId('secret-continue')).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId('secret-continue').click();
-  await expect(page.getByTestId('nav-call')).toBeVisible({ timeout: 15_000 });
   await page.getByTestId('nav-call').click();
   await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId('share-link')).toBeVisible();
