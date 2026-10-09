@@ -68,6 +68,7 @@ export default function App() {
         onContinue={(name) => void loom.onContinueWithoutVault(name)}
         onCreateVault={(name) => void loom.onCreateVault(name)}
         onOpenVault={() => void loom.onOpenVault()}
+        onProbeVault={() => loom.onProbeVault()}
       />
     );
   }

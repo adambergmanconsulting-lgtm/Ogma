@@ -393,6 +393,13 @@ export function useLoomController() {
     }
   }, [vault]);
 
+  /** Whether this browser already has a vault key (for Open vault). */
+  const onProbeVault = useCallback(async () => {
+    const store = storeRef.current ?? (await getLoomStore());
+    storeRef.current = store;
+    return Boolean(await store.getDeviceKeyMeta());
+  }, []);
+
   /** Open vault already stored on this browser. */
   const onOpenVault = useCallback(async () => {
     setError(null);
@@ -400,7 +407,7 @@ export function useLoomController() {
     storeRef.current = store;
     const meta = await store.getDeviceKeyMeta();
     if (!meta) {
-      setError('No vault on this browser yet. Create vault, or Continue and Import.');
+      setError('No vault on this browser yet. Create one with a name, or close and Continue.');
       return;
     }
     const existing = readVault();
@@ -551,6 +558,7 @@ export function useLoomController() {
     },
     onContinueWithoutVault,
     onCreateVault,
+    onProbeVault,
     onOpenVault,
     onEnableVault,
     onUnlockVault,

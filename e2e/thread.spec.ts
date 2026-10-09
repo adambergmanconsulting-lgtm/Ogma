@@ -10,8 +10,12 @@ test.describe('Name + Chats', () => {
     await expect(page.getByTestId('vault-splash')).toBeVisible();
     await expect(page.getByTestId('vault-create')).toBeVisible();
     await expect(page.getByTestId('vault-open')).toBeVisible();
+    await expect(page.getByTestId('vault-splash-empty')).toBeVisible();
+    await expect(page.getByTestId('vault-open')).toBeDisabled();
+    await page.getByTestId('vault-splash-name').fill('Ada');
+    await expect(page.getByTestId('vault-create')).toBeEnabled();
     await page.getByTestId('vault-splash-close').click();
-    await page.getByTestId('vault-name').fill('Ada');
+    await expect(page.getByTestId('vault-name')).toHaveValue('Ada');
     await page.getByTestId('name-continue').click();
     await expect(page.getByTestId('secret-value')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Chat' })).toBeVisible();
