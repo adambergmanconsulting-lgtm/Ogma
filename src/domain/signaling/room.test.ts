@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createRoomSecret,
   parseCapabilityFromHash,
   parseRoomIdFromHash,
   roomDisplayCode,
   roomHash,
+  roomShareUrl,
   spaceHash,
 } from './room';
 
@@ -50,5 +51,15 @@ describe('createRoomSecret', () => {
 describe('roomDisplayCode', () => {
   it('shows a short uppercase prefix', () => {
     expect(roomDisplayCode('7Di9LHXvokdxZKx5P3gYTA')).toBe('7DI9LH');
+  });
+});
+
+describe('roomShareUrl', () => {
+  it('keeps base path and room hash', () => {
+    vi.stubGlobal('location', { origin: 'https://host.example' });
+    // BASE_URL is injected by Vite; unit test uses whatever build set (often `/`).
+    const href = roomShareUrl('AbCdEf123456');
+    expect(href).toContain('#room=AbCdEf123456');
+    expect(href.startsWith('http')).toBe(true);
   });
 });

@@ -161,8 +161,20 @@ export default function App() {
       audioOutputId={media.audioOutputId}
       onShareLink={() => {
         if (!shareUrl) return;
-        void shareRoomLink(shareUrl).then(() => {
-          setLinkHint('Anyone with this link can join.');
+        void shareRoomLink(shareUrl).then((result) => {
+          if (result.ok) {
+            setLinkHint(
+              result.method === 'clipboard'
+                ? 'Link copied — paste it to the other person.'
+                : 'Invite sent. Keep this tab open to stay in the call.',
+            );
+            return;
+          }
+          if (result.reason === 'cancelled') {
+            setLinkHint('Share cancelled. Tap Share link again to copy.');
+            return;
+          }
+          setLinkHint(`Copy this link manually: ${result.url}`);
         });
       }}
       onToggleMic={media.toggleMic}
