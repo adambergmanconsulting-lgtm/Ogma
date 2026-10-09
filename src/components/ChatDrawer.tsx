@@ -68,6 +68,7 @@ export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDraw
 
       <form onSubmit={submit} className="flex gap-2 border-t border-[color:var(--color-line)] p-3">
         <input
+          data-testid="chat-input"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Say something…"
@@ -75,6 +76,7 @@ export function ChatDrawer({ open, messages, selfId, onClose, onSend }: ChatDraw
         />
         <button
           type="submit"
+          data-testid="chat-send"
           aria-label="Send"
           className="rounded-xl bg-[color:var(--color-gold)] px-3 text-[#1a1408]"
         >

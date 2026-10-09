@@ -1,5 +1,5 @@
 import { joinRoom, selfId, type Room } from '@trystero-p2p/torrent';
-import { ICE_SERVERS } from '../types';
+import { ICE_SERVERS, MAX_PEERS } from '../types';
 
 export const TRYSTERO_APP_ID = 'ogma-thread-v1';
 
@@ -21,6 +21,7 @@ export interface ThreadSessionHandlers {
   onChat: (peerId: string, message: ChatWire) => void;
   onMeta: (peerId: string, meta: MetaWire) => void;
   onJoinError: (message: string) => void;
+  onRoomFull: () => void;
 }
 
 export interface ThreadSession {
@@ -30,7 +31,12 @@ export interface ThreadSession {
   sendMeta: (meta: MetaWire) => Promise<void>;
   addStream: (stream: MediaStream) => void;
   replaceTrack: (oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) => void;
+  peerCount: () => number;
   leave: () => Promise<void>;
+}
+
+function remotePeerCount(room: Room): number {
+  return Object.keys(room.getPeers()).length;
 }
 
 export function openThreadSession(roomSecret: string, handlers: ThreadSessionHandlers): ThreadSession {
@@ -61,15 +67,32 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
     handlers.onMeta(context.peerId, data);
   };
 
+  const enforceCapacity = () => {
+    // MAX_PEERS includes self → more than MAX_PEERS - 1 remotes means room is over capacity.
+    if (remotePeerCount(room) > MAX_PEERS - 1) {
+      handlers.onRoomFull();
+      void room.leave();
+      return true;
+    }
+    return false;
+  };
+
   room.onPeerJoin = (peerId) => {
+    if (enforceCapacity()) return;
     handlers.onPeerJoin(peerId);
   };
   room.onPeerLeave = (peerId) => {
     handlers.onPeerLeave(peerId);
   };
   room.onPeerStream = (stream, peerId) => {
+    if (remotePeerCount(room) > MAX_PEERS - 1) return;
     handlers.onPeerStream(peerId, stream);
   };
+
+  // Immediate check if we joined an already-full swarm.
+  queueMicrotask(() => {
+    enforceCapacity();
+  });
 
   return {
     selfId,
@@ -85,6 +108,9 @@ export function openThreadSession(roomSecret: string, handlers: ThreadSessionHan
     },
     replaceTrack(oldTrack, newTrack) {
       void room.replaceTrack(oldTrack, newTrack);
+    },
+    peerCount() {
+      return remotePeerCount(room) + 1;
     },
     async leave() {
       room.onPeerJoin = null;

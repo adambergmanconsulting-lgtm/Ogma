@@ -6,6 +6,8 @@
 **Kit source:** `C:\Users\AdamBergman\railkit` `kit/` only  
 **Qualification:** Go — greenfield host, writable tree, active seam (P2P video SPA), accepts sequence.
 
+**Post-adopt branding:** Product surface is **Ogma** only. Railkit remains bootstrap provenance — see [bootstrap-provenance.md](bootstrap-provenance.md). Do not keep kit pitch as the host README identity.
+
 ## Sequence outcome
 
 | Step | Result |

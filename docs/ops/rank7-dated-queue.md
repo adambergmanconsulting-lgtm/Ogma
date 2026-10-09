@@ -11,7 +11,7 @@
 | Instrument | Serves ranks | Owner | Due (YYYY-MM-DD) | Status |
 |------------|--------------|-------|------------------|--------|
 | Unused-export / Knip-class | 4, 6, 7 | Adam Bergman | 2026-11-09 | queued |
-| Host unit+e2e on CI umbrella | 2, 4, 7 | Adam Bergman | 2026-11-09 | unit shipped; e2e queued |
+| Host unit+e2e on CI umbrella | 2, 4, 7 | Adam Bergman | 2026-11-09 | unit shipped; e2e local via `npm run test:e2e`; CI job still to wire |
 | UI heuristics + one ui-review | 7 | Adam Bergman | 2026-11-09 | queued |
 | Vendor assert/apply (static host) | 5, 7 | Adam Bergman | 2026-11-09 | queued (GitHub Pages contract + workflow shipped; assert/apply still open) |
 

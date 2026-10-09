@@ -67,13 +67,17 @@ export function ControlBar(props: ControlBarProps) {
         onClick={props.onToggleChat}
         active={props.chatOpen}
       >
-        <MessageSquare className="h-5 w-5" />
+        <span data-testid="toggle-chat">
+          <MessageSquare className="h-5 w-5" />
+        </span>
       </CtrlButton>
       <CtrlButton label="Settings" onClick={props.onOpenSettings}>
         <Settings className="h-5 w-5" />
       </CtrlButton>
       <CtrlButton label="Leave call" onClick={props.onLeave} danger>
-        <PhoneOff className="h-5 w-5" />
+        <span data-testid="leave-call">
+          <PhoneOff className="h-5 w-5" />
+        </span>
       </CtrlButton>
     </div>
   );

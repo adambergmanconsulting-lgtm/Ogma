@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChatDrawer } from '../components/ChatDrawer';
-import { ControlBar } from '../components/ControlBar';
+import { CallShell } from '../components/CallShell';
 import { Lobby } from '../components/Lobby';
-import { SettingsDrawer } from '../components/SettingsDrawer';
-import { VideoGrid } from '../components/VideoGrid';
 import {
   createRoomSecret,
   parseRoomIdFromHash,
@@ -17,13 +14,13 @@ import { useWebRTC } from '../hooks/useWebRTC';
 type Drawer = 'none' | 'chat' | 'settings';
 
 export default function App() {
+  const initialRoom = parseRoomIdFromHash(window.location.hash);
   const [displayName, setDisplayName] = useState(
     () => localStorage.getItem('ogma.displayName') || '',
   );
-  const [roomInput, setRoomInput] = useState('');
-  const [activeRoom, setActiveRoom] = useState<string | null>(() =>
-    parseRoomIdFromHash(window.location.hash),
-  );
+  const [roomInput, setRoomInput] = useState(() => initialRoom ?? '');
+  const [activeRoom, setActiveRoom] = useState<string | null>(() => initialRoom);
+  const [inviteMode, setInviteMode] = useState(() => Boolean(initialRoom));
   const [inCall, setInCall] = useState(false);
   const [busy, setBusy] = useState(false);
   const [drawer, setDrawer] = useState<Drawer>('none');
@@ -60,6 +57,7 @@ export default function App() {
       if (id && !inCall) {
         setActiveRoom(id);
         setRoomInput(id);
+        setInviteMode(true);
       }
     };
     window.addEventListener('hashchange', onHash);
@@ -83,6 +81,7 @@ export default function App() {
   );
 
   const onCreate = useCallback(() => {
+    setInviteMode(false);
     void enterRoom(createRoomSecret());
   }, [enterRoom]);
 
@@ -107,13 +106,21 @@ export default function App() {
     [activeRoom],
   );
 
+  const connectionLabel =
+    webrtc.connectionState === 'connected'
+      ? webrtc.remotePeers.length
+        ? 'Connected'
+        : 'Waiting for others…'
+      : webrtc.connectionState;
+
   if (!inCall) {
     return (
       <Lobby
         displayName={displayName}
         roomInput={roomInput}
-        mediaError={media.error}
+        mediaError={media.error || webrtc.error}
         busy={busy}
+        inviteMode={inviteMode}
         onDisplayName={setDisplayName}
         onRoomInput={setRoomInput}
         onCreate={onCreate}
@@ -123,84 +130,42 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <header className="flex flex-col gap-1 border-b border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-4 py-2.5 backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-[family-name:var(--font-display)] text-xl tracking-tight">Ogma</div>
-            <div className="truncate text-xs text-[color:var(--color-muted)]">
-              {webrtc.connectionState === 'connected'
-                ? webrtc.remotePeers.length
-                  ? 'Connected'
-                  : 'Waiting for others…'
-                : webrtc.connectionState}
-            </div>
-          </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-lg border border-[color:var(--color-line)] px-3 py-1.5 text-xs hover:bg-[color:var(--color-panel-2)]"
-            onClick={() => {
-              if (!shareUrl) return;
-              void shareRoomLink(shareUrl).then(() => {
-                setLinkHint('Anyone with this link can join.');
-              });
-            }}
-          >
-            Share link
-          </button>
-        </div>
-        <p className="text-[11px] text-[color:var(--color-muted)]">
-          {linkHint ?? 'Anyone with this link can join. Keep this tab open to stay in the call.'}
-        </p>
-      </header>
-
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <VideoGrid
-            localStream={media.stream}
-            localLabel={displayName.trim() || 'Guest'}
-            localMicOff={!media.micEnabled}
-            remotePeers={webrtc.remotePeers}
-            applyAudioOutput={media.applyAudioOutput}
-          />
-          {(webrtc.error || media.error) && (
-            <p className="px-4 pb-2 text-sm text-[color:var(--color-danger)]">
-              {webrtc.error || media.error}
-            </p>
-          )}
-          <ControlBar
-            micEnabled={media.micEnabled}
-            cameraEnabled={media.cameraEnabled}
-            chatOpen={drawer === 'chat'}
-            onToggleMic={media.toggleMic}
-            onToggleCamera={media.toggleCamera}
-            onToggleChat={() => setDrawer((d) => (d === 'chat' ? 'none' : 'chat'))}
-            onOpenSettings={() => setDrawer((d) => (d === 'settings' ? 'none' : 'settings'))}
-            onLeave={onLeave}
-          />
-        </div>
-
-        <ChatDrawer
-          open={drawer === 'chat'}
-          messages={webrtc.messages}
-          selfId={webrtc.peerId}
-          onClose={() => setDrawer('none')}
-          onSend={webrtc.sendChat}
-        />
-        <SettingsDrawer
-          open={drawer === 'settings'}
-          videoDevices={media.videoDevices}
-          audioDevices={media.audioDevices}
-          outputDevices={media.outputDevices}
-          videoDeviceId={media.videoDeviceId}
-          audioDeviceId={media.audioDeviceId}
-          audioOutputId={media.audioOutputId}
-          onClose={() => setDrawer('none')}
-          onVideoChange={(id) => void media.switchVideoDevice(id)}
-          onAudioChange={(id) => void media.switchAudioDevice(id)}
-          onOutputChange={media.setAudioOutputId}
-        />
-      </div>
-    </div>
+    <CallShell
+      displayName={displayName.trim() || 'Guest'}
+      connectionLabel={connectionLabel}
+      linkHint={linkHint ?? 'Anyone with this link can join. Keep this tab open to stay in the call.'}
+      error={webrtc.error || media.error}
+      localStream={media.stream}
+      localMicOff={!media.micEnabled}
+      remotePeers={webrtc.remotePeers}
+      messages={webrtc.messages}
+      selfId={webrtc.peerId}
+      drawer={drawer}
+      micEnabled={media.micEnabled}
+      cameraEnabled={media.cameraEnabled}
+      videoDevices={media.videoDevices}
+      audioDevices={media.audioDevices}
+      outputDevices={media.outputDevices}
+      videoDeviceId={media.videoDeviceId}
+      audioDeviceId={media.audioDeviceId}
+      audioOutputId={media.audioOutputId}
+      onShareLink={() => {
+        if (!shareUrl) return;
+        void shareRoomLink(shareUrl).then(() => {
+          setLinkHint('Anyone with this link can join.');
+        });
+      }}
+      onToggleMic={media.toggleMic}
+      onToggleCamera={media.toggleCamera}
+      onToggleChat={() => setDrawer((d) => (d === 'chat' ? 'none' : 'chat'))}
+      onOpenSettings={() => setDrawer((d) => (d === 'settings' ? 'none' : 'settings'))}
+      onCloseDrawer={() => setDrawer('none')}
+      onLeave={onLeave}
+      onSendChat={webrtc.sendChat}
+      onVideoChange={(id) => void media.switchVideoDevice(id)}
+      onAudioChange={(id) => void media.switchAudioDevice(id)}
+      onOutputChange={media.setAudioOutputId}
+      applyAudioOutput={media.applyAudioOutput}
+    />
   );
 }

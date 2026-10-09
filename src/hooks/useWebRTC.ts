@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  openThreadSession,
-  type ThreadSession,
-} from '../domain/thread/session';
-import type { ChatMessage, ConnectionState, RemotePeer } from '../domain/types';
+import { listRemotePeers, syncLocalStream } from '../domain/thread/peerState';
+import { openThreadSession, type ThreadSession } from '../domain/thread/session';
+import type { ChatMessage, ConnectionState } from '../domain/types';
 
 export interface UseWebRTCOptions {
   roomId: string | null;
@@ -16,7 +14,7 @@ export interface UseWebRTCOptions {
 export function useWebRTC(options: UseWebRTCOptions) {
   const { roomId, displayName, localStream, enabled } = options;
   const [peerId, setPeerId] = useState('');
-  const [remotePeers, setRemotePeers] = useState<RemotePeer[]>([]);
+  const [remotePeers, setRemotePeers] = useState(() => listRemotePeers(new Map(), new Map()));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -24,63 +22,46 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const sessionRef = useRef<ThreadSession | null>(null);
   const namesRef = useRef<Map<string, string>>(new Map());
   const streamsRef = useRef<Map<string, MediaStream>>(new Map());
-  const localStreamRef = useRef<MediaStream | null>(localStream);
-  localStreamRef.current = localStream;
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const displayNameRef = useRef(displayName);
+  displayNameRef.current = displayName;
 
   const publishPeers = useCallback(() => {
-    const list: RemotePeer[] = [];
-    for (const [id, stream] of streamsRef.current) {
-      list.push({
-        peerId: id,
-        displayName: namesRef.current.get(id) ?? 'Peer',
-        stream,
-        connectionState: 'connected',
-      });
-    }
-    for (const [id, name] of namesRef.current) {
-      if (!streamsRef.current.has(id)) {
-        list.push({
-          peerId: id,
-          displayName: name,
-          stream: null,
-          connectionState: 'connecting',
-        });
-      }
-    }
-    setRemotePeers(list);
+    setRemotePeers(listRemotePeers(streamsRef.current, namesRef.current));
   }, []);
 
   const leave = useCallback(() => {
     const session = sessionRef.current;
     sessionRef.current = null;
+    localStreamRef.current = null;
     namesRef.current.clear();
     streamsRef.current.clear();
     setRemotePeers([]);
+    setMessages([]);
+    setError(null);
     setConnectionState('left');
     void session?.leave();
   }, []);
 
-  const sendChat = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || !sessionRef.current) return;
-      const message: ChatMessage = {
-        id: `${sessionRef.current.selfId}-${Date.now()}`,
-        peerId: sessionRef.current.selfId,
-        displayName: displayName.trim() || 'Guest',
-        text: trimmed,
-        sentAt: Date.now(),
-      };
-      setMessages((prev) => [...prev, message]);
-      void sessionRef.current.sendChat({
-        id: message.id,
-        text: message.text,
-        displayName: message.displayName,
-        sentAt: message.sentAt,
-      });
-    },
-    [displayName],
-  );
+  const sendChat = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || !sessionRef.current) return;
+    const name = displayNameRef.current.trim() || 'Guest';
+    const message: ChatMessage = {
+      id: `${sessionRef.current.selfId}-${Date.now()}`,
+      peerId: sessionRef.current.selfId,
+      displayName: name,
+      text: trimmed,
+      sentAt: Date.now(),
+    };
+    setMessages((prev) => [...prev, message]);
+    void sessionRef.current.sendChat({
+      id: message.id,
+      text: message.text,
+      displayName: message.displayName,
+      sentAt: message.sentAt,
+    });
+  }, []);
 
   const replaceTrack = useCallback((track: MediaStreamTrack) => {
     const session = sessionRef.current;
@@ -97,7 +78,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
   }, [options, replaceTrack]);
 
   useEffect(() => {
-    if (!enabled || !roomId || !localStream) {
+    if (!enabled || !roomId) {
       return;
     }
 
@@ -106,6 +87,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
     setMessages([]);
     namesRef.current.clear();
     streamsRef.current.clear();
+    setRemotePeers([]);
 
     let cancelled = false;
 
@@ -115,7 +97,9 @@ export function useWebRTC(options: UseWebRTCOptions) {
         namesRef.current.set(id, namesRef.current.get(id) ?? 'Peer');
         setConnectionState('connected');
         publishPeers();
-        void sessionRef.current?.sendMeta({ displayName: displayName.trim() || 'Guest' });
+        void sessionRef.current?.sendMeta({
+          displayName: displayNameRef.current.trim() || 'Guest',
+        });
       },
       onPeerLeave: (id) => {
         if (cancelled) return;
@@ -154,21 +138,41 @@ export function useWebRTC(options: UseWebRTCOptions) {
         setError(message || "Couldn't reach peers — network may block P2P.");
         setConnectionState('error');
       },
+      onRoomFull: () => {
+        if (cancelled) return;
+        setError('Room is full (max 6 people).');
+        setConnectionState('error');
+        sessionRef.current = null;
+        localStreamRef.current = null;
+      },
     });
 
     sessionRef.current = session;
     setPeerId(session.selfId);
-    session.addStream(localStream);
-    void session.sendMeta({ displayName: displayName.trim() || 'Guest' });
-    // Alone in room is valid; peers may still be discovering via trackers.
+    void session.sendMeta({ displayName: displayNameRef.current.trim() || 'Guest' });
     setConnectionState('connected');
 
     return () => {
       cancelled = true;
       sessionRef.current = null;
+      localStreamRef.current = null;
       void session.leave();
     };
-  }, [displayName, enabled, localStream, publishPeers, roomId]);
+  }, [enabled, publishPeers, roomId]);
+
+  useEffect(() => {
+    const session = sessionRef.current;
+    if (!enabled || !session || !localStream) return;
+    const prev = localStreamRef.current;
+    if (prev === localStream) return;
+    syncLocalStream(session, prev, localStream);
+    localStreamRef.current = localStream;
+  }, [enabled, localStream]);
+
+  useEffect(() => {
+    if (!enabled || !sessionRef.current) return;
+    void sessionRef.current.sendMeta({ displayName: displayName.trim() || 'Guest' });
+  }, [displayName, enabled]);
 
   return {
     peerId,

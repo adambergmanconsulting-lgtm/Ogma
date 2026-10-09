@@ -4,7 +4,7 @@
 
 ## Fast path (read first)
 
-- **Local:** `npm run check:railkit`
+- **Local:** `npm run check` (alias: `check:railkit`)
 - **CI:** [`.github/workflows/railkit-checks.yml`](../../.github/workflows/railkit-checks.yml) runs the same script
 - **Skill:** `ci-gate` — what to run when merge fails or before push
 - **Do not:** invent remote-only gates that humans cannot run locally
@@ -22,7 +22,7 @@
 
 | Item | Value |
 |------|--------|
-| Local umbrella | `npm run check:railkit` then `npm run test` |
+| Local umbrella | `npm run check` then `npm run test` (`check:railkit` aliases `check`) |
 | App build | `npm run build` → `dist/` (GitHub Pages; set `BASE_PATH=/<repo>/` for project sites) |
 | Static host | GitHub Pages — [github-pages.json](../../infra/contracts/github-pages.json) |
 | Release | Push `main` or `workflow_dispatch` on `deploy-pages.yml` |
