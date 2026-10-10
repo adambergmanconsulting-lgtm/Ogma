@@ -22,5 +22,5 @@ Queue "add living design surface" with owner + due date when UI heuristic docs a
 
 ## Host (Ogma)
 
-- Heuristics owners: [ui-principles.md](ui-principles.md), [ui-naming.md](ui-naming.md), [in-page-layout.md](in-page-layout.md) (full-bleed top bar + `.app-gutter-x`; home `.app-column`).
+- Heuristics owners: [ui-principles.md](ui-principles.md), [ui-naming.md](ui-naming.md), [in-page-layout.md](in-page-layout.md) (shell owner).
 - Tokens today live in `src/index.css` (`@theme`). Shared chrome primitives there too: `.brand-wordmark`, `.gate-shell`, `.field` / `.field--inset`, `.btn-primary` / `.btn-secondary` / `.btn-quiet` / `.btn-ghost`, `.moment-card`, `.drawer-sheet`, `.link-action`. A living `/design` page is **queued** — thin catalog of real tokens + Chat/Call chrome; not a TeamResume-scale `/admin/design`. See [rank7-dated-queue.md](../../ops/rank7-dated-queue.md).

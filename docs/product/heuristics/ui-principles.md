@@ -37,7 +37,7 @@ Optimize for efficiency: user attention, support load, build energy. Waste = dup
 
 Moments that tilt tensions: first visit, irreversible action, error recovery, empty state, permission denied, success after a long chore. Name the Moment when breaking a default lean.
 
-**Host (Ogma):** First visit / home — **Start new** + **Previous spaces** ([ui-naming.md](ui-naming.md)); land in the space (invite on-space — no blocking reveal); open space is **video left / chat right** (foldable; keep ≥1 open) — **Call** on the video pane fills the left side (not in the top bar; not a lobby). Soft-nav while in Call keeps Thread live (return strip) — hang up only on Leave or page close. Shell/gutter locks: [in-page-layout.md](in-page-layout.md).
+**Host (Ogma):** First visit / home — labels in [ui-naming.md](ui-naming.md); shell, space panes, Call placement, soft-nav in [in-page-layout.md](in-page-layout.md); jobs (invite on-space, hang up only on Leave or page close) in [overview.md](../overview.md).
 
 ## Ship checklist
 
@@ -49,4 +49,4 @@ Moments that tilt tensions: first visit, irreversible action, error recovery, em
 
 ## Maintaining
 
-Prefer tensions / Moments over new Prefer/Avoid rows. Specialize after repeated drift. Host product words live in ui-naming, not here.
+Prefer tensions / Moments over new Prefer/Avoid rows. Specialize after repeated drift. Host product words live in ui-naming; shell locks live in in-page-layout — not here.

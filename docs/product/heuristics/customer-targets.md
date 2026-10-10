@@ -19,4 +19,12 @@
 
 ## App core (index)
 
-Point each row at one deciding owner (fit, pricing, modes). Do not restate matrices here.
+Point each row at one deciding owner. Do not restate matrices here.
+
+| Concern | Owner |
+|---------|--------|
+| Product spine / jobs | [overview.md](../overview.md) |
+| UX ranks / tensions | [ui-principles.md](ui-principles.md) |
+| Locked chrome strings | [ui-naming.md](ui-naming.md) |
+| Shell / regions | [in-page-layout.md](in-page-layout.md) |
+| Feature / claim fit | [customer-fit.md](customer-fit.md) |

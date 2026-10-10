@@ -18,7 +18,7 @@
 |---------|--------|
 | UX ranks, tensions, Moments | [ui-principles.md](product/heuristics/ui-principles.md) |
 | Locked chrome strings / microcopy grammar | [ui-naming.md](product/heuristics/ui-naming.md) |
-| In-page regions / content hierarchy | [in-page-layout.md](product/heuristics/in-page-layout.md) |
+| Shell / regions / content hierarchy | [in-page-layout.md](product/heuristics/in-page-layout.md) |
 | Who we serve / Primary jobs | [customer-targets.md](product/heuristics/customer-targets.md) |
 | Feature / claim fit | [customer-fit.md](product/heuristics/customer-fit.md) |
 | Layering / persistence boundaries | [application-layering.md](engineering/architecture/application-layering.md) |
@@ -54,7 +54,9 @@
 | Author / extend preferred suite / harness tests | [testing.md](engineering/testing.md) |
 | What CI to run / merge bar | [ci-flow.md](ops/ci-flow.md) |
 | Doc ownership / dual homes | [DOCUMENTATION-PRINCIPLES.md](DOCUMENTATION-PRINCIPLES.md) |
-| UI chrome conflict | [ui-principles.md](product/heuristics/ui-principles.md) |
+| UI chrome conflict (ranks / tensions) | [ui-principles.md](product/heuristics/ui-principles.md) |
+| Shell / layout / regions | [in-page-layout.md](product/heuristics/in-page-layout.md) |
+| Locked chrome strings | [ui-naming.md](product/heuristics/ui-naming.md) |
 | Should we build this (fit) | [customer-fit.md](product/heuristics/customer-fit.md) |
 | Portal / deploy / DNS only in wiki | [CODE-FIRST.md](CODE-FIRST.md) |
 | Bootstrap host into Railkit | [ADOPTION.md](ADOPTION.md) |

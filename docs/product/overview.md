@@ -10,7 +10,7 @@
 - **Thread (now):** rendezvous via BitTorrent trackers (`@trystero-p2p/torrent`); media over WebRTC **P2P mesh** (selective subscribe; hub later).
 - **Paid team (later, optional):** images in chat, SFU streaming, related team extras — opt-in infra; honest copy when active.
 - **Loom / Chat:** encrypted peer-seeded **text** on device; **name** to use; **vault optional** (cold **Use a vault**, or Settings **Add vault key**) for Log out / retrieve / move.
-- **Shell:** permanent top bar — **Ogma** (home) · Settings; open space is video left / chat right (**Call** on the video pane); shared `.app-column` + `.app-gutter-x` on home/nav.
+- **Shell:** [in-page-layout.md](heuristics/in-page-layout.md) — top bar, gutters, space panes, Call placement.
 - **1:1 video must work** (incl. phone foreground). 3 = mesh. 4+ = client hub + selective video on free path.
 - **Phones:** participants yes; hubs/seeders last resort.
 - **Room size (free):** warn at 5, refuse at 6 until hub; see [thread-topology.md](../engineering/protocols/thread-topology.md).
@@ -32,14 +32,14 @@
 |-----|---------|
 | Name | Required once per browser profile to chat/call |
 | Vault (optional) | Cold **Use a vault** splash → **Create vault** / **Open vault**; or Settings **Add vault key**; session until **Log out** |
-| Chat (Loom) | `#space=<secret>`; sealed history; list by last activity; warm sync while tab open; titles from other participants or **Only you** |
-| **Host Call** | **Start new** Chat or Call → space (invite on-space; video left / chat right, foldable) → video-pane **Call** fills the left pane; same Loom log + compose; call invite `?room=` + `#space=` |
+| Chat (Loom) | `#space=<secret>`; sealed history; list by last activity; warm sync while tab open; titles from other participants or **Only you**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
+| **Host Call** | **Start new** Chat or Call → space (invite on-space) → video-pane **Call**; same Loom log + compose; call invite `?room=` + `#space=` — shell: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
-| In call | Mute, camera, background blur, leave; soft-nav keeps Thread live (return strip); hang up only on Leave or page close; device hot-swap; truthful connection state |
+| In call | Mute, camera, background blur, leave; soft-nav keeps Thread live; hang up only on Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Move device | Export file → Import (+ vault key if one was added) |
-| Home overview | Bare origin + **Ogma** → **Start new** (Chat/Call), then **Previous spaces** (by activity + muted time) + quiet invite Join; share link lives on the open space, not here; install Moment then optional vault nudge; Settings **Home screen** anytime |
+| Home overview | Bare origin + **Ogma** → **Start new** (Chat/Call), then **Previous spaces** (by activity + muted time) + quiet invite Join; share link on the open space; install Moment then optional vault nudge; Settings **Home screen** anytime |
 
-**First visit:** Top bar always visible. Home: **Start new** (Chat or Call) or open a space row, or quiet invite Join. Vault optional behind **Use a vault**. After the first chat, offer install.
+**First visit:** Home: **Start new** (Chat or Call) or open a space row, or quiet invite Join. Vault optional behind **Use a vault**. After the first chat, offer install. Shell always on — [in-page-layout.md](heuristics/in-page-layout.md).
 
 ## Honest copy (ship in UI)
 
