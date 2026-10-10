@@ -1,20 +1,16 @@
 import type { ReactNode } from 'react';
 import {
-  PanelBottomClose,
-  PanelBottomOpen,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
-  PanelTopClose,
-  PanelTopOpen,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
 } from 'lucide-react';
 
 export type PaneEdge = 'start' | 'end';
 
 const iconClass = 'h-4 w-4';
 
-/** Fold control: panel-close toward this pane’s edge (stack on mobile, split on md+). */
+/** Fold control: chevron toward the edge this pane leaves (up/down when stacked, left/right when split). */
 export function FoldButton(props: {
   testId: string;
   label: string;
@@ -22,8 +18,8 @@ export function FoldButton(props: {
   disabled?: boolean;
   onClick: () => void;
 }) {
-  const MobileClose = props.edge === 'start' ? PanelTopClose : PanelBottomClose;
-  const DesktopClose = props.edge === 'start' ? PanelLeftClose : PanelRightClose;
+  const MobileClose = props.edge === 'start' ? ChevronUp : ChevronDown;
+  const DesktopClose = props.edge === 'start' ? ChevronLeft : ChevronRight;
 
   return (
     <button
@@ -42,8 +38,8 @@ export function FoldButton(props: {
 }
 
 function ExpandIcons(props: { edge: PaneEdge }) {
-  const MobileOpen = props.edge === 'start' ? PanelTopOpen : PanelBottomOpen;
-  const DesktopOpen = props.edge === 'start' ? PanelLeftOpen : PanelRightOpen;
+  const MobileOpen = props.edge === 'start' ? ChevronDown : ChevronUp;
+  const DesktopOpen = props.edge === 'start' ? ChevronRight : ChevronLeft;
   return (
     <>
       <MobileOpen className={`${iconClass} md:hidden`} aria-hidden />

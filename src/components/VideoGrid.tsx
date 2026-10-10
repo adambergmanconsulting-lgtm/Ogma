@@ -1,4 +1,6 @@
+import type { PrivacyBackdropId } from '../domain/media/backgroundBlurBackdrop';
 import type { RemotePeer } from '../domain/types';
+import { VideoBlurControls } from './VideoBlurControls';
 import { VideoTile } from './VideoTile';
 
 interface VideoGridProps {
@@ -7,6 +9,14 @@ interface VideoGridProps {
   localMicOff: boolean;
   /** Local picture is a screen, so do not mirror or crop it. */
   localScreen?: boolean;
+  blurSupported?: boolean;
+  blurEnabled?: boolean;
+  backdropSelectable?: boolean;
+  backdropId?: PrivacyBackdropId;
+  edgeCut?: number;
+  onToggleBlur?: () => void;
+  onBackdropChange?: (id: PrivacyBackdropId) => void;
+  onEdgeCutChange?: (value: number) => void;
   remotePeers: RemotePeer[];
   pinnedPeerIds?: string[];
   onTogglePin?: (peerId: string) => void;
@@ -27,6 +37,14 @@ export function VideoGrid({
   localLabel,
   localMicOff,
   localScreen = false,
+  blurSupported = false,
+  blurEnabled = false,
+  backdropSelectable = false,
+  backdropId,
+  edgeCut,
+  onToggleBlur,
+  onBackdropChange,
+  onEdgeCutChange,
   remotePeers,
   pinnedPeerIds = [],
   onTogglePin,
@@ -49,6 +67,19 @@ export function VideoGrid({
         fit={localScreen ? 'contain' : 'cover'}
         micOff={localMicOff}
         showMicLevel
+        overlay={
+          !localScreen && blurSupported && onToggleBlur ? (
+            <VideoBlurControls
+              enabled={blurEnabled}
+              backdropSelectable={backdropSelectable}
+              backdropId={backdropId}
+              edgeCut={edgeCut}
+              onToggle={onToggleBlur}
+              onBackdropChange={onBackdropChange}
+              onEdgeCutChange={onEdgeCutChange}
+            />
+          ) : null
+        }
       />
       {remotePeers.map((peer) => (
         <VideoTile

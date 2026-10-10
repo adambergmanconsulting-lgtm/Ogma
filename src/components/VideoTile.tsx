@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { MicOff, Pin, User, Volume2 } from 'lucide-react';
 import { isAudioInputOff } from '../domain/media/audioInput';
 import {
@@ -22,6 +22,8 @@ interface VideoTileProps {
   pinned?: boolean;
   onTogglePin?: () => void;
   applyAudioOutput?: (el: HTMLMediaElement | null) => void | Promise<void>;
+  /** Camera-only chrome, drawn on this tile. */
+  overlay?: ReactNode;
 }
 
 function useAudioInputOff(stream: MediaStream | null): boolean {
@@ -71,6 +73,7 @@ export function VideoTile({
   pinned = false,
   onTogglePin,
   applyAudioOutput,
+  overlay,
 }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [needsUnlock, setNeedsUnlock] = useState(
@@ -139,6 +142,9 @@ export function VideoTile({
           hasVideo ? '' : 'opacity-0',
         ].join(' ')}
       />
+      {overlay ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 p-2">{overlay}</div>
+      ) : null}
       {!hasVideo ? (
         <div className="absolute inset-0 flex items-center justify-center text-[color:var(--color-muted)]">
           <User className="h-12 w-12 opacity-50" />

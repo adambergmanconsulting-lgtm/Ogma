@@ -47,7 +47,7 @@ export function buildSpaceCallBand(
     onMaskEdgeCutChange: call.media.setMaskEdgeCut,
     onTogglePin: call.webrtc.togglePin,
     onToggleShowAllVideos: () => call.webrtc.setShowAllVideos((v) => !v),
-    onOpenDevices: () => call.setDrawer('settings'),
+    onOpenDevices: () => call.setDrawer((d) => (d === 'settings' ? 'none' : 'settings')),
     onCloseDevices: () => call.setDrawer('none'),
     onLeave,
     onVideoChange: (id: string) => void call.media.switchVideoDevice(id),

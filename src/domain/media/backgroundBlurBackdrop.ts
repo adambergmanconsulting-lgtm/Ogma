@@ -10,7 +10,7 @@ export type PrivacyBackdropColors = {
 
 export type PrivacyBackdropOption = {
   id: PrivacyBackdropId;
-  /** Short Devices label (ui-naming: Soft / Cool / Warm). */
+  /** Short tile label (ui-naming: Soft / Cool / Warm). */
   label: string;
   colors: PrivacyBackdropColors;
 };

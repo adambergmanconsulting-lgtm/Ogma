@@ -7,7 +7,6 @@ import {
   MicOff,
   PhoneOff,
   Settings,
-  Sparkles,
   Video,
   VideoOff,
 } from 'lucide-react';
@@ -17,8 +16,6 @@ interface ControlBarProps {
   cameraEnabled: boolean;
   screenSharing?: boolean;
   screenShareSupported?: boolean;
-  backgroundBlur?: boolean;
-  backgroundBlurSupported?: boolean;
   /** Omit when chat is already the primary canvas (space shell). */
   chatOpen?: boolean;
   showAllVideos?: boolean;
@@ -27,9 +24,9 @@ interface ControlBarProps {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenShare?: () => void;
-  onToggleBackgroundBlur?: () => void;
   onToggleChat?: () => void;
   onToggleShowAllVideos?: () => void;
+  settingsOpen?: boolean;
   onOpenSettings: () => void;
   onLeave: () => void;
 }
@@ -38,6 +35,7 @@ function CtrlButton({
   onClick,
   active,
   danger,
+  pressed,
   label,
   children,
   testId,
@@ -46,6 +44,7 @@ function CtrlButton({
   onClick: () => void;
   active?: boolean;
   danger?: boolean;
+  pressed?: boolean;
   label: string;
   children: ReactNode;
   testId?: string;
@@ -55,6 +54,7 @@ function CtrlButton({
     <button
       type="button"
       aria-label={label}
+      aria-pressed={pressed}
       title={label}
       data-testid={testId}
       onClick={onClick}
@@ -79,6 +79,7 @@ export function ControlBar(props: ControlBarProps) {
 
   return (
     <div
+      data-testid="call-controls"
       className={[
         'flex flex-wrap items-center justify-center',
         dense ? 'gap-1.5 px-2 py-1.5' : 'gap-2 px-3 py-3 md:gap-3',
@@ -112,17 +113,6 @@ export function ControlBar(props: ControlBarProps) {
           <MonitorUp className={icon} />
         </CtrlButton>
       ) : null}
-      {props.backgroundBlurSupported && !props.screenSharing && props.onToggleBackgroundBlur ? (
-        <CtrlButton
-          dense={dense}
-          label={props.backgroundBlur ? 'Clear background' : 'Blur background'}
-          onClick={props.onToggleBackgroundBlur}
-          active={props.backgroundBlur}
-          testId="toggle-background-blur"
-        >
-          <Sparkles className={icon} />
-        </CtrlButton>
-      ) : null}
       {props.onToggleChat ? (
         <CtrlButton
           dense={dense}
@@ -146,7 +136,14 @@ export function ControlBar(props: ControlBarProps) {
           <LayoutGrid className={icon} />
         </CtrlButton>
       ) : null}
-      <CtrlButton dense={dense} label="Settings" onClick={props.onOpenSettings}>
+      <CtrlButton
+        dense={dense}
+        label="Settings"
+        onClick={props.onOpenSettings}
+        active={props.settingsOpen}
+        pressed={props.settingsOpen}
+        testId="call-settings"
+      >
         <Settings className={icon} />
       </CtrlButton>
       <CtrlButton dense={dense} label="Leave call" onClick={props.onLeave} danger>

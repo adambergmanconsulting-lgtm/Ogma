@@ -41,7 +41,7 @@ test.describe('Chat and Call entry', () => {
   }) => {
     await ensureVault(page, 'Host');
     await page.getByTestId('home-chat').click();
-    await expect(page.getByText(/This chat stays here/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('space-join')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('space-people')).toContainText('Host');
     await expect(page.getByTestId('space-join')).toContainText(/Host joined/i);
     await expect(page.getByTestId('app-work-shell')).toBeVisible();
@@ -66,6 +66,15 @@ test.describe('Chat and Call entry', () => {
     await page.locator('[data-testid^="space-call-"]').first().click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('toggle-screen-share')).toBeVisible();
+    await expect(page.getByTestId('video-blur')).toBeVisible();
+    await expect(page.getByTestId('toggle-background-blur')).toHaveText(/Blur background/);
+    await expect(page.getByTestId('call-controls').getByTestId('toggle-background-blur')).toHaveCount(0);
+    await page.getByTestId('call-settings').click();
+    await expect(page.getByRole('heading', { name: 'Devices' })).toBeVisible();
+    await expect(page.getByTestId('privacy-backdrop')).toHaveCount(0);
+    await expect(page.getByTestId('mask-edge-cut')).toHaveCount(0);
+    await page.getByTestId('call-settings').click();
+    await expect(page.getByRole('heading', { name: 'Devices' })).toHaveCount(0);
     await expect(page.getByTestId('share-link')).toBeVisible();
     await expect(page.getByTestId('connection-label')).toContainText(/Waiting|Connected/);
     await expect(page).toHaveURL(/[?&]room=/);
@@ -105,12 +114,16 @@ test.describe('Home anchor', () => {
     await ensureVault(page, 'Host');
     await expect(page.getByTestId('home-anchor-install')).toHaveCount(0);
     await page.getByTestId('home-chat').click();
-    await expect(page.getByText(/This chat stays here/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('space-join')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('nav-home').click();
     await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('home-anchor-install')).toBeVisible();
     await page.getByTestId('home-anchor-install-dismiss').click();
     await expect(page.getByTestId('home-anchor-vault')).toBeVisible();
+    await page.getByTestId('nav-settings').click();
+    await expect(page.getByTestId('settings-you')).toBeVisible();
+    await page.getByTestId('nav-settings').click();
+    await expect(page.getByTestId('settings-you')).toHaveCount(0);
     await page.getByTestId('nav-settings').click();
     await expect(page.getByTestId('settings-you')).toBeVisible();
     await expect(page.getByTestId('settings-install')).toBeVisible();

@@ -1,7 +1,7 @@
 /** Person-matte helpers for privacy blur. */
 
 /**
- * **Edge cut** 0–100 (Devices, while blur on):
+ * **Edge cut** 0–100 (local video tile, while blur on):
  * - Soft (≤ {@link FIRST_IMPL_EDGE_CUT_MAX}): original matte — confidence → alpha as-is.
  * - Firm: threshold + erode + feather (hides sofa leaks; can clip hair/face).
  * Optional URL override: `?maskFloor=&maskErode=&maskFeather=&maskCeil=`

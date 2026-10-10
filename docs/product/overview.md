@@ -76,7 +76,7 @@ Forced accounts to join, Ogma-sent invites, public room directory / open hangout
 
 | Feature | Intent |
 |---------|--------|
-| Background blur (shipped) | Optional local effect; strong privacy blur + built-in soft fills (Soft / Cool / Warm); default Soft **Edge cut** uses the original person matte; Firm adds tighter cut; peers see via processed track + `replaceTrack` (or OS blur when controllable). No custom upload yet. Model/WASM loads on first toggle. Yields under CPU/N pressure. |
+| Background blur (shipped) | Optional local effect on the camera tile (hidden while sharing a screen). Soft fills (Soft / Cool / Warm) and **Edge cut** open from **Blur settings** on that tile while blur is on, and fold away again. Default Soft uses the original person matte; Firm adds a tighter cut. Peers see the processed track via `replaceTrack` (or OS blur when controllable). No custom upload. Model/WASM loads on first toggle. Yields under CPU/N pressure. |
 | Screen share (shipped) | **Share screen** replaces the camera on the one video track. The browser picker chooses screen, window, or tab. **Stop sharing** (or the browser stop bar) restores the camera. Blur stays off that picture. |
 
 ## Related

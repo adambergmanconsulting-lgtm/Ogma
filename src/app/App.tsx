@@ -226,7 +226,7 @@ export default function App() {
   };
 
   const openSettings = () => {
-    setSettingsOpen(true);
+    setSettingsOpen((open) => !open);
   };
 
   const loomChat =
@@ -411,23 +411,26 @@ export default function App() {
         onStartChat={goStartChat}
         onStartCall={goStartCall}
         onSettings={openSettings}
+        settingsOpen={settingsOpen}
       />
-      <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{body}</main>
-      {callSurface === 'background' ? (
-        <InCallBar
-          statusLabel={call.statusLabel}
-          onReturn={returnToCall}
-          onLeave={leaveCall}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{body}</main>
+        {callSurface === 'background' ? (
+          <InCallBar
+            statusLabel={call.statusLabel}
+            onReturn={returnToCall}
+            onLeave={leaveCall}
+          />
+        ) : null}
+        <AppSettingsDrawer
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          loom={loom}
+          pwa={pwa}
+          call={call}
+          onAfterLeaveShell={() => setRoomShellOpen(false)}
         />
-      ) : null}
-      <AppSettingsDrawer
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        loom={loom}
-        pwa={pwa}
-        call={call}
-        onAfterLeaveShell={() => setRoomShellOpen(false)}
-      />
+      </div>
     </div>
   );
 }

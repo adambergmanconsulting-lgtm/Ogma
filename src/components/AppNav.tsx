@@ -10,6 +10,7 @@ interface AppNavProps {
   onStartChat: () => void;
   onStartCall: () => void;
   onSettings: () => void;
+  settingsOpen?: boolean;
 }
 
 /**
@@ -68,8 +69,14 @@ export function AppNav(props: AppNavProps) {
           data-testid="nav-settings"
           title="Settings"
           aria-label="Settings"
+          aria-pressed={props.settingsOpen}
           onClick={props.onSettings}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--color-muted)] transition hover:bg-[color:var(--color-panel-2)] hover:text-[color:var(--color-ink)]"
+          className={[
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition',
+            props.settingsOpen
+              ? 'bg-[color:var(--color-panel-2)] text-[color:var(--color-ink)]'
+              : 'text-[color:var(--color-muted)] hover:bg-[color:var(--color-panel-2)] hover:text-[color:var(--color-ink)]',
+          ].join(' ')}
         >
           <Settings className="h-5 w-5" />
         </button>

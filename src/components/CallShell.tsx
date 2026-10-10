@@ -110,6 +110,14 @@ export function CallShell(props: CallShellProps) {
             localLabel={props.displayName}
             localMicOff={props.localMicOff}
             localScreen={props.screenSharing}
+            blurSupported={props.backgroundBlurSupported}
+            blurEnabled={props.backgroundBlur}
+            backdropSelectable={props.privacyBackdropSelectable}
+            backdropId={props.privacyBackdropId}
+            edgeCut={props.maskEdgeCut}
+            onToggleBlur={props.onToggleBackgroundBlur}
+            onBackdropChange={props.onPrivacyBackdropChange}
+            onEdgeCutChange={props.onMaskEdgeCutChange}
             remotePeers={props.remotePeers}
             pinnedPeerIds={props.pinnedPeerIds}
             onTogglePin={props.onTogglePin}
@@ -132,14 +140,12 @@ export function CallShell(props: CallShellProps) {
             cameraEnabled={props.cameraEnabled}
             screenSharing={props.screenSharing}
             screenShareSupported={props.screenShareSupported}
-            backgroundBlur={props.backgroundBlur}
-            backgroundBlurSupported={props.backgroundBlurSupported}
             chatOpen={props.drawer === 'chat'}
             showAllVideos={props.showAllVideos}
+            settingsOpen={props.drawer === 'settings'}
             onToggleMic={props.onToggleMic}
             onToggleCamera={props.onToggleCamera}
             onToggleScreenShare={props.onToggleScreenShare}
-            onToggleBackgroundBlur={props.onToggleBackgroundBlur}
             onToggleChat={props.onToggleChat}
             onToggleShowAllVideos={!waitingAlone ? props.onToggleShowAllVideos : undefined}
             onOpenSettings={props.onOpenSettings}
@@ -165,11 +171,6 @@ export function CallShell(props: CallShellProps) {
           videoDeviceId={props.videoDeviceId}
           audioDeviceId={props.audioDeviceId}
           audioOutputId={props.audioOutputId}
-          privacyBackdropSelectable={props.privacyBackdropSelectable}
-          privacyBackdropId={props.privacyBackdropId}
-          onPrivacyBackdropChange={props.onPrivacyBackdropChange}
-          maskEdgeCut={props.maskEdgeCut}
-          onMaskEdgeCutChange={props.onMaskEdgeCutChange}
           onClose={props.onCloseDrawer}
           onVideoChange={props.onVideoChange}
           onAudioChange={props.onAudioChange}

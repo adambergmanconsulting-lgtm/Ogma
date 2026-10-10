@@ -157,6 +157,14 @@ export function SpaceView(props: SpaceViewProps) {
                   localLabel={call.displayName}
                   localMicOff={call.localMicOff}
                   localScreen={call.screenSharing}
+                  blurSupported={call.backgroundBlurSupported}
+                  blurEnabled={call.backgroundBlur}
+                  backdropSelectable={call.privacyBackdropSelectable}
+                  backdropId={call.privacyBackdropId}
+                  edgeCut={call.maskEdgeCut}
+                  onToggleBlur={call.onToggleBackgroundBlur}
+                  onBackdropChange={call.onPrivacyBackdropChange}
+                  onEdgeCutChange={call.onMaskEdgeCutChange}
                   remotePeers={call.remotePeers}
                   pinnedPeerIds={call.pinnedPeerIds}
                   onTogglePin={call.onTogglePin}
@@ -168,20 +176,18 @@ export function SpaceView(props: SpaceViewProps) {
             </div>
 
             {call ? (
-              <div className="shrink-0 border-t border-[color:var(--color-line)]/50">
+              <div className="relative z-30 shrink-0 border-t border-[color:var(--color-line)]/50">
                 <ControlBar
                   dense
                   micEnabled={call.micEnabled}
                   cameraEnabled={call.cameraEnabled}
                   screenSharing={call.screenSharing}
                   screenShareSupported={call.screenShareSupported}
-                  backgroundBlur={call.backgroundBlur}
-                  backgroundBlurSupported={call.backgroundBlurSupported}
                   showAllVideos={call.showAllVideos}
+                  settingsOpen={call.devicesOpen}
                   onToggleMic={call.onToggleMic}
                   onToggleCamera={call.onToggleCamera}
                   onToggleScreenShare={call.onToggleScreenShare}
-                  onToggleBackgroundBlur={call.onToggleBackgroundBlur}
                   onToggleShowAllVideos={!waitingAlone ? call.onToggleShowAllVideos : undefined}
                   onOpenSettings={call.onOpenDevices}
                   onLeave={call.onLeave}
@@ -299,11 +305,6 @@ export function SpaceView(props: SpaceViewProps) {
                   </div>
                 ),
               )}
-              {props.messages.every((m) => m.kind !== 'text') ? (
-                <p className="pt-3 text-center text-xs leading-relaxed text-[color:var(--color-muted)]">
-                  This chat stays here. Copy the invite to add people.
-                </p>
-              ) : null}
               <div ref={bottomRef} />
             </div>
 
@@ -361,11 +362,6 @@ export function SpaceView(props: SpaceViewProps) {
             videoDeviceId={call.videoDeviceId}
             audioDeviceId={call.audioDeviceId}
             audioOutputId={call.audioOutputId}
-            privacyBackdropSelectable={call.privacyBackdropSelectable}
-            privacyBackdropId={call.privacyBackdropId}
-            onPrivacyBackdropChange={call.onPrivacyBackdropChange}
-            maskEdgeCut={call.maskEdgeCut}
-            onMaskEdgeCutChange={call.onMaskEdgeCutChange}
             onClose={call.onCloseDevices}
             onVideoChange={call.onVideoChange}
             onAudioChange={call.onAudioChange}
