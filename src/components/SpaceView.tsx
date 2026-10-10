@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { Phone, User } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Phone } from 'lucide-react';
 import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
 import type { ShareResult } from '../domain/signaling/share';
 import { ControlBar } from './ControlBar';
 import { ChatMessageText } from './ChatMessageText';
 import { InviteLinkBar } from './InviteLinkBar';
+import { ChatColumn, type ChatPane } from './ChatColumn';
 import { CollapsedRail, FoldButton } from './SpacePaneChrome';
 import { SettingsDrawer } from './SettingsDrawer';
 import type { SpaceCallBand } from './spaceCallBand';
 import { VideoGrid } from './VideoGrid';
+import { VideoIdle } from './VideoIdle';
 
 export type { SpaceCallBand } from './spaceCallBand';
 
@@ -22,7 +24,6 @@ export type SpaceMessageView = {
 
 interface SpaceViewProps {
   title: string;
-  selfLabel: string;
   inviteUrl: string | null;
   messages: SpaceMessageView[];
   error: string | null;
@@ -34,6 +35,9 @@ interface SpaceViewProps {
   onStartCall?: () => void;
   callBusy?: boolean;
   call?: SpaceCallBand | null;
+  chatPane: ChatPane;
+  onChatPane: (pane: ChatPane) => void;
+  spacesPane: ReactNode;
 }
 
 export function SpaceView(props: SpaceViewProps) {
@@ -86,8 +90,8 @@ export function SpaceView(props: SpaceViewProps) {
               chatOpen ? 'min-h-[11rem] md:min-w-0 md:flex-1' : 'min-h-0 flex-1',
             ].join(' ')}
           >
-            <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">
-              <div className="flex min-w-0 items-center gap-1.5">
+            <header className="shrink-0">
+              <div className="space-pane-head">
                 <div className="min-w-0 flex-1 truncate text-xs text-[color:var(--color-muted)]">
                   {call ? (
                     <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -112,7 +116,7 @@ export function SpaceView(props: SpaceViewProps) {
                     data-testid="space-call"
                     disabled={props.callBusy}
                     onClick={props.onStartCall}
-                    className="btn-primary btn-primary--sm inline-flex shrink-0 items-center gap-1"
+                    className="btn-primary inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-2.5 text-sm"
                   >
                     <Phone className="h-3.5 w-3.5" aria-hidden />
                     Call
@@ -130,7 +134,7 @@ export function SpaceView(props: SpaceViewProps) {
                 <p
                   role="status"
                   data-testid="capacity-warning"
-                  className="mt-1 text-[11px] text-[color:var(--color-muted)]"
+                  className="space-pane-pad pt-1 text-[11px] text-[color:var(--color-muted)]"
                 >
                   {call.capacityWarning}
                 </p>
@@ -158,15 +162,7 @@ export function SpaceView(props: SpaceViewProps) {
                   applyAudioOutput={call.applyAudioOutput}
                 />
               ) : (
-                <div
-                  data-testid="space-presence-idle"
-                  className="flex h-full min-h-[8rem] flex-col items-center justify-center gap-1.5 rounded-lg bg-[color:var(--color-panel)]/80 ring-1 ring-[color:var(--color-line)]/60"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-panel-2)] text-[color:var(--color-muted)]">
-                    <User className="h-6 w-6" aria-hidden />
-                  </span>
-                  <span className="truncate px-3 text-sm font-medium">{props.selfLabel}</span>
-                </div>
+                <VideoIdle />
               )}
             </div>
 
@@ -218,26 +214,21 @@ export function SpaceView(props: SpaceViewProps) {
         )}
 
         {chatOpen ? (
-          <section
-            data-testid="space-chat"
+          <ChatColumn
+            pane={props.chatPane}
+            onPane={props.onChatPane}
             className={[
               'flex min-h-0 min-w-0 flex-col bg-[color:var(--color-panel)]/25',
               videoOpen ? 'flex-1 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none' : 'flex-1',
             ].join(' ')}
+            onFold={foldChat}
+            foldDisabled={!canFoldChat}
+            spaces={props.spacesPane}
           >
             <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">
-              <div className="flex min-w-0 items-center gap-1.5">
-                <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight">
-                  {props.title}
-                </h1>
-                <FoldButton
-                  testId="space-fold-chat"
-                  label="Hide chat"
-                  edge="end"
-                  disabled={!canFoldChat}
-                  onClick={foldChat}
-                />
-              </div>
+              <h1 className="min-w-0 truncate text-base font-semibold tracking-tight">
+                {props.title}
+              </h1>
               {props.inviteUrl ? (
                 <div className="mt-1.5">
                   <InviteLinkBar dense inviteUrl={props.inviteUrl} onCopyInvite={props.onCopyInvite} />
@@ -310,7 +301,7 @@ export function SpaceView(props: SpaceViewProps) {
                 Send
               </button>
             </form>
-          </section>
+          </ChatColumn>
         ) : (
           <CollapsedRail
             testId="space-chat-collapsed"

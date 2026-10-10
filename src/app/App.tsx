@@ -1,14 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { AppHome } from '../components/AppHome';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppNav, type AppNavPlace } from '../components/AppNav';
+import { AppWorkShell } from '../components/AppWorkShell';
+import type { ChatPane } from '../components/ChatColumn';
+import { PreviousSpacesList } from '../components/PreviousSpacesList';
 import { CallShell } from '../components/CallShell';
 import { InCallBar } from '../components/InCallBar';
 import { Lobby } from '../components/Lobby';
 import { SecretReveal } from '../components/SecretReveal';
 import { SpaceView } from '../components/SpaceView';
-import { VaultSettings } from '../components/VaultSettings';
 import { VaultSetup } from '../components/VaultSetup';
 import { VaultUnlock } from '../components/VaultUnlock';
+import { WorkspaceIdle } from '../components/WorkspaceIdle';
 import { parseRoomIdFromLocation } from '../domain/signaling/room';
 import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
 import {
@@ -19,6 +21,8 @@ import {
 } from '../domain/shell/pwaInstall';
 import { resolveCallSurface } from '../domain/thread/callSurface';
 import type { ChatMessage } from '../domain/types';
+import { AppSettingsDrawer } from './AppSettingsDrawer';
+import { buildSpaceCallBand } from './buildSpaceCallBand';
 import { useCallController } from './useCallController';
 import { useLoomController } from './useLoomController';
 import { usePwaInstall } from './usePwaInstall';
@@ -27,6 +31,8 @@ import { usePwaUpdate } from './usePwaUpdate';
 export default function App() {
   const loom = useLoomController();
   const pwa = usePwaInstall();
+  const preferSpaces = useRef(false);
+  const [chatPane, setChatPane] = useState<ChatPane>('spaces');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [vaultNudgeDismissed, setVaultNudgeDismissed] = useState(() =>
     readDismissed(VAULT_NUDGE_DISMISS_KEY),
@@ -65,7 +71,7 @@ export default function App() {
     loom.setScreen('thread');
   }, [loom.unlocked, loom.screen, call.inCall, loom.setScreen]);
 
-  // No cold Call lobby — room-less Thread screen returns home.
+  // No cold Call lobby — room-less Thread screen returns idle work shell.
   useEffect(() => {
     if (
       loom.unlocked &&
@@ -88,6 +94,12 @@ export default function App() {
     if (!call.inCall) return;
     call.restoreShareUrl();
   }, [call.inCall, call.restoreShareUrl, loom.focusedSecret, loom.screen]);
+
+  // Resume opens the chat unless the user asked for the Spaces tab.
+  useEffect(() => {
+    if (preferSpaces.current) return;
+    if (loom.focusedSecret) setChatPane('chat');
+  }, [loom.focusedSecret]);
 
   if (loom.screen === 'reveal' && loom.reveal) {
     return (
@@ -132,11 +144,26 @@ export default function App() {
         ? 'space'
         : 'home';
 
+  const showChat = () => {
+    preferSpaces.current = false;
+    setChatPane('chat');
+  };
+
+  const showSpaces = () => {
+    preferSpaces.current = true;
+    setChatPane('spaces');
+  };
+
   const goHome = () => {
-    loom.onBackToHome();
+    showSpaces();
     if (call.inCall) {
+      loom.onBackToHome();
       setRoomShellOpen(false);
       call.restoreShareUrl();
+      return;
+    }
+    if (!loom.focusedSecret) {
+      void loom.resumeLastSpace();
     }
   };
 
@@ -155,6 +182,7 @@ export default function App() {
   };
 
   const goStartChat = () => {
+    showChat();
     void loom.onCreateSpace();
   };
 
@@ -163,6 +191,7 @@ export default function App() {
       returnToCall();
       return;
     }
+    showChat();
     if (loom.busy) return;
     void (async () => {
       const secret = await loom.createAndOpenSpace();
@@ -178,10 +207,12 @@ export default function App() {
   };
 
   const goOpenChat = (spaceId: string) => {
+    showChat();
     void loom.onOpenSpace(spaceId);
   };
 
   const goOpenCall = (spaceId: string) => {
+    showChat();
     if (call.inCall) {
       returnToCall();
       return;
@@ -216,56 +247,37 @@ export default function App() {
   };
 
   const spaceCallBand =
-    callSurface === 'space-call'
-      ? {
-          connectionLabel: call.statusLabel,
-          roomCode: call.roomCode,
-          linkHint: call.linkHint,
-          error: call.webrtc.error || call.media.error,
-          localStream: call.media.stream,
-          localMicOff: !call.media.micEnabled,
-          remotePeers: call.webrtc.remotePeers,
-          displayName: loom.displayName.trim() || 'Guest',
-          micEnabled: call.media.micEnabled,
-          cameraEnabled: call.media.cameraEnabled,
-          backgroundBlur: call.media.backgroundBlur,
-          backgroundBlurSupported: call.media.backgroundBlurSupported,
-          privacyBackdropSelectable: call.media.privacyBackdropSelectable,
-          privacyBackdropId: call.media.privacyBackdropId,
-          maskEdgeCut: call.media.maskEdgeCut,
-          pinnedPeerIds: call.webrtc.pins,
-          showAllVideos: call.webrtc.showAllVideos,
-          capacityWarning: call.webrtc.capacityWarning,
-          devicesOpen: call.drawer === 'settings',
-          videoDevices: call.media.videoDevices,
-          audioDevices: call.media.audioDevices,
-          outputDevices: call.media.outputDevices,
-          videoDeviceId: call.media.videoDeviceId,
-          audioDeviceId: call.media.audioDeviceId,
-          audioOutputId: call.media.audioOutputId,
-          onToggleMic: call.media.toggleMic,
-          onToggleCamera: call.media.toggleCamera,
-          onToggleBackgroundBlur: () => void call.media.toggleBackgroundBlur(),
-          onPrivacyBackdropChange: call.media.setPrivacyBackdrop,
-          onMaskEdgeCutChange: call.media.setMaskEdgeCut,
-          onTogglePin: call.webrtc.togglePin,
-          onToggleShowAllVideos: () => call.webrtc.setShowAllVideos((v) => !v),
-          onOpenDevices: () => call.setDrawer('settings'),
-          onCloseDevices: () => call.setDrawer('none'),
-          onLeave: leaveCall,
-          onVideoChange: (id: string) => void call.media.switchVideoDevice(id),
-          onAudioChange: (id: string) => void call.media.switchAudioDevice(id),
-          onOutputChange: call.media.setAudioOutputId,
-          applyAudioOutput: call.media.applyAudioOutput,
-        }
-      : null;
+    callSurface === 'space-call' ? buildSpaceCallBand(call, loom, leaveCall) : null;
 
-  let body: ReactNode;
+  const spacesPane = (
+    <PreviousSpacesList
+      chats={loom.chats}
+      displayName={loom.displayName}
+      busy={loom.busy || call.busy}
+      activeSpaceId={loom.focusedSpaceId}
+      error={loom.error}
+      spaceInput={loom.spaceInput}
+      onSpaceInput={loom.setSpaceInput}
+      onJoinSpace={loom.onJoinSpace}
+      onOpenChat={goOpenChat}
+      onOpenCall={goOpenCall}
+    />
+  );
+
+  const paneProps = {
+    chatPane,
+    onChatPane: (pane: ChatPane) => {
+      if (pane === 'spaces') showSpaces();
+      else showChat();
+    },
+    spacesPane,
+  };
+
+  let workspace: ReactNode;
   if (callSurface === 'space-call') {
-    body = (
+    workspace = (
       <SpaceView
         title={loom.spaceTitle}
-        selfLabel={loom.displayName.trim() || 'You'}
         inviteUrl={call.shareUrl || loom.inviteUrl}
         messages={loom.messages}
         error={loom.error}
@@ -275,9 +287,33 @@ export default function App() {
         onSend={(text) => void loom.onSend(text)}
         onCopyInvite={call.onCopyInvite}
         call={spaceCallBand}
+        callBusy={loom.busy || call.busy}
+        {...paneProps}
       />
     );
-  } else if (callSurface === 'room-shell') {
+  } else if (loom.screen === 'space') {
+    workspace = (
+      <SpaceView
+        title={loom.spaceTitle}
+        inviteUrl={loom.inviteUrl}
+        messages={loom.messages}
+        error={loom.error}
+        hasMoreOlder={loom.hasMoreOlder}
+        loadingOlder={loom.loadingOlder}
+        onLoadOlder={() => void loom.onLoadOlder()}
+        onSend={(text) => void loom.onSend(text)}
+        onCopyInvite={loom.onCopyInvite}
+        onStartCall={call.inCall ? undefined : goCall}
+        callBusy={loom.busy || call.busy}
+        {...paneProps}
+      />
+    );
+  } else {
+    workspace = <WorkspaceIdle {...paneProps} />;
+  }
+
+  let body: ReactNode;
+  if (callSurface === 'room-shell') {
     body = (
       <CallShell
         displayName={loom.displayName.trim() || 'Guest'}
@@ -327,23 +363,6 @@ export default function App() {
         applyAudioOutput={call.media.applyAudioOutput}
       />
     );
-  } else if (loom.screen === 'space') {
-    body = (
-      <SpaceView
-        title={loom.spaceTitle}
-        selfLabel={loom.displayName.trim() || 'You'}
-        inviteUrl={loom.inviteUrl}
-        messages={loom.messages}
-        error={loom.error}
-        hasMoreOlder={loom.hasMoreOlder}
-        loadingOlder={loom.loadingOlder}
-        onLoadOlder={() => void loom.onLoadOlder()}
-        onSend={(text) => void loom.onSend(text)}
-        onCopyInvite={loom.onCopyInvite}
-        onStartCall={call.inCall ? undefined : goCall}
-        callBusy={loom.busy || call.busy}
-      />
-    );
   } else if (loom.screen === 'thread') {
     body = (
       <Lobby
@@ -359,12 +378,7 @@ export default function App() {
     );
   } else {
     body = (
-      <AppHome
-        chats={loom.chats}
-        displayName={loom.displayName}
-        spaceInput={loom.spaceInput}
-        busy={loom.busy}
-        error={loom.error}
+      <AppWorkShell
         homeAnchor={homeAnchor}
         installMode={pwa.mode}
         installHowOpen={pwa.howOpen}
@@ -380,19 +394,21 @@ export default function App() {
           writeDismissed(VAULT_NUDGE_DISMISS_KEY);
           setVaultNudgeDismissed(true);
         }}
-        onSpaceInput={loom.setSpaceInput}
-        onStartChat={goStartChat}
-        onStartCall={goStartCall}
-        onJoinSpace={loom.onJoinSpace}
-        onOpenChat={goOpenChat}
-        onOpenCall={goOpenCall}
+        workspace={workspace}
       />
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <AppNav place={place} onHome={goHome} onSettings={openSettings} />
+    <div data-testid="app-home" className="flex h-full min-h-0 flex-col">
+      <AppNav
+        place={place}
+        busy={loom.busy || call.busy}
+        onHome={goHome}
+        onStartChat={goStartChat}
+        onStartCall={goStartCall}
+        onSettings={openSettings}
+      />
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{body}</main>
       {callSurface === 'background' ? (
         <InCallBar
@@ -401,38 +417,13 @@ export default function App() {
           onLeave={leaveCall}
         />
       ) : null}
-      <VaultSettings
+      <AppSettingsDrawer
         open={settingsOpen}
-        displayName={loom.displayName}
-        hasVaultKey={loom.hasVaultKey}
-        installMode={pwa.mode}
-        installHowOpen={pwa.howOpen}
-        busy={loom.busy}
-        error={loom.error}
-        onClose={() => setSettingsOpen(false)}
-        onRename={(name) => {
-          loom.onRenameVault(name);
-          setSettingsOpen(false);
-        }}
-        onEnableVault={() => {
-          setSettingsOpen(false);
-          void loom.onEnableVault();
-        }}
-        onInstall={() => void pwa.runInstall()}
-        onExport={() => void loom.onExport()}
-        onImportFile={(f) => void loom.onImportFile(f)}
-        onLogout={() => {
-          setSettingsOpen(false);
-          if (call.inCall) call.onLeave();
-          setRoomShellOpen(false);
-          loom.onLogout();
-        }}
-        onSwitchVault={() => {
-          setSettingsOpen(false);
-          if (call.inCall) call.onLeave();
-          setRoomShellOpen(false);
-          loom.onSwitchVault();
-        }}
+        onOpenChange={setSettingsOpen}
+        loom={loom}
+        pwa={pwa}
+        call={call}
+        onAfterLeaveShell={() => setRoomShellOpen(false)}
       />
     </div>
   );

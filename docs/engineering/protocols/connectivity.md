@@ -4,9 +4,10 @@
 
 ## Fast path (read first)
 
-- M1: public **STUN** only (`stun:stun.l.google.com:19302` and one backup).
+- M1 default: public **STUN** only (`stun:stun.l.google.com:19302` and one backup).
 - TURN is **NAT help**, never media mixing. Using TURN is a privacy trade (relay sees IP / timing; with DTLS may not see media plaintext).
-- Decision gate: **M1 manual matrix**, not speculation.
+- **Optional user TURN** ships in Settings (**Network help**), off when unset (`src/domain/thread/iceConfig.ts`). Prefer filling the [manual matrix](../../ops/manual-call-matrix.md) before recommending TURN in copy.
+- Decision gate for *default* TURN: **M1 manual matrix**, not speculation.
 
 ## M1 acceptance matrix (manual)
 
@@ -33,7 +34,8 @@ Record pass/fail for A/V + text within ~30s of join:
 
 ## UI
 
-- States: `joining` → `connected` only after media or data channel useful; else `error` with plain language (“Couldn’t reach peer — network may block P2P”).
+- Status labels: `connectionLabel` — **Joining…** / **Reconnecting…** / error message (else **Couldn't connect**) / when `connected`: **Connected** / **Waiting…** / **Connecting…** ([ui-naming.md](../../product/heuristics/ui-naming.md)).
+- Join failure copy: “Couldn't reach peers — network may block P2P.”
 - Never show connected with zero tracks and no explanation.
 
 ## Related

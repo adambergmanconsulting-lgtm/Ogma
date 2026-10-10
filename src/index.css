@@ -21,16 +21,21 @@
   /* Shell gutters + home column — chrome and canvas share gutters (in-page-layout). */
   --spacing-gutter: 1.25rem;
   --spacing-gutter-lg: 1.75rem;
-  --width-app-column: 32rem; /* ~max-w-lg */
+  --spacing-gutter-xl: 2.5rem;
+  --spacing-gutter-2xl: 3.5rem;
+  --width-app-column: 32rem; /* ~max-w-lg; list width stays fixed */
 }
 
-/** Horizontal inset for top chrome and primary canvas. */
+/** Horizontal page margins for top chrome and primary canvas. Scales up on wide viewports. */
 .app-gutter-x {
   padding-left: var(--spacing-gutter);
   padding-right: var(--spacing-gutter);
 }
 
-/** Centered content column (home). Chrome is full-bleed + gutter; open space is video-left / chat-right. */
+/**
+ * Home list column — fixed max width, centered within shared page gutters.
+ * Chrome is full-bleed + gutter; open space is video-left / chat-right.
+ */
 .app-column {
   width: 100%;
   max-width: var(--width-app-column);
@@ -42,6 +47,20 @@
   .app-gutter-x {
     padding-left: var(--spacing-gutter-lg);
     padding-right: var(--spacing-gutter-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-gutter-x {
+    padding-left: var(--spacing-gutter-xl);
+    padding-right: var(--spacing-gutter-xl);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-gutter-x {
+    padding-left: var(--spacing-gutter-2xl);
+    padding-right: var(--spacing-gutter-2xl);
   }
 }
 
@@ -97,6 +116,154 @@
 
 /** Tight horizontal inset for space panes (video + chat). */
 .space-pane-pad {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/** Empty video pane: still wash and a few fireflies. Not a camera preview. */
+.video-idle {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 8rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--color-panel);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-line) 55%, transparent);
+}
+
+.video-idle-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--color-gold) 9%, transparent),
+    transparent 58%
+  );
+  pointer-events: none;
+}
+
+.video-idle-firefly {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-gold-soft);
+  box-shadow:
+    0 0 8px 3px color-mix(in srgb, var(--color-gold) 75%, transparent),
+    0 0 22px 10px color-mix(in srgb, var(--color-gold) 28%, transparent);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.video-idle-firefly--0 {
+  left: 18%;
+  top: 32%;
+  animation: video-idle-fly-0 28s ease-in-out infinite, video-idle-blink 7s ease-in-out infinite;
+}
+.video-idle-firefly--1 {
+  left: 62%;
+  top: 22%;
+  animation: video-idle-fly-1 34s ease-in-out infinite, video-idle-blink 9s ease-in-out -3s infinite;
+}
+.video-idle-firefly--2 {
+  left: 74%;
+  top: 58%;
+  animation: video-idle-fly-2 31s ease-in-out infinite, video-idle-blink 6.5s ease-in-out -2s infinite;
+}
+.video-idle-firefly--3 {
+  left: 28%;
+  top: 70%;
+  animation: video-idle-fly-3 37s ease-in-out infinite, video-idle-blink 8s ease-in-out -5s infinite;
+}
+.video-idle-firefly--4 {
+  left: 46%;
+  top: 40%;
+  animation: video-idle-fly-4 26s ease-in-out infinite, video-idle-blink 11s ease-in-out -1s infinite;
+}
+.video-idle-firefly--5 {
+  left: 84%;
+  top: 36%;
+  animation: video-idle-fly-5 33s ease-in-out infinite, video-idle-blink 7.5s ease-in-out -4s infinite;
+}
+
+@keyframes video-idle-blink {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.2;
+  }
+  84% {
+    opacity: 0;
+  }
+}
+
+@keyframes video-idle-fly-0 {
+  0% { transform: translate3d(0, 0, 0); }
+  30% { transform: translate3d(70px, -40px, 0); }
+  55% { transform: translate3d(20px, 50px, 0); }
+  80% { transform: translate3d(-40px, 10px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes video-idle-fly-1 {
+  0% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(-50px, 30px, 0); }
+  50% { transform: translate3d(-90px, -20px, 0); }
+  75% { transform: translate3d(-20px, -60px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes video-idle-fly-2 {
+  0% { transform: translate3d(0, 0, 0); }
+  35% { transform: translate3d(-60px, -50px, 0); }
+  60% { transform: translate3d(-30px, 40px, 0); }
+  85% { transform: translate3d(20px, -20px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes video-idle-fly-3 {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(40px, -30px, 0); }
+  50% { transform: translate3d(80px, -70px, 0); }
+  80% { transform: translate3d(30px, 20px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes video-idle-fly-4 {
+  0% { transform: translate3d(0, 0, 0); }
+  40% { transform: translate3d(-40px, 60px, 0); }
+  70% { transform: translate3d(50px, 20px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes video-idle-fly-5 {
+  0% { transform: translate3d(0, 0, 0); }
+  30% { transform: translate3d(-30px, 40px, 0); }
+  65% { transform: translate3d(-80px, -10px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-idle-firefly {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
+/** First row of video and chat — same height so the divider is one line. */
+.space-pane-head {
+  display: flex;
+  height: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.375rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-line) 50%, transparent);
   padding-left: 0.75rem;
   padding-right: 0.75rem;
 }
@@ -243,6 +410,34 @@ body,
   height: 100%;
 }
 
+/**
+ * Native bars follow the stone palette. Without color-scheme, Windows keeps a light track
+ * on the slate panels (spaces list, chat log, drawers).
+ */
+html {
+  color-scheme: dark;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-color: var(--color-line);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted);
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -257,6 +452,8 @@ body {
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
 }
 
 @keyframes fade-up {

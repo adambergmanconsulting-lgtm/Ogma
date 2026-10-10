@@ -1,17 +1,20 @@
-import { Settings } from 'lucide-react';
+import { MessageSquare, Phone, Settings } from 'lucide-react';
 import { OghamMark } from './OghamMark';
 
 export type AppNavPlace = 'home' | 'space' | 'call';
 
 interface AppNavProps {
   place: AppNavPlace;
+  busy?: boolean;
   onHome: () => void;
+  onStartChat: () => void;
+  onStartCall: () => void;
   onSettings: () => void;
 }
 
 /**
- * Permanent top fixture: brand (home) · Settings; full-bleed + gutter.
- * Call lives on the space video pane — not in global chrome.
+ * Permanent top fixture: brand (focus Spaces tab) · Start new · Settings.
+ * Call for the open space lives on the video pane — not in global chrome.
  */
 export function AppNav(props: AppNavProps) {
   return (
@@ -24,7 +27,7 @@ export function AppNav(props: AppNavProps) {
           type="button"
           data-testid="nav-home"
           onClick={props.onHome}
-          aria-label="Ogma home"
+          aria-label="Spaces"
           aria-current={props.place === 'home' ? 'page' : undefined}
           className="flex min-w-0 items-center gap-2 rounded-xl py-1 text-left transition hover:opacity-90"
         >
@@ -33,6 +36,32 @@ export function AppNav(props: AppNavProps) {
         </button>
 
         <div className="min-w-0 flex-1" />
+
+        <div data-testid="home-start-new" className="flex shrink-0 items-center gap-2">
+          <span className="hidden text-[13px] font-medium text-[color:var(--color-muted)] sm:inline">
+            Start new
+          </span>
+          <button
+            type="button"
+            data-testid="home-chat"
+            disabled={props.busy}
+            onClick={props.onStartChat}
+            className="link-action"
+          >
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+            Chat
+          </button>
+          <button
+            type="button"
+            data-testid="home-call"
+            disabled={props.busy}
+            onClick={props.onStartCall}
+            className="link-action"
+          >
+            <Phone className="h-3.5 w-3.5" aria-hidden />
+            Call
+          </button>
+        </div>
 
         <button
           type="button"

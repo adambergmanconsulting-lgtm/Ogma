@@ -56,6 +56,15 @@ Before coding M1.5 hub: prove on Chromium and WebKit that a received `MediaStrea
 | Chrome only | Hub on desktop Chrome rooms; Safari leaves selective-mesh |
 | Neither reliable | **No hub** — selective subscription on mesh only; hard cap stays 6 |
 
+### Spike log
+
+| Engine | Date | Result | Proof |
+|--------|------|--------|-------|
+| Chromium | 2026-10-10 | Pass (forward received track outbound) | `e2e/hub-forward-spike.spec.ts` |
+| WebKit / Safari | — | **Open** — no Playwright WebKit project yet | Queue: [rank7-dated-queue.md](../../ops/rank7-dated-queue.md) M1.5 row |
+
+**Interim:** do not raise `MAX_PEERS` or ship hub election until WebKit is recorded or product explicitly accepts Chrome-only hub rooms.
+
 ## Encoding
 
 - Soft ceilings: width max 1280, fps max 30; scale with N, speaking tier, congestion (`buildUserMediaConstraints`, `maxVideoBitrateBps`).

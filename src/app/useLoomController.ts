@@ -102,6 +102,8 @@ export function useLoomController() {
   const storeRef = useRef<LoomStore | null>(null);
   const focusedSpaceIdRef = useRef<string | null>(null);
   const messagesRef = useRef<SpaceMessageView[]>([]);
+  /** One resume/URL open per unlock cycle — do not re-open after soft-nav idle. */
+  const bootstrapDoneRef = useRef(false);
   const displayName = vault?.displayName ?? '';
   const unlocked = Boolean(wrapKey) || Boolean(vault && !vault.hasDeviceKey);
 
@@ -273,17 +275,43 @@ export function useLoomController() {
     }
   }, [ensureSync, focusedSpaceId, spaces, stopSync]);
 
+  const resumeLastSpace = useCallback(async (): Promise<string | null> => {
+    const store = storeRef.current ?? (await getLoomStore());
+    storeRef.current = store;
+    const recent = sortSpacesRecentFirst(await store.listSpaces())[0];
+    if (!recent) return null;
+    let secret = secretFromSpaceRow(recent.spaceId, recent, secretsRef.current);
+    if (!secret && wrapKey && recent.wrappedSecret) {
+      try {
+        secret = await unwrapSpaceSecret(wrapKey, recent.wrappedSecret);
+        secretsRef.current.set(recent.spaceId, secret);
+      } catch {
+        return null;
+      }
+    }
+    if (!secret) return null;
+    secretsRef.current.set(recent.spaceId, secret);
+    return openSpaceWithSecret(secret);
+  }, [openSpaceWithSecret, wrapKey]);
+
   useEffect(() => {
-    if (!vault || !unlocked) return;
+    if (!vault || !unlocked) {
+      bootstrapDoneRef.current = false;
+      return;
+    }
+    if (bootstrapDoneRef.current) return;
+    bootstrapDoneRef.current = true;
     void (async () => {
       storeRef.current = await getLoomStore();
       await refreshSpaces();
       const fromUrl = parseSpaceSecretFromLocation();
       if (fromUrl) {
         await openSpaceWithSecret(fromUrl);
+        return;
       }
+      await resumeLastSpace();
     })();
-  }, [vault, unlocked, refreshSpaces, openSpaceWithSecret]);
+  }, [vault, unlocked, refreshSpaces, openSpaceWithSecret, resumeLastSpace]);
 
   useEffect(() => {
     return () => {
@@ -544,6 +572,7 @@ export function useLoomController() {
     inviteUrl: focusedSecret ? spaceShareUrl(focusedSecret) : null,
     /** Space capability secret for the open chat (Call derives Thread room from this). */
     focusedSecret,
+    focusedSpaceId,
     spaceTitle: focusedRow ? displaySpaceLabel(focusedRow, displayName) : 'Space',
     messages,
     hasMoreOlder,
@@ -624,6 +653,7 @@ export function useLoomController() {
       secretsRef.current.set(spaceId, secret);
       return openSpaceWithSecret(secret);
     },
+    /** Soft-nav / idle: clear open space; keep Call live via InCallBar. */
     onBackToHome: () => {
       focusedSpaceIdRef.current = null;
       setFocusedSpaceId(null);
@@ -636,6 +666,7 @@ export function useLoomController() {
       setScreen('home');
       void refreshSpaces();
     },
+    resumeLastSpace,
     onSend: async (text: string) => {
       if (!focusedSecret || !focusedSpaceId) return;
       const env = await sealEnvelope(focusedSecret, text, displayName);

@@ -4,7 +4,7 @@ Peer-to-peer chat and video in the browser. Static PWA — Ogma holds no user me
 
 **Try it:** [https://adambergmanconsulting-lgtm.github.io/Ogma/](https://adambergmanconsulting-lgtm.github.io/Ogma/)
 
-**Start new** (Chat or Call) on home, open a space the same way, or join a capability link (`?room=` / `#space=`). There is no public room list or open hangout — invite links only. Public BitTorrent trackers only help peers meet; live audio, video, and chat stay on WebRTC between browsers. Anyone with the link can join. There are no accounts.
+**Start new** (Chat or Call) on home, open a space the same way, or join a capability link (`?room=` / `#space=`). There is no public room list or open hangout — invite links only. Public BitTorrent trackers only help peers meet; STUN may be used for connectivity; live audio, video, and chat stay on WebRTC between browsers. Anyone with the link can join. There are no accounts. Honest privacy copy lives in Settings and [docs/product/overview.md](docs/product/overview.md) — no “no servers” / “fully anonymous” claims.
 
 **Name.** In Celtic myth, Ogma is the god of speech and open dialogue. Legend pictured him linking the speaker’s tongue to the listener’s ear with invisible golden threads — a metaphor for peer-to-peer video.
 

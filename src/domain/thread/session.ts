@@ -1,10 +1,11 @@
 import { joinRoom, selfId } from '@trystero-p2p/torrent';
-import { ICE_SERVERS, MAX_PEERS } from '../types';
+import { MAX_PEERS } from '../types';
 import {
   normalizeInboundChat,
   textChatPayload,
   type TextChatPayload,
 } from './chatEnvelope';
+import { buildIceServers } from './iceConfig';
 import { createMeshMediaPlane } from './mediaPlane';
 import {
   clearScheduledPublishes,
@@ -44,7 +45,7 @@ export function openThreadSession(
   const room = joinRoom(
     {
       appId: TRYSTERO_APP_ID,
-      rtcConfig: { iceServers: ICE_SERVERS },
+      rtcConfig: { iceServers: buildIceServers() },
       relayConfig: { urls: THREAD_TRACKER_URLS },
     },
     roomSecret,

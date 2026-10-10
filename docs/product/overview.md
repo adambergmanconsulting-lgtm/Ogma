@@ -37,17 +37,19 @@
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
 | In call | Mute, camera, background blur, leave; soft-nav keeps Thread live; hang up only on Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Move device | Export file → Import (+ vault key if one was added) |
-| Home overview | Bare origin + **Ogma** → **Start new** (Chat/Call), then **Previous spaces** (by activity + muted time) + quiet invite Join; share link on the open space; install Moment then optional vault nudge; Settings **Home screen** anytime |
+| Work shell | Top bar **Start new** + Video \| Chat; chat column tabs **Chat** \| **Spaces**; resume last space or idle (no auto-create); **Ogma** opens the Spaces tab (soft-nav in Call); share link on the open chat; install Moment then optional vault nudge; Settings **Home screen** anytime |
 
-**First visit:** Home: **Start new** (Chat or Call) or open a space row, or quiet invite Join. Vault optional behind **Use a vault**. After the first chat, offer install. Shell always on — [in-page-layout.md](heuristics/in-page-layout.md).
+**First visit:** Top bar **Start new** (Chat or Call), or the Spaces tab (list or quiet invite Join). Vault optional behind **Use a vault**. After the first chat, offer install. One work shell — [in-page-layout.md](heuristics/in-page-layout.md).
 
 ## Honest copy (ship in UI)
 
-**Thread (free):** Video, audio, and live chat stay between peers. Ogma runs no media or chat server on the free path. Public trackers only help you meet; STUN may be used for connectivity. Anyone with the link can join.
+**Thread (free):** Video, audio, and live chat stay between peers. Ogma runs no media or chat server on the free path. Public trackers only help you meet; STUN may be used for connectivity. Anyone with the link can join. Surfaces: Join lobby + Settings **Privacy** (`THREAD_FREE_HONEST_COPY`).
 
 **Thread (paid team, when active):** Media and/or files may relay through Ogma or a partner. Say so in the UI for that room — do not reuse free-path copy.
 
-**Loom:** Text history is encrypted with the space key, kept on members’ devices, and syncs when someone has the space open. Ogma keeps no central copy. Anyone with the space link can read that history.
+**Loom:** Text history is encrypted with the vault key, kept on members’ devices, and syncs when someone has the space open. Ogma keeps no central copy. Anyone with the space link can read that history. Surface: Settings **Privacy** (`LOOM_HONEST_COPY`); empty-space Moment stays the shorter ui-naming line.
+
+**Public meta:** `SITE_META_DESCRIPTION` in `honestCopy.ts` / `index.html` — no “serverless” / “fully anonymous” / unaudited “E2EE”.
 
 ## Non-goals (free core)
 

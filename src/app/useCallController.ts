@@ -177,6 +177,7 @@ export function useCallController(opts: CallControllerOpts) {
       webrtc.connectionState,
       webrtc.remotePeers.length,
       webrtc.openRelays,
+      webrtc.error,
     ),
     onCopyInvite: async () => {
       if (!shareUrl) return { ok: false as const, reason: 'failed' as const, url: '' };

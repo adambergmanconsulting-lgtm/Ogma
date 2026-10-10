@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createRoom, ensureVault, joinRoom, newMediaContext, openCallChat } from './helpers';
 
 test.describe('Name + home', () => {
-  test('name then home list with Start new', async ({ page }) => {
+  test('name then spaces strip with Start new and idle workspace', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('name-continue')).toBeVisible();
     await expect(page.getByTestId('vault-splash-open')).toBeVisible();
@@ -18,11 +18,15 @@ test.describe('Name + home', () => {
     await expect(page.getByTestId('vault-name')).toHaveValue('Ada');
     await page.getByTestId('name-continue').click();
     await expect(page.getByTestId('secret-value')).toHaveCount(0);
+    await expect(page.getByTestId('app-work-shell')).toBeVisible();
     await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('home-start-new')).toBeVisible();
     await expect(page.getByTestId('home-start-new').getByText('Start new')).toBeVisible();
     await expect(page.getByTestId('home-chat')).toBeVisible();
     await expect(page.getByTestId('home-call')).toBeVisible();
+    await expect(page.getByTestId('space-view')).toBeVisible();
+    await expect(page.getByTestId('space-presence-idle')).toBeVisible();
+    await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('nav-home').getByText('Ogma')).toBeVisible();
     await expect(page.getByTestId('home-join')).toBeVisible();
     await expect(page.getByTestId('nav-home')).toBeVisible();
@@ -32,12 +36,14 @@ test.describe('Name + home', () => {
 });
 
 test.describe('Chat and Call entry', () => {
-  test('home Chat lands in space; list Call starts Thread; space Call upgrades', async ({
+  test('strip Chat lands in space; list Call starts Thread; space Call upgrades', async ({
     page,
   }) => {
     await ensureVault(page, 'Host');
     await page.getByTestId('home-chat').click();
     await expect(page.getByText(/This chat stays here/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('app-work-shell')).toBeVisible();
+    await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('space-presence')).toBeVisible();
     await expect(page.getByTestId('space-presence-idle')).toBeVisible();
     await expect(page.getByTestId('share-link')).toBeVisible();
@@ -50,8 +56,10 @@ test.describe('Chat and Call entry', () => {
     await expect(page.getByTestId('space-presence')).toBeVisible();
     await page.getByTestId('nav-home').click();
     await expect(page.getByTestId('app-home')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Previous spaces' })).toBeVisible();
-    await expect(page.getByText('Only you')).toBeVisible();
+    await expect(page.getByTestId('space-view')).toBeVisible();
+    await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByTestId('previous-spaces')).toBeVisible();
+    await expect(page.getByTestId('previous-spaces').getByText('Only you')).toBeVisible();
     await expect(page.locator('[data-testid^="space-activity-"]').first()).toBeVisible();
     await page.locator('[data-testid^="space-call-"]').first().click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
@@ -71,7 +79,7 @@ test.describe('Chat and Call entry', () => {
     await openCallChat(page);
   });
 
-  test('brand home keeps Call live; Back to call restores', async ({ page }) => {
+  test('brand soft-nav keeps Call live; Back to call restores', async ({ page }) => {
     await ensureVault(page, 'Host');
     await page.getByTestId('home-call').click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
@@ -88,7 +96,7 @@ test.describe('Chat and Call entry', () => {
 });
 
 test.describe('Home anchor', () => {
-  test('install Moment after first chat; brand returns home; vault nudge after dismiss', async ({
+  test('install Moment after first chat; brand focuses strip; vault nudge after dismiss', async ({
     page,
   }) => {
     await ensureVault(page, 'Host');
@@ -101,7 +109,12 @@ test.describe('Home anchor', () => {
     await page.getByTestId('home-anchor-install-dismiss').click();
     await expect(page.getByTestId('home-anchor-vault')).toBeVisible();
     await page.getByTestId('nav-settings').click();
+    await expect(page.getByTestId('settings-you')).toBeVisible();
     await expect(page.getByTestId('settings-install')).toBeVisible();
+    await page.getByTestId('settings-privacy').locator('summary').click();
+    await expect(page.getByTestId('settings-privacy-thread')).toContainText(/stay between peers/i);
+    await expect(page.getByTestId('settings-privacy-loom')).toContainText(/no central copy/i);
+    await expect(page.getByTestId('settings-turn')).toBeVisible();
     await page.getByTestId('vault-settings-close').click();
     await page.getByTestId('home-anchor-vault-dismiss').click();
     await expect(page.getByTestId('home-anchor-vault')).toHaveCount(0);

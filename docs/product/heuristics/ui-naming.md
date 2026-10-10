@@ -27,6 +27,12 @@
 | Call invite control | Button: **Copy** → **Copied**; field aria-label **Invite link** | Standing "send this so they join" / "paste it to them" essays |
 | Call status (alone) | **Waiting…** | "Waiting for others…"; "Waiting alone — …" helper under the bar |
 | Call status (setup) | **Connecting…** | "Connecting to trackers…" |
+| Call status (joining) | **Joining…** | Raw enum `joining` |
+| Call status (reconnecting) | **Reconnecting…** | Raw enum `reconnecting` |
+| Call status (error) | Join/room error message, else **Couldn't connect** | Raw enum `error` |
+| Settings privacy | Collapsed summary **How privacy works**; Thread free + Loom honest paragraphs inside | Standing full honest essays above You / vault actions; "no servers" / "fully anonymous" / unaudited "E2EE" |
+| Settings TURN | Collapsed summary **Network help (optional)**; open when a TURN URI is saved; honesty that relay may see IP / timing | Standing TURN form above common settings; bundled public TURN on by default |
+| Settings You | Heading **You**; vault scope + **Your name** / **Save name** first | Burying name / vault actions under Privacy / Network essays |
 | Devices drawer title | **Devices** | "Hardware"; "hot-swap" subtitles; standing test-sound tutorials |
 | Remote audio unlock | **Enable sound** | Browser-policy essays on the overlay |
 | Local tile name | Display name only | "(You)" suffix |
@@ -42,11 +48,11 @@
 | Vault unlock | Title **Open vault**; field **Vault key**; **Open**; quiet **Back** | Heading = display name; unlock on every visit |
 | Vault session | Stay signed in until **Log out** (only if vault key exists) | Re-prompt vault key on reload |
 | Space invite | **InviteLinkBar**: **Copy** → **Copied** (share sheet on phone); same control on Call | Blocking invite essay; fake Copied without clipboard result; one-off quiet Copy |
-| Top-bar brand | **Ogma** (mark + name) | Synonym product title in chrome |
+| Top-bar brand | **Ogma** (mark + name); opens the **Spaces** tab (soft-nav when in Call) | Synonym product title in chrome; treating brand as a separate Home app |
 | Settings gear | **Settings** | "Preferences"; "Account" for the gear |
 | Space **Call** | Button: **Call** (gold while video is off) | Synonym ("Start video", "Join call") on the video pane |
-| Home **Start new** | Row label **Start new**; actions **Chat** / **Call** | Separate tile titles; second **Ogma** headline |
-| Home spaces section | **Previous spaces** | "Recents"; "Chats" as the section title |
+| Home **Start new** | Top bar: **Start new** · **Chat** / **Call** | A second Start new inside the Spaces tab; separate tile titles |
+| Chat column tabs | **Chat** \| **Spaces** | Stacking both at once; "Recents" / "Chats" as a section title |
 | Home invite cue | Quiet **Have an invite?** → Join | Loud parallel Join CTA |
 | Soft-nav return | **Back to call**; Leave | Synonym strip labels ("Return", "Exit room") |
 | Chat list title | Other participants' names (comma); custom **label** if set; else **Only you** | Opaque short ids; **New chat**; including yourself in the participant title |
