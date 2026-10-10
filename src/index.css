@@ -158,35 +158,36 @@
   opacity: 0;
 }
 
+/* Blink waits ~5s so the pane starts dark. Later delays keep the stagger. */
 .video-idle-firefly--0 {
   left: 18%;
   top: 32%;
-  animation: video-idle-fly-0 28s ease-in-out infinite, video-idle-blink 7s ease-in-out infinite;
+  animation: video-idle-fly-0 28s ease-in-out infinite, video-idle-blink 7s ease-in-out 5s infinite;
 }
 .video-idle-firefly--1 {
   left: 62%;
   top: 22%;
-  animation: video-idle-fly-1 34s ease-in-out infinite, video-idle-blink 9s ease-in-out -3s infinite;
+  animation: video-idle-fly-1 34s ease-in-out infinite, video-idle-blink 9s ease-in-out 8s infinite;
 }
 .video-idle-firefly--2 {
   left: 74%;
   top: 58%;
-  animation: video-idle-fly-2 31s ease-in-out infinite, video-idle-blink 6.5s ease-in-out -2s infinite;
+  animation: video-idle-fly-2 31s ease-in-out infinite, video-idle-blink 6.5s ease-in-out 7s infinite;
 }
 .video-idle-firefly--3 {
   left: 28%;
   top: 70%;
-  animation: video-idle-fly-3 37s ease-in-out infinite, video-idle-blink 8s ease-in-out -5s infinite;
+  animation: video-idle-fly-3 37s ease-in-out infinite, video-idle-blink 8s ease-in-out 10s infinite;
 }
 .video-idle-firefly--4 {
   left: 46%;
   top: 40%;
-  animation: video-idle-fly-4 26s ease-in-out infinite, video-idle-blink 11s ease-in-out -1s infinite;
+  animation: video-idle-fly-4 26s ease-in-out infinite, video-idle-blink 11s ease-in-out 6s infinite;
 }
 .video-idle-firefly--5 {
   left: 84%;
   top: 36%;
-  animation: video-idle-fly-5 33s ease-in-out infinite, video-idle-blink 7.5s ease-in-out -4s infinite;
+  animation: video-idle-fly-5 33s ease-in-out infinite, video-idle-blink 7.5s ease-in-out 9s infinite;
 }
 
 @keyframes video-idle-blink {
