@@ -12,6 +12,7 @@ import {
   shouldSendVideoToPeer,
   type SpeakingSample,
 } from '../domain/thread/subscribe';
+import { shouldSendLocalVideo } from '../domain/media/screenShare';
 import { MAX_PEERS, WARN_PEERS } from '../domain/types';
 
 export type SendQualityChange = {
@@ -24,6 +25,7 @@ export function useThreadQuality(options: {
   enabled: boolean;
   localStream: MediaStream | null;
   cameraEnabled: boolean;
+  screenSharing?: boolean;
   sessionRef: MutableRefObject<ThreadSession | null>;
   speakingRef: MutableRefObject<Map<string, SpeakingSample>>;
   subscribeFromPeersRef: MutableRefObject<
@@ -38,6 +40,7 @@ export function useThreadQuality(options: {
     enabled,
     localStream,
     cameraEnabled,
+    screenSharing = false,
     sessionRef,
     speakingRef,
     subscribeFromPeersRef,
@@ -55,6 +58,8 @@ export function useThreadQuality(options: {
   showAllRef.current = showAllVideos;
   const cameraEnabledRef = useRef(cameraEnabled);
   cameraEnabledRef.current = cameraEnabled;
+  const screenSharingRef = useRef(screenSharing);
+  screenSharingRef.current = screenSharing;
   const onSendQualityChangeRef = useRef(onSendQualityChange);
   onSendQualityChangeRef.current = onSendQualityChange;
 
@@ -62,11 +67,11 @@ export function useThreadQuality(options: {
     const session = sessionRef.current;
     if (!session) return;
     const self = session.selfId;
-    const camOn = cameraEnabledRef.current;
+    const sendVideo = shouldSendLocalVideo(cameraEnabledRef.current, screenSharingRef.current);
     for (const id of Object.keys(session.room.getPeers())) {
       const sub = subscribeFromPeersRef.current.get(id);
       const want = sub ? shouldSendVideoToPeer(self, sub) : true;
-      session.setOutboundVideoEnabled(id, camOn && want);
+      session.setOutboundVideoEnabled(id, sendVideo && want);
     }
   }, [sessionRef, subscribeFromPeersRef]);
 
@@ -93,7 +98,7 @@ export function useThreadQuality(options: {
 
   useEffect(() => {
     applyOutboundVideoPolicy();
-  }, [applyOutboundVideoPolicy, cameraEnabled, remotePeerCount]);
+  }, [applyOutboundVideoPolicy, cameraEnabled, remotePeerCount, screenSharing]);
 
   useEffect(() => {
     if (!enabled || !localStream) {

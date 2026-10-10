@@ -23,10 +23,12 @@ export type SpaceStatus = 'recent' | 'archived';
 
 export type SpaceIndexRow = {
   spaceId: string;
-  /** User-chosen title; when set, wins over participant names. */
+  /** User-chosen title; when set, wins over last preview. */
   label?: string;
   /** Distinct message authors seen in this space (display labels). */
   authors?: string[];
+  /** Short list row preview (last text body, or "{name} joined"). */
+  lastPreview?: string;
   status: SpaceStatus;
   lastOpenedAt: number;
   lastMessageAt: number;

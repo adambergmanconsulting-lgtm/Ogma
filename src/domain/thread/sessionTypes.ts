@@ -3,7 +3,7 @@ import type { TextChatPayload } from './chatEnvelope';
 import type { MediaPlane } from './mediaPlane';
 import type { RoomMode } from './roomMode';
 
-export type MetaWire = { displayName: string };
+export type MetaWire = { displayName: string; sharingScreen?: boolean };
 
 export type ControlWire =
   | { type: 'speaking'; level: number; ts: number }

@@ -4,6 +4,7 @@ import type { ThreadSession } from './session';
 export function listRemotePeers(
   streams: Map<string, MediaStream>,
   names: Map<string, string>,
+  sharingScreen: Map<string, boolean> = new Map(),
 ): RemotePeer[] {
   const list: RemotePeer[] = [];
   const seen = new Set<string>();
@@ -14,6 +15,7 @@ export function listRemotePeers(
       displayName: names.get(id) ?? 'Peer',
       stream,
       connectionState: 'connected',
+      sharingScreen: sharingScreen.get(id) === true,
     });
   }
   for (const [id, name] of names) {
@@ -23,6 +25,7 @@ export function listRemotePeers(
       displayName: name,
       stream: null,
       connectionState: 'connecting',
+      sharingScreen: sharingScreen.get(id) === true,
     });
   }
   return list;

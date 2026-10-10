@@ -42,6 +42,8 @@ test.describe('Chat and Call entry', () => {
     await ensureVault(page, 'Host');
     await page.getByTestId('home-chat').click();
     await expect(page.getByText(/This chat stays here/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('space-people')).toContainText('Host');
+    await expect(page.getByTestId('space-join')).toContainText(/Host joined/i);
     await expect(page.getByTestId('app-work-shell')).toBeVisible();
     await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('space-presence')).toBeVisible();
@@ -59,10 +61,11 @@ test.describe('Chat and Call entry', () => {
     await expect(page.getByTestId('space-view')).toBeVisible();
     await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('previous-spaces')).toBeVisible();
-    await expect(page.getByTestId('previous-spaces').getByText('No one else yet')).toBeVisible();
+    await expect(page.getByTestId('previous-spaces').getByText('Host joined')).toBeVisible();
     await expect(page.locator('[data-testid^="space-activity-"]').first()).toBeVisible();
     await page.locator('[data-testid^="space-call-"]').first().click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('toggle-screen-share')).toBeVisible();
     await expect(page.getByTestId('share-link')).toBeVisible();
     await expect(page.getByTestId('connection-label')).toContainText(/Waiting|Connected/);
     await expect(page).toHaveURL(/[?&]room=/);

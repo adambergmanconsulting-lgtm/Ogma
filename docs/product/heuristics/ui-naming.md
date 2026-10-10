@@ -40,6 +40,7 @@
 | Capacity full | `Room full ({max} max)` | Long "room is full of people" essays |
 | Call lobby honest (free) | overview Thread free honest paragraph (muted under name on Join) | Paid-path copy; "no servers" / "fully anonymous" |
 | Background blur | **Blur background** / **Clear background** | "Portrait mode"; "virtual background" for blur-only |
+| Screen share | **Share screen** / **Stop sharing**. If the browser cannot capture: **This browser can't share a screen. Open Ogma in Chrome or Edge.** | A second Share window button; blur while the screen is the picture; raw `NotSupportedError` |
 | Privacy backdrop (Devices, while blur on) | **Backdrop** with chips **Soft** / **Cool** / **Warm** | "Virtual background"; photo gallery; file upload in ControlBar |
 | Blur matte firmness (Devices, while blur on) | **Edge cut** Soft → Firm (0–100); Soft = original matte, Firm = tighter cut | "Aggressiveness"; multi-slider debug chrome |
 | Cold start | Field **Your name**; primary **Continue**; quiet **Use a vault** → splash | Create/Open as loud peers to Continue; vault essay on the main screen |
@@ -55,9 +56,11 @@
 | Chat column tabs | **Chat** \| **Spaces** | Stacking both at once; "Recents" / "Chats" as a section title |
 | Home invite cue | Quiet **Have an invite?** → Join | Loud parallel Join CTA |
 | Soft-nav return | **Back to call**; Leave | Synonym strip labels ("Return", "Exit room") |
-| Chat list title | Other participants' names (comma); custom **label** if set; else **No one else yet** | Opaque short ids; **New chat**; **Only you** (reads as occupancy); including yourself in the participant title |
+| Chat list title | Custom **label** if set; else **lastPreview** (last text, or `{name} joined`); else **Chat** | Participant-name titles; **No one yet**; opaque short ids; **New chat**; **Only you** (occupancy) |
+| Open chat header | People row: short first-token names, full name in `title` / aria; invite Copy under; no chat title | Title chrome (`No one yet` / participant headline); online dots on the people row |
+| Join system line | Centered muted **`{name} joined`** (sealed once per author on open) | Leave lines; inventing join without a sealed event |
 | Older messages | Quiet **Load older** (+50) | Manual archive chore wording |
-| Space empty (Moment) | **This chat stays here. Copy the invite to add people.** | Framing Call as a separate place; long tutorials |
+| Space empty (Moment) | **This chat stays here. Copy the invite to add people.** (while no text messages yet) | Framing Call as a separate place; long tutorials |
 | Call lobby title | **Call** (invite join only) | Cold Create lobby with paste field |
 | Vault settings | **Save name**; optional **Add vault key**; **Export** / **Import**; **Log out** only with key; **Start over** / **Switch vault** | Vault key required; Log out without a key |
 | Vault scope copy | Without key: chats stay in this browser…; with key: vault session copy | Device-wide / cross-OS claims |

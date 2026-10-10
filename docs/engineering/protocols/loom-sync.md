@@ -4,7 +4,7 @@
 
 ## Fast path (read first)
 
-- Text-only sealed append log in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
+- Sealed append log (text + join) in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
 - Space secret → UTF-8 bytes → HKDF → AES-256-GCM (Web Crypto). **Locked:** UTF-8 of `#space=` string (never change).
 - Availability = members online; Ogma stores nothing.
 - Display **name** required before Chat / Call. **Vault key optional** (cold **Use a vault** or Settings **Add vault key**): wraps Remembered secrets + Log out / retrieve; not required to use the app. Without a vault key, each space keeps `localSecret` on-device so Previous spaces can reopen after refresh; Add vault key migrates those into `wrappedSecret`.
@@ -23,7 +23,10 @@
 }
 ```
 
-**Plaintext inside ciphertext:** `{ "text": "..." }` UTF-8 JSON. Max plaintext 4 KiB per message.
+**Plaintext inside ciphertext** (UTF-8 JSON, max 4 KiB):
+- Text: `{ "kind": "text", "text": "..." }`
+- Join (once per author when they open the space): `{ "kind": "join" }`
+- Legacy still opens: `{ "text": "..." }` (treated as text)
 
 **Dedupe:** by `id`. **Order:** `ts` then `id`. Clock skew: accept; UI sorts stably.
 

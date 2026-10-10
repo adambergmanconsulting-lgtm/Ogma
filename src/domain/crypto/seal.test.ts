@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { openText, publicSpaceId, sealText } from './seal';
+import { openPayload, openText, publicSpaceId, sealPayload, sealText } from './seal';
 
 describe('seal/open', () => {
   it('round-trips text with space secret', async () => {
@@ -7,6 +7,23 @@ describe('seal/open', () => {
     const sealed = await sealText(secret, 'golden threads');
     const plain = await openText(secret, sealed.nonce, sealed.ciphertext);
     expect(plain).toBe('golden threads');
+  });
+
+  it('round-trips join payloads', async () => {
+    const secret = 'join-space';
+    const sealed = await sealPayload(secret, { kind: 'join' });
+    await expect(openPayload(secret, sealed.nonce, sealed.ciphertext)).resolves.toEqual({
+      kind: 'join',
+    });
+  });
+
+  it('openPayload returns text kind for sealed text', async () => {
+    const secret = 'legacy';
+    const sealed = await sealText(secret, 'hi');
+    await expect(openPayload(secret, sealed.nonce, sealed.ciphertext)).resolves.toEqual({
+      kind: 'text',
+      text: 'hi',
+    });
   });
 
   it('fails with wrong secret', async () => {

@@ -15,6 +15,8 @@ interface VideoTileProps {
   /** Local tile: mute playback to avoid echo. */
   muted?: boolean;
   mirrored?: boolean;
+  /** Screen share shows the whole picture. Camera fills the tile. */
+  fit?: 'cover' | 'contain';
   micOff?: boolean;
   showMicLevel?: boolean;
   pinned?: boolean;
@@ -63,6 +65,7 @@ export function VideoTile({
   label,
   muted = false,
   mirrored = false,
+  fit = 'cover',
   micOff,
   showMicLevel = false,
   pinned = false,
@@ -130,7 +133,8 @@ export function VideoTile({
         playsInline
         muted={muted || needsUnlock}
         className={[
-          'h-full w-full rounded-xl object-cover',
+          'h-full w-full rounded-xl',
+          fit === 'contain' ? 'object-contain' : 'object-cover',
           mirrored ? 'scale-x-[-1]' : '',
           hasVideo ? '' : 'opacity-0',
         ].join(' ')}

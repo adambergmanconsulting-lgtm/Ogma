@@ -12,7 +12,13 @@ import {
   secretFromSpaceRow,
   wrapStoredSpaceSecrets,
 } from '../domain/loom/spaceSecretAccess';
-import { compareEnvelopes, openEnvelope, sealEnvelope } from '../domain/loom/envelope';
+import {
+  compareEnvelopes,
+  openPayload,
+  previewFromPayload,
+  sealJoin,
+  sealTextMessage,
+} from '../domain/loom/envelope';
 import {
   hasUnloadableCold,
   pickColdBatch,
@@ -23,10 +29,10 @@ import {
   backfillSpaceAuthors,
   bumpLastMessage,
   clearUnread,
-  displaySpaceLabel,
   ensureSpaceRow,
   noteSpaceAuthors,
   sortSpacesRecentFirst,
+  spacePeopleNames,
 } from '../domain/loom/spaceIndex';
 import { getLoomStore } from '../domain/loom/store';
 import type { LoomStore } from '../domain/loom/storePort';
@@ -136,14 +142,18 @@ export function useLoomController() {
       const views: SpaceMessageView[] = [];
       for (const row of rows) {
         try {
-          const text = await openEnvelope(secret, row);
-          views.push({
+          const payload = await openPayload(secret, row);
+          const base = {
             id: row.id,
             author: row.author,
-            text,
             ts: row.ts,
             self: row.author === displayName,
-          });
+          };
+          views.push(
+            payload.kind === 'join'
+              ? { ...base, kind: 'join' }
+              : { ...base, kind: 'text', text: payload.text },
+          );
         } catch {
           // skip
         }
@@ -151,6 +161,29 @@ export function useLoomController() {
       return views;
     },
     [displayName],
+  );
+
+  const authorHasJoin = useCallback(
+    async (spaceId: string, secret: string, author: string): Promise<boolean> => {
+      const store = storeRef.current ?? (await getLoomStore());
+      const self = author.trim().toLowerCase();
+      if (!self) return true;
+      const rows = [
+        ...(await store.listMessages(spaceId)),
+        ...(await store.listColdMessages(spaceId)),
+      ];
+      for (const row of rows) {
+        if (row.author.trim().toLowerCase() !== self) continue;
+        try {
+          const payload = await openPayload(secret, row);
+          if (payload.kind === 'join') return true;
+        } catch {
+          // skip
+        }
+      }
+      return false;
+    },
+    [],
   );
 
   const refreshHasMoreOlder = useCallback(async (spaceId: string, shown: SpaceMessageView[]) => {
@@ -183,17 +216,29 @@ export function useLoomController() {
       if (added === 0) return;
       await trimSpaceMessages(store, spaceId);
       let maxTs = 0;
-      for (const e of entries) maxTs = Math.max(maxTs, e.ts);
+      let tip: LoomEnvelope | null = null;
+      for (const e of entries) {
+        if (!tip || compareEnvelopes(e, tip) > 0) tip = e;
+        maxTs = Math.max(maxTs, e.ts);
+      }
       await noteSpaceAuthors(
         store,
         spaceId,
         entries.map((e) => e.author),
       );
       const viewing = focusedSpaceIdRef.current === spaceId;
-      await bumpLastMessage(store, spaceId, maxTs, fromPeer && !viewing ? added : 0);
+      const secret = secretsRef.current.get(spaceId);
+      let preview: string | undefined;
+      if (secret && tip) {
+        try {
+          preview = previewFromPayload(tip.author, await openPayload(secret, tip));
+        } catch {
+          // leave prior preview
+        }
+      }
+      await bumpLastMessage(store, spaceId, maxTs, fromPeer && !viewing ? added : 0, preview);
       if (viewing) {
         await clearUnread(store, spaceId);
-        const secret = secretsRef.current.get(spaceId);
         if (secret) await loadMessages(spaceId, secret);
       }
       await refreshSpaces();
@@ -201,6 +246,18 @@ export function useLoomController() {
       await syncRef.current.get(spaceId)?.broadcastHave();
     },
     [loadMessages, refreshSpaces, soundEnabled],
+  );
+
+  const ensureSelfJoin = useCallback(
+    async (spaceId: string, secret: string) => {
+      const name = displayName.trim();
+      if (!name) return;
+      if (await authorHasJoin(spaceId, secret, name)) return;
+      const env = await sealJoin(secret, name);
+      await ingestEntries(spaceId, [env], false);
+      await syncRef.current.get(spaceId)?.sendEntries([env]);
+    },
+    [authorHasJoin, displayName, ingestEntries],
   );
 
   const stopSync = useCallback((spaceId: string) => {
@@ -247,6 +304,7 @@ export function useLoomController() {
           stored.map((m) => m.author),
         );
         await ensureSync(row.spaceId, secret);
+        await ensureSelfJoin(row.spaceId, secret);
         setScreen('space');
         await refreshSpaces();
         return secret;
@@ -257,7 +315,7 @@ export function useLoomController() {
         setBusy(false);
       }
     },
-    [ensureSync, loadMessages, refreshSpaces, wrapKey],
+    [ensureSelfJoin, ensureSync, loadMessages, refreshSpaces, wrapKey],
   );
 
   useEffect(() => {
@@ -573,7 +631,7 @@ export function useLoomController() {
     /** Space capability secret for the open chat (Call derives Thread room from this). */
     focusedSecret,
     focusedSpaceId,
-    spaceTitle: focusedRow ? displaySpaceLabel(focusedRow, displayName) : 'Space',
+    people: spacePeopleNames(focusedRow?.authors, displayName),
     messages,
     hasMoreOlder,
     loadingOlder,
@@ -669,7 +727,7 @@ export function useLoomController() {
     resumeLastSpace,
     onSend: async (text: string) => {
       if (!focusedSecret || !focusedSpaceId) return;
-      const env = await sealEnvelope(focusedSecret, text, displayName);
+      const env = await sealTextMessage(focusedSecret, text, displayName);
       await ingestEntries(focusedSpaceId, [env], false);
       await syncRef.current.get(focusedSpaceId)?.sendEntries([env]);
       await loadMessages(focusedSpaceId, focusedSecret);

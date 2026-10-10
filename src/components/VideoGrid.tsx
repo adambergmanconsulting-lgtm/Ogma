@@ -5,6 +5,8 @@ interface VideoGridProps {
   localStream: MediaStream | null;
   localLabel: string;
   localMicOff: boolean;
+  /** Local picture is a screen, so do not mirror or crop it. */
+  localScreen?: boolean;
   remotePeers: RemotePeer[];
   pinnedPeerIds?: string[];
   onTogglePin?: (peerId: string) => void;
@@ -24,6 +26,7 @@ export function VideoGrid({
   localStream,
   localLabel,
   localMicOff,
+  localScreen = false,
   remotePeers,
   pinnedPeerIds = [],
   onTogglePin,
@@ -42,7 +45,8 @@ export function VideoGrid({
         stream={localStream}
         label={localLabel}
         muted
-        mirrored
+        mirrored={!localScreen}
+        fit={localScreen ? 'contain' : 'cover'}
         micOff={localMicOff}
         showMicLevel
       />
@@ -51,6 +55,7 @@ export function VideoGrid({
           key={peer.peerId}
           stream={peer.stream}
           label={peer.displayName}
+          fit={peer.sharingScreen ? 'contain' : 'cover'}
           pinned={pinnedPeerIds.includes(peer.peerId)}
           onTogglePin={onTogglePin ? () => onTogglePin(peer.peerId) : undefined}
           applyAudioOutput={applyAudioOutput}

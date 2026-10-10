@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryLoomStore } from './memoryStore';
 import {
+  clipSpacePreview,
   displaySpaceLabel,
-  formatParticipantLabel,
   formatSpaceActivity,
   mergeAuthors,
   noteSpaceAuthors,
+  shortDisplayName,
   spaceActivityAt,
+  spacePeopleNames,
 } from './spaceIndex';
 import type { SpaceIndexRow } from './types';
 
@@ -15,26 +17,36 @@ describe('space labels from participants', () => {
     expect(mergeAuthors(['Ada', 'Bo'], ['ada', 'Cam', ' Bo '])).toEqual(['Ada', 'Bo', 'Cam']);
   });
 
-  it('formats others and excludes self', () => {
-    expect(formatParticipantLabel(['Ada', 'Bo'], 'Ada')).toBe('Bo');
-    expect(formatParticipantLabel(['Ada', 'Bo', 'Cam'], 'Ada')).toBe('Bo, Cam');
-    expect(formatParticipantLabel(['Ada', 'Bo', 'Cam', 'Dee', 'Ed'], 'Ada')).toBe('Bo, Cam +2');
-    expect(formatParticipantLabel(['Ada'], 'Ada')).toBeNull();
+  it('shortens display names to first token', () => {
+    expect(shortDisplayName('Ada Lovelace')).toBe('Ada');
+    expect(shortDisplayName('Bo')).toBe('Bo');
+    expect(shortDisplayName('  Cam  Reed ')).toBe('Cam');
   });
 
-  it('prefers custom label, then participants, then No one else yet', () => {
+  it('lists people including self', () => {
+    expect(spacePeopleNames(['Bo'], 'Ada')).toEqual(['Bo', 'Ada']);
+    expect(spacePeopleNames(['Ada'], 'Ada')).toEqual(['Ada']);
+    expect(spacePeopleNames(undefined, 'Ada')).toEqual(['Ada']);
+  });
+
+  it('prefers custom label, then lastPreview, then Chat', () => {
     const row: SpaceIndexRow = {
       spaceId: 'abcdefghijklmnop',
       authors: ['Ada', 'Bo'],
+      lastPreview: 'hello there',
       status: 'recent',
       lastOpenedAt: 0,
       lastMessageAt: 0,
       unreadCount: 0,
     };
-    expect(displaySpaceLabel(row, 'Ada')).toBe('Bo');
+    expect(displaySpaceLabel(row, 'Ada')).toBe('hello there');
     expect(displaySpaceLabel({ ...row, label: 'Project' }, 'Ada')).toBe('Project');
-    expect(displaySpaceLabel({ ...row, authors: ['Ada'] }, 'Ada')).toBe('No one else yet');
-    expect(displaySpaceLabel({ ...row, authors: undefined }, 'Ada')).toBe('No one else yet');
+    expect(displaySpaceLabel({ ...row, lastPreview: undefined }, 'Ada')).toBe('Chat');
+  });
+
+  it('clips long previews', () => {
+    expect(clipSpacePreview('a'.repeat(100)).length).toBeLessThanOrEqual(80);
+    expect(clipSpacePreview('a'.repeat(100)).endsWith('…')).toBe(true);
   });
 
   it('persists newly seen authors on the space row', async () => {

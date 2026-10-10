@@ -14,6 +14,7 @@ export interface UseWebRTCOptions {
   localStream: MediaStream | null;
   enabled: boolean;
   cameraEnabled?: boolean;
+  screenSharing?: boolean;
   roomMode?: RoomMode;
   onTrackReplaceNeeded?: (replace: (track: MediaStreamTrack) => void) => void;
   onSendQualityChange?: (state: SendQualityChange) => void;
@@ -26,6 +27,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
     localStream,
     enabled,
     cameraEnabled = true,
+    screenSharing = false,
     roomMode = DEFAULT_ROOM_MODE,
   } = options;
   const [peerId, setPeerId] = useState('');
@@ -40,6 +42,9 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const sessionRef = useRef<ThreadSession | null>(null);
   const namesRef = useRef(new Map<string, string>());
   const streamsRef = useRef(new Map<string, MediaStream>());
+  const screenSharesRef = useRef(new Map<string, boolean>());
+  const sharingScreenRef = useRef(screenSharing);
+  sharingScreenRef.current = screenSharing;
   const speakingRef = useRef(new Map<string, SpeakingSample>());
   const subscribeFromPeersRef = useRef(
     new Map<string, Extract<ControlWire, { type: 'subscribe' }>>(),
@@ -51,13 +56,16 @@ export function useWebRTC(options: UseWebRTCOptions) {
   displayNameRef.current = displayName;
 
   const publishPeers = useCallback(() => {
-    setRemotePeers(listRemotePeers(streamsRef.current, namesRef.current));
+    setRemotePeers(
+      listRemotePeers(streamsRef.current, namesRef.current, screenSharesRef.current),
+    );
   }, []);
 
   const quality = useThreadQuality({
     enabled,
     localStream,
     cameraEnabled,
+    screenSharing,
     sessionRef,
     speakingRef,
     subscribeFromPeersRef,
@@ -72,6 +80,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const resetLocalState = useCallback(() => {
     namesRef.current.clear();
     streamsRef.current.clear();
+    screenSharesRef.current.clear();
     speakingRef.current.clear();
     subscribeFromPeersRef.current.clear();
     setRemotePeers([]);
@@ -94,6 +103,8 @@ export function useWebRTC(options: UseWebRTCOptions) {
     localStreamLiveRef,
     namesRef,
     streamsRef,
+    screenSharesRef,
+    sharingScreenRef,
     speakingRef,
     subscribeFromPeersRef,
     displayNameRef,
@@ -146,8 +157,11 @@ export function useWebRTC(options: UseWebRTCOptions) {
 
   useEffect(() => {
     if (!enabled || !sessionRef.current) return;
-    void sessionRef.current.sendMeta({ displayName: displayName.trim() || 'Guest' });
-  }, [displayName, enabled]);
+    void sessionRef.current.sendMeta({
+      displayName: displayName.trim() || 'Guest',
+      sharingScreen: screenSharing,
+    });
+  }, [displayName, enabled, screenSharing]);
 
   return {
     peerId,

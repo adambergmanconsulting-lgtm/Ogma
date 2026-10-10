@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   LayoutGrid,
   MessageSquare,
+  MonitorUp,
   Mic,
   MicOff,
   PhoneOff,
@@ -14,6 +15,8 @@ import {
 interface ControlBarProps {
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing?: boolean;
+  screenShareSupported?: boolean;
   backgroundBlur?: boolean;
   backgroundBlurSupported?: boolean;
   /** Omit when chat is already the primary canvas (space shell). */
@@ -23,6 +26,7 @@ interface ControlBarProps {
   dense?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
+  onToggleScreenShare?: () => void;
   onToggleBackgroundBlur?: () => void;
   onToggleChat?: () => void;
   onToggleShowAllVideos?: () => void;
@@ -97,7 +101,18 @@ export function ControlBar(props: ControlBarProps) {
       >
         {props.cameraEnabled ? <Video className={icon} /> : <VideoOff className={icon} />}
       </CtrlButton>
-      {props.backgroundBlurSupported && props.onToggleBackgroundBlur ? (
+      {props.screenShareSupported && props.onToggleScreenShare ? (
+        <CtrlButton
+          dense={dense}
+          label={props.screenSharing ? 'Stop sharing' : 'Share screen'}
+          onClick={props.onToggleScreenShare}
+          active={props.screenSharing}
+          testId="toggle-screen-share"
+        >
+          <MonitorUp className={icon} />
+        </CtrlButton>
+      ) : null}
+      {props.backgroundBlurSupported && !props.screenSharing && props.onToggleBackgroundBlur ? (
         <CtrlButton
           dense={dense}
           label={props.backgroundBlur ? 'Clear background' : 'Blur background'}

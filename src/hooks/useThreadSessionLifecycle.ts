@@ -19,6 +19,8 @@ export function useThreadSessionLifecycle(options: {
   localStreamLiveRef: MutableRefObject<MediaStream | null>;
   namesRef: MutableRefObject<Map<string, string>>;
   streamsRef: MutableRefObject<Map<string, MediaStream>>;
+  screenSharesRef: MutableRefObject<Map<string, boolean>>;
+  sharingScreenRef: MutableRefObject<boolean>;
   speakingRef: MutableRefObject<Map<string, SpeakingSample>>;
   subscribeFromPeersRef: MutableRefObject<
     Map<string, Extract<ControlWire, { type: 'subscribe' }>>
@@ -43,6 +45,8 @@ export function useThreadSessionLifecycle(options: {
     localStreamLiveRef,
     namesRef,
     streamsRef,
+    screenSharesRef,
+    sharingScreenRef,
     speakingRef,
     subscribeFromPeersRef,
     displayNameRef,
@@ -67,6 +71,8 @@ export function useThreadSessionLifecycle(options: {
       cancelled: () => cancelled,
       names: namesRef.current,
       streams: streamsRef.current,
+      screenShares: screenSharesRef.current,
+      sharingScreen: () => sharingScreenRef.current,
       speaking: speakingRef.current,
       subscribeFromPeers: subscribeFromPeersRef.current,
       displayName: () => displayNameRef.current.trim() || 'Guest',
@@ -105,6 +111,8 @@ export function useThreadSessionLifecycle(options: {
     localStreamLiveRef,
     localStreamRef,
     namesRef,
+    screenSharesRef,
+    sharingScreenRef,
     onSpeakingTick,
     onSubscribeTick,
     publishPeers,

@@ -56,6 +56,7 @@ export function useCallController(opts: CallControllerOpts) {
     localStream: media.stream,
     enabled: inCall && Boolean(activeRoom && media.stream),
     cameraEnabled: media.cameraEnabled,
+    screenSharing: media.screenSharing,
     onTrackReplaceNeeded: (replace) => {
       replaceTrackRef.current = replace;
     },

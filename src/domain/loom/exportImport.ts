@@ -88,6 +88,7 @@ function normalizeSpace(row: SpaceIndexRow): SpaceIndexRow {
     authors: Array.isArray(row.authors)
       ? row.authors.filter((a): a is string => typeof a === 'string')
       : undefined,
+    lastPreview: typeof row.lastPreview === 'string' ? row.lastPreview : undefined,
     status: row.status === 'archived' ? 'archived' : 'recent',
     lastOpenedAt: row.lastOpenedAt || 0,
     lastMessageAt: row.lastMessageAt || 0,
@@ -106,10 +107,15 @@ function mergeSpace(existing: SpaceIndexRow, incoming: SpaceIndexRow): SpaceInde
     seen.add(key);
     authors.push(a.trim());
   }
+  const newerPreview =
+    (incoming.lastMessageAt || 0) >= (existing.lastMessageAt || 0)
+      ? incoming.lastPreview || existing.lastPreview
+      : existing.lastPreview || incoming.lastPreview;
   return {
     ...existing,
     label: existing.label || incoming.label,
     authors: authors.length ? authors : existing.authors,
+    lastPreview: newerPreview,
     status: existing.status === 'archived' && incoming.status === 'archived' ? 'archived' : 'recent',
     lastOpenedAt: Math.max(existing.lastOpenedAt, incoming.lastOpenedAt || 0),
     lastMessageAt: Math.max(existing.lastMessageAt, incoming.lastMessageAt || 0),

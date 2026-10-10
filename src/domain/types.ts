@@ -34,6 +34,8 @@ export interface RemotePeer {
   displayName: string;
   stream: MediaStream | null;
   connectionState: 'connecting' | 'connected' | 'disconnected';
+  /** Their picture is a screen, window, or tab — letterbox it. */
+  sharingScreen?: boolean;
 }
 
 export const ICE_SERVERS: RTCIceServer[] = [

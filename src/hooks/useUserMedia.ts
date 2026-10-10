@@ -12,9 +12,15 @@ import { isSoftwareBackgroundBlurSupported } from '../domain/media/backgroundBlu
 import type { SendQualityTier } from '../domain/media/constraints';
 import { devicesByKind, listMediaDevices, setAudioOutput } from '../domain/media/devices';
 import {
+  buildPublishStream,
   setAudioTracksEnabled,
   setVideoTracksEnabled,
 } from '../domain/media/publishStream';
+import {
+  canShareScreen,
+  captureScreenTrack,
+  screenShareFailure,
+} from '../domain/media/screenShare';
 import {
   applyLiveVideoQuality,
   pickDefaultDeviceIds,
@@ -44,6 +50,8 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const [audioOutputId, setAudioOutputId] = useState('');
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [screenSharing, setScreenSharing] = useState(false);
+  const [screenShareSupported] = useState(() => canShareScreen());
   const [backgroundBlur, setBackgroundBlur] = useState(false);
   const [backgroundBlurMode, setBackgroundBlurMode] = useState<BackgroundBlurMode>('off');
   const [backgroundBlurSupported] = useState(() => isSoftwareBackgroundBlurSupported());
@@ -54,7 +62,9 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);
   const blurBusyRef = useRef(false);
+  const screenBusyRef = useRef(false);
   const onTrackReplacedRef = useRef(onTrackReplaced);
   onTrackReplacedRef.current = onTrackReplaced;
 
@@ -68,6 +78,34 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       onTrackReplaced: (track) => onTrackReplacedRef.current?.(track),
     }),
   );
+
+  const restoreCameraPublish = useCallback(() => {
+    const camera = cameraStreamRef.current;
+    if (!camera) return;
+    streamRef.current = camera;
+    setStream(camera);
+    const video = camera.getVideoTracks()[0];
+    if (video) onTrackReplacedRef.current?.(video);
+  }, []);
+
+  const onScreenEndedRef = useRef<() => void>(() => undefined);
+  onScreenEndedRef.current = () => {
+    screenTrackRef.current = null;
+    setScreenSharing(false);
+    restoreCameraPublish();
+  };
+  const onScreenEnded = useCallback(() => {
+    onScreenEndedRef.current();
+  }, []);
+
+  const releaseScreenTrack = useCallback(() => {
+    const track = screenTrackRef.current;
+    if (!track) return;
+    screenTrackRef.current = null;
+    track.removeEventListener('ended', onScreenEnded);
+    track.stop();
+    setScreenSharing(false);
+  }, [onScreenEnded]);
 
   const refreshDevices = useCallback(async () => {
     const list = await listMediaDevices();
@@ -90,6 +128,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
         blurRef.current.stop();
         setBackgroundBlur(false);
         setBackgroundBlurMode('off');
+        releaseScreenTrack();
         cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
         cameraStreamRef.current = next;
         streamRef.current = next;
@@ -117,6 +156,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       peerCount,
       qualityTier,
       refreshDevices,
+      releaseScreenTrack,
       videoDeviceId,
     ],
   );
@@ -149,11 +189,12 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     blurRef.current.stop();
     setBackgroundBlur(false);
     setBackgroundBlurMode('off');
+    releaseScreenTrack();
     cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     cameraStreamRef.current = null;
     streamRef.current = null;
     setStream(null);
-  }, []);
+  }, [releaseScreenTrack]);
 
   const switchVideoDevice = useCallback(
     async (deviceId: string) => {
@@ -163,7 +204,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       if (!track || !cameraStreamRef.current) return;
       cameraStreamRef.current = new MediaStream(cameraStreamRef.current.getTracks());
       await blurRef.current.onCameraTrackChanged();
-      if (!blurRef.current.enabled) {
+      if (!blurRef.current.enabled && !screenTrackRef.current) {
         streamRef.current = cameraStreamRef.current;
         setStream(cameraStreamRef.current);
         onTrackReplacedRef.current?.(track);
@@ -180,7 +221,13 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       const track = await switchAudioTrack(cameraStreamRef.current, deviceId, micEnabled);
       if (!track || !cameraStreamRef.current) return;
       cameraStreamRef.current = new MediaStream(cameraStreamRef.current.getTracks());
-      if (blurRef.current.enabled && blurRef.current.mode === 'software') {
+      const screen = screenTrackRef.current;
+      if (screen) {
+        const next = buildPublishStream(cameraStreamRef.current, screen);
+        streamRef.current = next;
+        setStream(next);
+        onTrackReplacedRef.current?.(track);
+      } else if (blurRef.current.enabled && blurRef.current.mode === 'software') {
         await blurRef.current.onCameraTrackChanged();
       } else {
         streamRef.current = cameraStreamRef.current;
@@ -204,13 +251,62 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const toggleCamera = useCallback(() => {
     setCameraEnabled((prev) => {
       const next = !prev;
-      setVideoTracksEnabled([cameraStreamRef.current, streamRef.current], next);
+      const streams = screenTrackRef.current
+        ? [cameraStreamRef.current]
+        : [cameraStreamRef.current, streamRef.current];
+      setVideoTracksEnabled(streams, next);
       return next;
     });
   }, []);
 
+  const toggleScreenShare = useCallback(async () => {
+    if (screenBusyRef.current) return;
+    if (screenTrackRef.current) {
+      releaseScreenTrack();
+      restoreCameraPublish();
+      return;
+    }
+    if (!cameraStreamRef.current || !canShareScreen()) return;
+    screenBusyRef.current = true;
+    setError(null);
+    let track: MediaStreamTrack;
+    try {
+      track = await captureScreenTrack();
+    } catch (err) {
+      const message = screenShareFailure(err);
+      if (message) setError(message);
+      screenBusyRef.current = false;
+      return;
+    }
+    try {
+      if (blurRef.current.enabled) {
+        await blurRef.current.disable();
+        setBackgroundBlur(false);
+        setBackgroundBlurMode('off');
+      }
+      const camera = cameraStreamRef.current;
+      if (track.readyState !== 'live' || !camera) {
+        track.stop();
+        return;
+      }
+      screenTrackRef.current = track;
+      track.addEventListener('ended', onScreenEnded);
+      setScreenSharing(true);
+      const next = buildPublishStream(camera, track);
+      streamRef.current = next;
+      setStream(next);
+      try {
+        onTrackReplacedRef.current?.(track);
+      } catch {
+        // The local picture is already the screen.
+      }
+    } finally {
+      screenBusyRef.current = false;
+    }
+  }, [onScreenEnded, releaseScreenTrack, restoreCameraPublish]);
+
   const toggleBackgroundBlur = useCallback(async () => {
-    if (blurBusyRef.current) return;
+    if (blurBusyRef.current || screenTrackRef.current) return;
     blurBusyRef.current = true;
     setError(null);
     try {
@@ -253,9 +349,10 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     return () => {
       navigator.mediaDevices?.removeEventListener?.('devicechange', onChange);
       blurRef.current.stop();
+      releaseScreenTrack();
       cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, [refreshDevices]);
+  }, [refreshDevices, releaseScreenTrack]);
 
   return {
     stream,
@@ -265,6 +362,9 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     audioOutputId,
     micEnabled,
     cameraEnabled,
+    screenSharing,
+    screenShareSupported,
+    toggleScreenShare,
     backgroundBlur,
     backgroundBlurSupported:
       backgroundBlurSupported || blurRef.current.supported,

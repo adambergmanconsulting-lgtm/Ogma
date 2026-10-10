@@ -13,6 +13,8 @@ export type SpaceCallBand = {
   displayName: string;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing?: boolean;
+  screenShareSupported?: boolean;
   backgroundBlur?: boolean;
   backgroundBlurSupported?: boolean;
   privacyBackdropSelectable?: boolean;
@@ -30,6 +32,7 @@ export type SpaceCallBand = {
   audioOutputId: string;
   onToggleMic: () => void;
   onToggleCamera: () => void;
+  onToggleScreenShare?: () => void;
   onToggleBackgroundBlur?: () => void;
   onPrivacyBackdropChange?: (id: PrivacyBackdropId) => void;
   onMaskEdgeCutChange?: (value: number) => void;

@@ -32,10 +32,10 @@
 |-----|---------|
 | Name | Required once per browser profile to chat/call |
 | Vault (optional) | Cold **Use a vault** splash → **Create vault** / **Open vault**; or Settings **Add vault key**; session until **Log out** |
-| Chat (Loom) | `#space=<secret>`; sealed history; list by last activity; warm sync while tab open; titles from other participants or **No one else yet**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
+| Chat (Loom) | `#space=<secret>`; sealed history + join events; list by last activity / preview; people row + **`{name} joined`** in open chat; warm sync while tab open; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
 | **Host Call** | **Start new** Chat or Call → space (invite on-space) → video-pane **Call**; same Loom log + compose; call invite `?room=` + `#space=` — shell: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
-| In call | Mute, camera, background blur, leave; soft-nav keeps Thread live; hang up only on Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |
+| In call | Mute, camera, **Share screen** (replaces the camera until **Stop sharing**), background blur, leave; soft-nav keeps Thread live; hang up only on Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Move device | Export file → Import (+ vault key if one was added) |
 | Work shell | Top bar **Start new** + Video \| Chat; chat column tabs **Chat** \| **Spaces**; resume last space or idle (no auto-create); **Ogma** opens the Spaces tab (soft-nav in Call); share link on the open chat; install Moment then optional vault nudge; Settings **Home screen** anytime |
 
@@ -53,7 +53,7 @@
 
 ## Non-goals (free core)
 
-Forced accounts to join, Ogma-sent invites, public room directory / open hangouts, SFU on free path, images in free sync, cloud recording, screen share (v1), waiting room, background mobile VoIP, store app required to join.
+Forced accounts to join, Ogma-sent invites, public room directory / open hangouts, SFU on free path, images in free sync, cloud recording, camera and screen at the same time, waiting room, background mobile VoIP, store app required to join.
 
 ## Paid team (later SKU — seams only until built)
 
@@ -77,6 +77,7 @@ Forced accounts to join, Ogma-sent invites, public room directory / open hangout
 | Feature | Intent |
 |---------|--------|
 | Background blur (shipped) | Optional local effect; strong privacy blur + built-in soft fills (Soft / Cool / Warm); default Soft **Edge cut** uses the original person matte; Firm adds tighter cut; peers see via processed track + `replaceTrack` (or OS blur when controllable). No custom upload yet. Model/WASM loads on first toggle. Yields under CPU/N pressure. |
+| Screen share (shipped) | **Share screen** replaces the camera on the one video track. The browser picker chooses screen, window, or tab. **Stop sharing** (or the browser stop bar) restores the camera. Blur stays off that picture. |
 
 ## Related
 

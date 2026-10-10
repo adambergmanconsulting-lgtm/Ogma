@@ -35,16 +35,21 @@ export async function publicSpaceId(spaceSecret: string): Promise<string> {
   );
 }
 
-export async function sealText(
+/** Sealed Loom plaintext (inside AES-GCM). Legacy `{ text }` still opens as text. */
+export type LoomSealPayload = { kind: 'text'; text: string } | { kind: 'join' };
+
+export async function sealPayload(
   spaceSecret: string,
-  text: string,
+  payload: LoomSealPayload,
 ): Promise<{
   nonce: string;
   ciphertext: string;
 }> {
   const key = await deriveEncKey(spaceSecret);
   const nonce = crypto.getRandomValues(new Uint8Array(12));
-  const plain = new TextEncoder().encode(JSON.stringify({ text }));
+  const body =
+    payload.kind === 'join' ? { kind: 'join' as const } : { kind: 'text' as const, text: payload.text };
+  const plain = new TextEncoder().encode(JSON.stringify(body));
   const cipher = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv: toBufferSource(nonce) },
     key,
@@ -56,11 +61,11 @@ export async function sealText(
   };
 }
 
-export async function openText(
+export async function openPayload(
   spaceSecret: string,
   nonceB64: string,
   ciphertextB64: string,
-): Promise<string> {
+): Promise<LoomSealPayload> {
   const key = await deriveEncKey(spaceSecret);
   const nonce = b64ToBytes(nonceB64);
   const ciphertext = b64ToBytes(ciphertextB64);
@@ -69,9 +74,37 @@ export async function openText(
     key,
     toBufferSource(ciphertext),
   );
-  const parsed = JSON.parse(new TextDecoder().decode(plain)) as { text?: string };
-  if (typeof parsed.text !== 'string') {
-    throw new Error('Invalid payload');
+  const parsed = JSON.parse(new TextDecoder().decode(plain)) as {
+    kind?: unknown;
+    text?: unknown;
+  };
+  if (parsed?.kind === 'join') return { kind: 'join' };
+  if (parsed?.kind === 'text' && typeof parsed.text === 'string') {
+    return { kind: 'text', text: parsed.text };
   }
-  return parsed.text;
+  // Legacy envelopes: `{ "text": "..." }` without kind.
+  if (typeof parsed?.text === 'string') {
+    return { kind: 'text', text: parsed.text };
+  }
+  throw new Error('Invalid payload');
+}
+
+export async function sealText(
+  spaceSecret: string,
+  text: string,
+): Promise<{
+  nonce: string;
+  ciphertext: string;
+}> {
+  return sealPayload(spaceSecret, { kind: 'text', text });
+}
+
+export async function openText(
+  spaceSecret: string,
+  nonceB64: string,
+  ciphertextB64: string,
+): Promise<string> {
+  const payload = await openPayload(spaceSecret, nonceB64, ciphertextB64);
+  if (payload.kind !== 'text') throw new Error('Not a text payload');
+  return payload.text;
 }

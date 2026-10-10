@@ -21,4 +21,11 @@ describe('listRemotePeers', () => {
       stream: null,
     });
   });
+
+  it('marks a peer who is sharing a screen', () => {
+    const streams = new Map([['a', {} as MediaStream]]);
+    const names = new Map([['a', 'Ada']]);
+    const sharing = new Map([['a', true]]);
+    expect(listRemotePeers(streams, names, sharing)[0]?.sharingScreen).toBe(true);
+  });
 });

@@ -30,6 +30,8 @@ interface CallShellProps {
   drawer: Drawer;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing?: boolean;
+  screenShareSupported?: boolean;
   backgroundBlur?: boolean;
   backgroundBlurSupported?: boolean;
   privacyBackdropSelectable?: boolean;
@@ -47,6 +49,7 @@ interface CallShellProps {
   onCopyInvite: () => Promise<ShareResult>;
   onToggleMic: () => void;
   onToggleCamera: () => void;
+  onToggleScreenShare?: () => void;
   onToggleBackgroundBlur?: () => void;
   onPrivacyBackdropChange?: (id: PrivacyBackdropId) => void;
   onMaskEdgeCutChange?: (value: number) => void;
@@ -106,6 +109,7 @@ export function CallShell(props: CallShellProps) {
             localStream={props.localStream}
             localLabel={props.displayName}
             localMicOff={props.localMicOff}
+            localScreen={props.screenSharing}
             remotePeers={props.remotePeers}
             pinnedPeerIds={props.pinnedPeerIds}
             onTogglePin={props.onTogglePin}
@@ -126,12 +130,15 @@ export function CallShell(props: CallShellProps) {
           <ControlBar
             micEnabled={props.micEnabled}
             cameraEnabled={props.cameraEnabled}
+            screenSharing={props.screenSharing}
+            screenShareSupported={props.screenShareSupported}
             backgroundBlur={props.backgroundBlur}
             backgroundBlurSupported={props.backgroundBlurSupported}
             chatOpen={props.drawer === 'chat'}
             showAllVideos={props.showAllVideos}
             onToggleMic={props.onToggleMic}
             onToggleCamera={props.onToggleCamera}
+            onToggleScreenShare={props.onToggleScreenShare}
             onToggleBackgroundBlur={props.onToggleBackgroundBlur}
             onToggleChat={props.onToggleChat}
             onToggleShowAllVideos={!waitingAlone ? props.onToggleShowAllVideos : undefined}

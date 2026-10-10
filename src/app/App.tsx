@@ -236,7 +236,7 @@ export default function App() {
         id: m.id,
         peerId: m.self ? '__self__' : m.author,
         displayName: m.author,
-        text: m.text,
+        text: m.kind === 'join' ? `${m.author} joined` : m.text,
         sentAt: m.ts,
       }))
     : call.webrtc.messages;
@@ -277,7 +277,7 @@ export default function App() {
   if (callSurface === 'space-call') {
     workspace = (
       <SpaceView
-        title={loom.spaceTitle}
+        people={loom.people}
         inviteUrl={call.shareUrl || loom.inviteUrl}
         messages={loom.messages}
         error={loom.error}
@@ -294,7 +294,7 @@ export default function App() {
   } else if (loom.screen === 'space') {
     workspace = (
       <SpaceView
-        title={loom.spaceTitle}
+        people={loom.people}
         inviteUrl={loom.inviteUrl}
         messages={loom.messages}
         error={loom.error}
@@ -330,6 +330,8 @@ export default function App() {
         drawer={call.drawer}
         micEnabled={call.media.micEnabled}
         cameraEnabled={call.media.cameraEnabled}
+        screenSharing={call.media.screenSharing}
+        screenShareSupported={call.media.screenShareSupported}
         backgroundBlur={call.media.backgroundBlur}
         backgroundBlurSupported={call.media.backgroundBlurSupported}
         privacyBackdropSelectable={call.media.privacyBackdropSelectable}
@@ -347,6 +349,7 @@ export default function App() {
         onCopyInvite={call.onCopyInvite}
         onToggleMic={call.media.toggleMic}
         onToggleCamera={call.media.toggleCamera}
+        onToggleScreenShare={() => void call.media.toggleScreenShare()}
         onToggleBackgroundBlur={() => void call.media.toggleBackgroundBlur()}
         onPrivacyBackdropChange={call.media.setPrivacyBackdrop}
         onMaskEdgeCutChange={call.media.setMaskEdgeCut}

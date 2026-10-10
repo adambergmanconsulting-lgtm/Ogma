@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Phone } from 'lucide-react';
+import { shortDisplayName } from '../domain/loom/spaceIndex';
 import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
 import type { ShareResult } from '../domain/signaling/share';
 import { ControlBar } from './ControlBar';
@@ -17,13 +18,12 @@ export type { SpaceCallBand } from './spaceCallBand';
 export type SpaceMessageView = {
   id: string;
   author: string;
-  text: string;
   ts: number;
   self: boolean;
-};
+} & ({ kind: 'text'; text: string } | { kind: 'join' });
 
 interface SpaceViewProps {
-  title: string;
+  people: string[];
   inviteUrl: string | null;
   messages: SpaceMessageView[];
   error: string | null;
@@ -156,6 +156,7 @@ export function SpaceView(props: SpaceViewProps) {
                   localStream={call.localStream}
                   localLabel={call.displayName}
                   localMicOff={call.localMicOff}
+                  localScreen={call.screenSharing}
                   remotePeers={call.remotePeers}
                   pinnedPeerIds={call.pinnedPeerIds}
                   onTogglePin={call.onTogglePin}
@@ -172,11 +173,14 @@ export function SpaceView(props: SpaceViewProps) {
                   dense
                   micEnabled={call.micEnabled}
                   cameraEnabled={call.cameraEnabled}
+                  screenSharing={call.screenSharing}
+                  screenShareSupported={call.screenShareSupported}
                   backgroundBlur={call.backgroundBlur}
                   backgroundBlurSupported={call.backgroundBlurSupported}
                   showAllVideos={call.showAllVideos}
                   onToggleMic={call.onToggleMic}
                   onToggleCamera={call.onToggleCamera}
+                  onToggleScreenShare={call.onToggleScreenShare}
                   onToggleBackgroundBlur={call.onToggleBackgroundBlur}
                   onToggleShowAllVideos={!waitingAlone ? call.onToggleShowAllVideos : undefined}
                   onOpenSettings={call.onOpenDevices}
@@ -226,11 +230,30 @@ export function SpaceView(props: SpaceViewProps) {
             spaces={props.spacesPane}
           >
             <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">
-              <h1 className="min-w-0 truncate text-base font-semibold tracking-tight">
-                {props.title}
-              </h1>
+              {props.people.length > 0 ? (
+                <ul
+                  data-testid="space-people"
+                  className="flex flex-wrap gap-x-2 gap-y-1"
+                  aria-label="People in this chat"
+                >
+                  {props.people.map((full) => {
+                    const short = shortDisplayName(full) || full;
+                    return (
+                      <li key={full.toLowerCase()}>
+                        <span
+                          className="text-xs text-[color:var(--color-muted)]"
+                          title={full}
+                          aria-label={full}
+                        >
+                          {short}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
               {props.inviteUrl ? (
-                <div className="mt-1.5">
+                <div className={props.people.length > 0 ? 'mt-1.5' : undefined}>
                   <InviteLinkBar dense inviteUrl={props.inviteUrl} onCopyInvite={props.onCopyInvite} />
                 </div>
               ) : null}
@@ -253,12 +276,16 @@ export function SpaceView(props: SpaceViewProps) {
                   </button>
                 </div>
               ) : null}
-              {props.messages.length === 0 ? (
-                <p className="pt-3 text-center text-xs leading-relaxed text-[color:var(--color-muted)]">
-                  This chat stays here. Copy the invite to add people.
-                </p>
-              ) : (
-                props.messages.map((m) => (
+              {props.messages.map((m) =>
+                m.kind === 'join' ? (
+                  <p
+                    key={m.id}
+                    data-testid="space-join"
+                    className="py-0.5 text-center text-[11px] text-[color:var(--color-muted)]"
+                  >
+                    {m.author} joined
+                  </p>
+                ) : (
                   <div
                     key={m.id}
                     className={`max-w-[92%] text-[13px] leading-snug ${m.self ? 'ml-auto text-right' : ''}`}
@@ -270,8 +297,13 @@ export function SpaceView(props: SpaceViewProps) {
                     ) : null}
                     <ChatMessageText text={m.text} />
                   </div>
-                ))
+                ),
               )}
+              {props.messages.every((m) => m.kind !== 'text') ? (
+                <p className="pt-3 text-center text-xs leading-relaxed text-[color:var(--color-muted)]">
+                  This chat stays here. Copy the invite to add people.
+                </p>
+              ) : null}
               <div ref={bottomRef} />
             </div>
 

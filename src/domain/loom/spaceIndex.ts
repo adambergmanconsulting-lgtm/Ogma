@@ -2,6 +2,9 @@ import { publicSpaceId } from '../crypto/seal';
 import type { LoomStore } from './storePort';
 import type { SpaceIndexRow, SpaceStatus } from './types';
 
+const DEFAULT_SPACE_LABEL = 'Chat';
+const PREVIEW_MAX = 80;
+
 /** Merge author display names; preserve first-seen order; case-insensitive dedupe. */
 export function mergeAuthors(existing: string[] | undefined, incoming: string[]): string[] {
   const out: string[] = [];
@@ -17,35 +20,36 @@ export function mergeAuthors(existing: string[] | undefined, incoming: string[])
   return out;
 }
 
-/**
- * Default chat title from other participants (excludes self).
- * Returns null when nobody else has spoken yet.
- */
-export function formatParticipantLabel(authors: string[], selfName: string): string | null {
-  const self = selfName.trim().toLowerCase();
-  const others: string[] = [];
-  const seen = new Set<string>();
-  for (const raw of authors) {
-    const name = raw.trim();
-    if (!name) continue;
-    const key = name.toLowerCase();
-    if (self && key === self) continue;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    others.push(name);
-  }
-  if (others.length === 0) return null;
-  if (others.length <= 3) return others.join(', ');
-  return `${others.slice(0, 2).join(', ')} +${others.length - 2}`;
+/** First whitespace token for chrome chips; full name when already one token. */
+export function shortDisplayName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  const token = trimmed.split(/\s+/)[0] ?? trimmed;
+  return token;
 }
 
-/** Title while no other participant has written (not a claim that the call is empty). */
-const NO_ONE_ELSE_LABEL = 'No one else yet';
+/** Clamp list preview text. */
+export function clipSpacePreview(text: string, max = PREVIEW_MAX): string {
+  const t = text.replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
 
-export function displaySpaceLabel(row: SpaceIndexRow, selfName = ''): string {
+/**
+ * Spaces list label: custom label → last preview → Chat.
+ * Open chat uses the people row + join lines instead of this string.
+ */
+export function displaySpaceLabel(row: SpaceIndexRow, _selfName = ''): string {
   const custom = row.label?.trim();
   if (custom) return custom;
-  return formatParticipantLabel(row.authors ?? [], selfName) || NO_ONE_ELSE_LABEL;
+  const preview = row.lastPreview?.trim();
+  if (preview) return preview;
+  return DEFAULT_SPACE_LABEL;
+}
+
+/** People known in this space for the open-chat row (includes self). */
+export function spacePeopleNames(authors: string[] | undefined, selfName: string): string[] {
+  return mergeAuthors(authors, selfName.trim() ? [selfName.trim()] : []);
 }
 
 /** Fill authors from stored envelopes when the index row never learned them. */
@@ -174,13 +178,18 @@ export async function bumpLastMessage(
   spaceId: string,
   ts: number,
   unreadDelta = 0,
+  lastPreview?: string,
 ): Promise<void> {
   const row = await store.getSpace(spaceId);
   if (!row) return;
+  const preview = lastPreview?.trim();
+  // Only replace list preview when this tip is at least as new as known activity.
+  const tipIsNewest = Boolean(preview) && ts >= (row.lastMessageAt || 0);
   await store.putSpace({
     ...row,
     lastMessageAt: Math.max(row.lastMessageAt, ts),
     unreadCount: Math.max(0, row.unreadCount + unreadDelta),
+    ...(tipIsNewest && preview ? { lastPreview: clipSpacePreview(preview) } : {}),
   });
 }
 
