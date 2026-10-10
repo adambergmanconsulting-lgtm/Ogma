@@ -13,7 +13,7 @@ export async function newMediaContext(browser: Browser): Promise<BrowserContext>
   return context;
 }
 
-/** Name → Continue → Chats (no vault key). */
+/** Name → Continue → home overview (no vault key). */
 export async function ensureVault(page: Page, name: string) {
   await page.goto('/');
   const vaultName = page.getByTestId('vault-name');
@@ -26,22 +26,25 @@ export async function ensureVault(page: Page, name: string) {
     await page.getByTestId('vault-name').fill(name);
     await page.getByTestId('name-continue').click();
   }
-  await expect(page.getByRole('heading', { name: 'Chat' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('app-home')).toBeVisible({ timeout: 15_000 });
 }
 
-/** Open in-call Chat drawer when closed. */
+/** Compose on the space shell (chat always visible; Call is a band). */
 export async function openCallChat(page: Page) {
+  const spaceCompose = page.getByTestId('space-compose');
+  if (await spaceCompose.isVisible().catch(() => false)) return;
   if (await page.getByTestId('chat-input').isVisible().catch(() => false)) return;
   await page.getByTestId('toggle-chat').click();
   await expect(page.getByTestId('chat-input')).toBeVisible();
 }
 
-/** Top-bar Call creates a chat and enters the Thread. */
+/** Home Call — new space + Thread on the same chat shell. */
 export async function createRoom(page: Page, name: string) {
   await ensureVault(page, name);
-  await page.getByTestId('nav-call').click();
+  await page.getByTestId('home-call').click();
   await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId('share-link')).toBeVisible();
+  await expect(page.getByTestId('space-compose')).toBeVisible();
   await openCallChat(page);
 }
 

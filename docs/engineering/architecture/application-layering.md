@@ -41,7 +41,8 @@
 | **Domain: chat wire** | `src/domain/thread/chatEnvelope.ts` — typed payloads (`text` now; `image-ref` reserved) |
 | **Domain: room mode** | `src/domain/thread/roomMode.ts` — `free` vs `team` (team unused until paid) |
 | **Domain: crypto / loom** | `src/domain/crypto/`, `src/domain/loom/` — seal/open, IndexedDB store, sync, vault, export |
-| **Shell chrome** | `src/components/AppNav.tsx` — top bar only; Call starts open Loom space (or creates one) via `src/app/App.tsx` |
+| **Shell chrome** | `src/components/AppNav.tsx` + `AppHome.tsx` + `SpaceView.tsx` — brand → home; open space is foldable video-left / chat-right; **Call** on the video pane via `src/app/App.tsx` |
+| **Domain: shell / PWA** | `src/domain/shell/` — install / home-anchor offer rules + dismiss flags; update-apply when safe (never mid-call); UI wires `beforeinstallprompt` + `virtual:pwa-register` |
 | **Domain: signaling URLs** | `src/domain/signaling/` — capability hash parse/format |
 | **Shared contracts** | `src/domain/types.ts` — peer/room/message shapes |
 | **Infra adapters** | Browser APIs + public trackers / STUN; later paid SFU/TURN behind media plane |

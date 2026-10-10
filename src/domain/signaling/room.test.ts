@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  clearCapabilityFromUrl,
   createRoomSecret,
   parseCapabilityFromHash,
   parseRoomIdFromHash,
@@ -95,5 +96,18 @@ describe('space location', () => {
   it('builds space share url with hash', () => {
     vi.stubGlobal('location', { origin: 'https://host.example' });
     expect(spaceShareUrl('sec')).toContain('#space=sec');
+  });
+
+  it('clears room and space from the address bar for home', () => {
+    const replaceState = vi.fn();
+    vi.stubGlobal('location', {
+      origin: 'https://host.example',
+      pathname: '/',
+      search: '?room=abc',
+      hash: '#space=sec',
+    });
+    vi.stubGlobal('window', { history: { replaceState } });
+    clearCapabilityFromUrl();
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/');
   });
 });

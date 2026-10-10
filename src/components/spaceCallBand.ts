@@ -1,0 +1,45 @@
+import type { PrivacyBackdropId } from '../domain/media/backgroundBlurBackdrop';
+import type { MediaDeviceOption, RemotePeer } from '../domain/types';
+
+/** Thread fill for the left presence pane. */
+export type SpaceCallBand = {
+  connectionLabel: string;
+  roomCode: string;
+  linkHint: string | null;
+  error: string | null;
+  localStream: MediaStream | null;
+  localMicOff: boolean;
+  remotePeers: RemotePeer[];
+  displayName: string;
+  micEnabled: boolean;
+  cameraEnabled: boolean;
+  backgroundBlur?: boolean;
+  backgroundBlurSupported?: boolean;
+  privacyBackdropSelectable?: boolean;
+  privacyBackdropId?: PrivacyBackdropId;
+  maskEdgeCut?: number;
+  pinnedPeerIds?: string[];
+  showAllVideos?: boolean;
+  capacityWarning?: string | null;
+  devicesOpen: boolean;
+  videoDevices: MediaDeviceOption[];
+  audioDevices: MediaDeviceOption[];
+  outputDevices: MediaDeviceOption[];
+  videoDeviceId: string;
+  audioDeviceId: string;
+  audioOutputId: string;
+  onToggleMic: () => void;
+  onToggleCamera: () => void;
+  onToggleBackgroundBlur?: () => void;
+  onPrivacyBackdropChange?: (id: PrivacyBackdropId) => void;
+  onMaskEdgeCutChange?: (value: number) => void;
+  onTogglePin?: (peerId: string) => void;
+  onToggleShowAllVideos?: () => void;
+  onOpenDevices: () => void;
+  onCloseDevices: () => void;
+  onLeave: () => void;
+  onVideoChange: (id: string) => void;
+  onAudioChange: (id: string) => void;
+  onOutputChange: (id: string) => void;
+  applyAudioOutput: (el: HTMLMediaElement | null) => void | Promise<void>;
+};

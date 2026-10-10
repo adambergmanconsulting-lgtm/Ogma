@@ -1,4 +1,15 @@
 import {
+  loadPrivacyBackdropId,
+  parsePrivacyBackdropId,
+  savePrivacyBackdropId,
+  type PrivacyBackdropId,
+} from './backgroundBlurBackdrop';
+import {
+  clampMaskEdgeCut,
+  loadMaskEdgeCut,
+  saveMaskEdgeCut,
+} from './backgroundBlurMask';
+import {
   canControlNativeBackgroundBlur,
   setNativeBackgroundBlur,
 } from './backgroundBlurNative';
@@ -9,6 +20,7 @@ import {
 import {
   backgroundBlurRadiusPx,
   backgroundBlurTargetFps,
+  backgroundBlurWashOpacity,
   shouldYieldBackgroundBlur,
   type BackgroundBlurPressure,
 } from './backgroundBlurPolicy';
@@ -20,11 +32,16 @@ export type BackgroundBlurMode = 'off' | 'native' | 'software';
 export type BackgroundBlurController = {
   mode: BackgroundBlurMode;
   enabled: boolean;
+  backdropId: PrivacyBackdropId;
+  /** Edge cut 0–100 — higher = firmer person matte (real-time). */
+  edgeCut: number;
   /** Latest MediaStream for UI + WebRTC (may wrap a processed track). */
   publishStream: MediaStream | null;
   supported: boolean;
   enable: () => Promise<{ ok: boolean; reason?: string }>;
   disable: () => Promise<void>;
+  setBackdrop: (id: PrivacyBackdropId) => void;
+  setEdgeCut: (value: number) => void;
   /** Call when camera track changes (device switch). */
   onCameraTrackChanged: () => Promise<void>;
   /** Soft-yield under mesh/CPU pressure; returns true if blur was turned off. */
@@ -39,6 +56,8 @@ export function createBackgroundBlurController(options: {
 }): BackgroundBlurController {
   let mode: BackgroundBlurMode = 'off';
   let enabled = false;
+  let backdropId: PrivacyBackdropId = loadPrivacyBackdropId();
+  let edgeCut = loadMaskEdgeCut();
   let pipeline: BackgroundBlurPipeline | null = null;
   let publishStream: MediaStream | null = null;
   let pressure: BackgroundBlurPressure = {
@@ -98,6 +117,9 @@ export function createBackgroundBlurController(options: {
       pipeline = await createBackgroundBlurPipeline(track, {
         fps: backgroundBlurTargetFps(pressure),
         blurPx: backgroundBlurRadiusPx(pressure),
+        washOpacity: backgroundBlurWashOpacity(pressure),
+        backdropId,
+        edgeCut,
       });
       pipeline.outputTrack.enabled = track.enabled;
       mode = 'software';
@@ -131,6 +153,12 @@ export function createBackgroundBlurController(options: {
     get enabled() {
       return enabled;
     },
+    get backdropId() {
+      return backdropId;
+    },
+    get edgeCut() {
+      return edgeCut;
+    },
     get publishStream() {
       return publishStream;
     },
@@ -141,6 +169,18 @@ export function createBackgroundBlurController(options: {
     },
     enable,
     disable,
+
+    setBackdrop(id) {
+      backdropId = parsePrivacyBackdropId(id);
+      savePrivacyBackdropId(backdropId);
+      pipeline?.setBackdrop(backdropId);
+    },
+
+    setEdgeCut(value) {
+      edgeCut = clampMaskEdgeCut(value);
+      saveMaskEdgeCut(edgeCut);
+      pipeline?.setEdgeCut(edgeCut);
+    },
 
     async onCameraTrackChanged() {
       const camera = options.getCameraStream();
@@ -178,6 +218,7 @@ export function createBackgroundBlurController(options: {
       if (pipeline) {
         pipeline.setFps(backgroundBlurTargetFps(pressure));
         pipeline.setBlurRadius(backgroundBlurRadiusPx(pressure));
+        pipeline.setWashOpacity(backgroundBlurWashOpacity(pressure));
       }
       if (enabled && shouldYieldBackgroundBlur(pressure)) {
         await disable();

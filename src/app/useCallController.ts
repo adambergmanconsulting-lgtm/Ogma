@@ -125,10 +125,20 @@ export function useCallController(opts: CallControllerOpts) {
     setInCall(false);
     setActiveRoom(null);
     setBoundSpaceSecret(null);
+    setInviteMode(false);
     setDrawer('none');
     setLinkHint(null);
     clearRoomFromUrl();
   }, [media, webrtc]);
+
+  /** Re-apply ?room= (+ #space=) after soft-nav cleared the address bar. */
+  const restoreShareUrl = useCallback(() => {
+    if (!activeRoom) return;
+    replaceUrlWithRoom(
+      activeRoom,
+      boundSpaceSecret ? { spaceSecret: boundSpaceSecret } : undefined,
+    );
+  }, [activeRoom, boundSpaceSecret]);
 
   const shareUrl = useMemo(
     () =>
@@ -160,6 +170,7 @@ export function useCallController(opts: CallControllerOpts) {
     /** Space secret bound to this call (Loom chat), if any. */
     boundSpaceSecret,
     onLeave,
+    restoreShareUrl,
     shareUrl,
     roomCode: activeRoom ? roomDisplayCode(activeRoom) : '',
     statusLabel: connectionLabel(

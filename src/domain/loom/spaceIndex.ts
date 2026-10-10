@@ -40,12 +40,12 @@ export function formatParticipantLabel(authors: string[], selfName: string): str
 }
 
 /** Human title when nobody else has spoken yet (avoid opaque ids in the list). */
-export const NEW_CHAT_LABEL = 'New chat';
+export const ONLY_YOU_LABEL = 'Only you';
 
 export function displaySpaceLabel(row: SpaceIndexRow, selfName = ''): string {
   const custom = row.label?.trim();
   if (custom) return custom;
-  return formatParticipantLabel(row.authors ?? [], selfName) || NEW_CHAT_LABEL;
+  return formatParticipantLabel(row.authors ?? [], selfName) || ONLY_YOU_LABEL;
 }
 
 /** Fill authors from stored envelopes when the index row never learned them. */
@@ -85,12 +85,38 @@ export async function noteSpaceAuthors(
   return next;
 }
 
+export function spaceActivityAt(row: Pick<SpaceIndexRow, 'lastMessageAt' | 'lastOpenedAt'>): number {
+  return Math.max(row.lastMessageAt || 0, row.lastOpenedAt || 0);
+}
+
 export function sortSpacesRecentFirst(rows: SpaceIndexRow[]): SpaceIndexRow[] {
-  return [...rows].sort((a, b) => {
-    const at = Math.max(a.lastMessageAt, a.lastOpenedAt);
-    const bt = Math.max(b.lastMessageAt, b.lastOpenedAt);
-    return bt - at;
-  });
+  return [...rows].sort((a, b) => spaceActivityAt(b) - spaceActivityAt(a));
+}
+
+/** Muted list timestamp — local, compact (time today; weekday/date otherwise). */
+export function formatSpaceActivity(
+  at: number,
+  now = Date.now(),
+  locale?: string,
+): string {
+  if (!at || at <= 0) return '';
+  const d = new Date(at);
+  const n = new Date(now);
+  const sameDay =
+    d.getFullYear() === n.getFullYear() &&
+    d.getMonth() === n.getMonth() &&
+    d.getDate() === n.getDate();
+  if (sameDay) {
+    return d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
+  }
+  const startToday = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime();
+  const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (startToday - startThat === dayMs) return 'Yesterday';
+  if (d.getFullYear() === n.getFullYear()) {
+    return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  }
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function partitionSpaces(rows: SpaceIndexRow[]): {

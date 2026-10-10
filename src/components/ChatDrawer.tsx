@@ -36,7 +36,7 @@ export function ChatDrawer({
   };
 
   return (
-    <aside className="flex w-full max-w-md flex-col border-l border-[color:var(--color-line)] bg-[color:var(--color-panel)]/95 backdrop-blur md:w-80">
+    <aside className="drawer-sheet">
       <div className="flex items-center justify-between px-3 py-2">
         <h2 className="text-sm font-semibold">Chat</h2>
         <button
@@ -57,14 +57,14 @@ export function ChatDrawer({
               data-testid="load-older"
               disabled={loadingOlder}
               onClick={() => onLoadOlder?.()}
-              className="text-sm text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)] disabled:opacity-60"
+              className="btn-quiet"
             >
               {loadingOlder ? 'Loading…' : 'Load older'}
             </button>
           </div>
         ) : null}
         {messages.length === 0 ? (
-          <p className="pt-6 text-center text-sm text-[color:var(--color-muted)]">No messages yet</p>
+          <p className="text-muted pt-6 text-center">No messages yet</p>
         ) : (
           messages.map((m) => {
             const mine = m.peerId === selfId;
@@ -91,13 +91,13 @@ export function ChatDrawer({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           aria-label="Message"
-          className="min-w-0 flex-1 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-gold)]"
+          className="field field--inset flex-1 text-sm"
         />
         <button
           type="submit"
           data-testid="chat-send"
           aria-label="Send"
-          className="rounded-xl bg-[color:var(--color-gold)] px-3 text-[color:var(--color-on-gold)] hover:bg-[color:var(--color-honey)]"
+          className="btn-primary px-3"
         >
           <Send className="h-4 w-4" />
         </button>

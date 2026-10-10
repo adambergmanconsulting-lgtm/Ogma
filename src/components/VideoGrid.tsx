@@ -9,6 +9,8 @@ interface VideoGridProps {
   pinnedPeerIds?: string[];
   onTogglePin?: (peerId: string) => void;
   applyAudioOutput?: (el: HTMLMediaElement | null) => void | Promise<void>;
+  /** Band inside the chat column (not a full-bleed call place). */
+  compact?: boolean;
 }
 
 function gridClass(count: number): string {
@@ -26,11 +28,16 @@ export function VideoGrid({
   pinnedPeerIds = [],
   onTogglePin,
   applyAudioOutput,
+  compact,
 }: VideoGridProps) {
   const total = 1 + remotePeers.length;
 
   return (
-    <div className={`grid h-full min-h-0 flex-1 gap-2 p-2 md:gap-3 md:p-3 ${gridClass(total)}`}>
+    <div
+      className={`grid min-h-0 ${
+        compact ? 'h-full gap-1.5 p-0' : 'h-full flex-1 gap-2 p-2 md:gap-3 md:p-3'
+      } ${gridClass(total)}`}
+    >
       <VideoTile
         stream={localStream}
         label={localLabel}

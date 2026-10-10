@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
+import type { PrivacyBackdropId } from '../domain/media/backgroundBlurBackdrop';
 import type { ShareResult } from '../domain/signaling/share';
 import type { ChatMessage, RemotePeer } from '../domain/types';
 import type { MediaDeviceOption } from '../domain/types';
@@ -31,6 +32,9 @@ interface CallShellProps {
   cameraEnabled: boolean;
   backgroundBlur?: boolean;
   backgroundBlurSupported?: boolean;
+  privacyBackdropSelectable?: boolean;
+  privacyBackdropId?: PrivacyBackdropId;
+  maskEdgeCut?: number;
   pinnedPeerIds?: string[];
   showAllVideos?: boolean;
   capacityWarning?: string | null;
@@ -44,6 +48,8 @@ interface CallShellProps {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleBackgroundBlur?: () => void;
+  onPrivacyBackdropChange?: (id: PrivacyBackdropId) => void;
+  onMaskEdgeCutChange?: (value: number) => void;
   onToggleChat: () => void;
   onTogglePin?: (peerId: string) => void;
   onToggleShowAllVideos?: () => void;
@@ -128,9 +134,7 @@ export function CallShell(props: CallShellProps) {
             onToggleCamera={props.onToggleCamera}
             onToggleBackgroundBlur={props.onToggleBackgroundBlur}
             onToggleChat={props.onToggleChat}
-            onToggleShowAllVideos={
-              !waitingAlone ? props.onToggleShowAllVideos : undefined
-            }
+            onToggleShowAllVideos={!waitingAlone ? props.onToggleShowAllVideos : undefined}
             onOpenSettings={props.onOpenSettings}
             onLeave={props.onLeave}
           />
@@ -154,6 +158,11 @@ export function CallShell(props: CallShellProps) {
           videoDeviceId={props.videoDeviceId}
           audioDeviceId={props.audioDeviceId}
           audioOutputId={props.audioOutputId}
+          privacyBackdropSelectable={props.privacyBackdropSelectable}
+          privacyBackdropId={props.privacyBackdropId}
+          onPrivacyBackdropChange={props.onPrivacyBackdropChange}
+          maskEdgeCut={props.maskEdgeCut}
+          onMaskEdgeCutChange={props.onMaskEdgeCutChange}
           onClose={props.onCloseDrawer}
           onVideoChange={props.onVideoChange}
           onAudioChange={props.onAudioChange}

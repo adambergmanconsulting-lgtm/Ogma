@@ -14,26 +14,21 @@ interface LobbyProps {
  */
 export function Lobby(props: LobbyProps) {
   return (
-    <div className="app-gutter-x mx-auto flex min-h-full w-full max-w-sm flex-col justify-center py-10 fade-up">
+    <div className="app-gutter-x gate-shell fade-up">
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">Call</h1>
-      <p className="mb-2 text-sm text-[color:var(--color-muted)]">{props.displayName}</p>
-      <p
-        data-testid="thread-honest-copy"
-        className="mb-8 text-sm leading-relaxed text-[color:var(--color-muted)]"
-      >
+      <p className="text-muted mb-2">{props.displayName}</p>
+      <p data-testid="thread-honest-copy" className="text-muted mb-8 leading-relaxed">
         {THREAD_FREE_HONEST_COPY}
       </p>
 
-      {props.mediaError ? (
-        <p className="mb-4 text-sm text-[color:var(--color-danger)]">{props.mediaError}</p>
-      ) : null}
+      {props.mediaError ? <p className="text-danger mb-4">{props.mediaError}</p> : null}
 
       <button
         type="button"
         data-testid="join-room"
         disabled={props.busy || !props.canJoin}
         onClick={props.onJoin}
-        className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] transition hover:bg-[color:var(--color-honey)] disabled:opacity-60"
+        className="btn-primary w-full"
       >
         Join
       </button>

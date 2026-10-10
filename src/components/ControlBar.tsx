@@ -16,12 +16,15 @@ interface ControlBarProps {
   cameraEnabled: boolean;
   backgroundBlur?: boolean;
   backgroundBlurSupported?: boolean;
-  chatOpen: boolean;
+  /** Omit when chat is already the primary canvas (space shell). */
+  chatOpen?: boolean;
   showAllVideos?: boolean;
+  /** Tighter chrome for the space video pane. */
+  dense?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleBackgroundBlur?: () => void;
-  onToggleChat: () => void;
+  onToggleChat?: () => void;
   onToggleShowAllVideos?: () => void;
   onOpenSettings: () => void;
   onLeave: () => void;
@@ -34,6 +37,7 @@ function CtrlButton({
   label,
   children,
   testId,
+  dense,
 }: {
   onClick: () => void;
   active?: boolean;
@@ -41,6 +45,7 @@ function CtrlButton({
   label: string;
   children: ReactNode;
   testId?: string;
+  dense?: boolean;
 }) {
   return (
     <button
@@ -50,7 +55,8 @@ function CtrlButton({
       data-testid={testId}
       onClick={onClick}
       className={[
-        'flex h-12 w-12 items-center justify-center rounded-full transition',
+        'flex items-center justify-center rounded-full transition',
+        dense ? 'h-9 w-9' : 'h-12 w-12',
         danger
           ? 'bg-[color:var(--color-danger)] text-white hover:brightness-110'
           : active
@@ -64,58 +70,73 @@ function CtrlButton({
 }
 
 export function ControlBar(props: ControlBarProps) {
+  const dense = Boolean(props.dense);
+  const icon = dense ? 'h-4 w-4' : 'h-5 w-5';
+
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 px-3 py-3 md:gap-3">
+    <div
+      className={[
+        'flex flex-wrap items-center justify-center',
+        dense ? 'gap-1.5 px-2 py-1.5' : 'gap-2 px-3 py-3 md:gap-3',
+      ].join(' ')}
+    >
       <CtrlButton
+        dense={dense}
         label={props.micEnabled ? 'Mute microphone' : 'Unmute microphone'}
         onClick={props.onToggleMic}
         active={!props.micEnabled}
         testId="toggle-mic"
       >
-        {props.micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+        {props.micEnabled ? <Mic className={icon} /> : <MicOff className={icon} />}
       </CtrlButton>
       <CtrlButton
+        dense={dense}
         label={props.cameraEnabled ? 'Turn camera off' : 'Turn camera on'}
         onClick={props.onToggleCamera}
         active={!props.cameraEnabled}
       >
-        {props.cameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+        {props.cameraEnabled ? <Video className={icon} /> : <VideoOff className={icon} />}
       </CtrlButton>
       {props.backgroundBlurSupported && props.onToggleBackgroundBlur ? (
         <CtrlButton
+          dense={dense}
           label={props.backgroundBlur ? 'Clear background' : 'Blur background'}
           onClick={props.onToggleBackgroundBlur}
           active={props.backgroundBlur}
           testId="toggle-background-blur"
         >
-          <Sparkles className="h-5 w-5" />
+          <Sparkles className={icon} />
         </CtrlButton>
       ) : null}
-      <CtrlButton
-        label={props.chatOpen ? 'Hide chat' : 'Show chat'}
-        onClick={props.onToggleChat}
-        active={props.chatOpen}
-      >
-        <span data-testid="toggle-chat">
-          <MessageSquare className="h-5 w-5" />
-        </span>
-      </CtrlButton>
+      {props.onToggleChat ? (
+        <CtrlButton
+          dense={dense}
+          label={props.chatOpen ? 'Hide chat' : 'Show chat'}
+          onClick={props.onToggleChat}
+          active={props.chatOpen}
+        >
+          <span data-testid="toggle-chat">
+            <MessageSquare className={icon} />
+          </span>
+        </CtrlButton>
+      ) : null}
       {props.onToggleShowAllVideos ? (
         <CtrlButton
+          dense={dense}
           label={props.showAllVideos ? 'Speaker video only' : 'Show all videos'}
           onClick={props.onToggleShowAllVideos}
           active={props.showAllVideos}
           testId="toggle-show-all-videos"
         >
-          <LayoutGrid className="h-5 w-5" />
+          <LayoutGrid className={icon} />
         </CtrlButton>
       ) : null}
-      <CtrlButton label="Settings" onClick={props.onOpenSettings}>
-        <Settings className="h-5 w-5" />
+      <CtrlButton dense={dense} label="Settings" onClick={props.onOpenSettings}>
+        <Settings className={icon} />
       </CtrlButton>
-      <CtrlButton label="Leave call" onClick={props.onLeave} danger>
+      <CtrlButton dense={dense} label="Leave call" onClick={props.onLeave} danger>
         <span data-testid="leave-call">
-          <PhoneOff className="h-5 w-5" />
+          <PhoneOff className={icon} />
         </span>
       </CtrlButton>
     </div>

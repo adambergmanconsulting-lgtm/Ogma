@@ -1,16 +1,39 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import {
+  SETTINGS_INSTALL,
+  installHowForMode,
+  type InstallOfferMode,
+} from '../domain/shell/pwaInstall';
+
+function settingsInstallBody(mode: InstallOfferMode): string {
+  switch (mode) {
+    case 'none':
+      return SETTINGS_INSTALL.bodyInstalled;
+    case 'prompt':
+      return SETTINGS_INSTALL.bodyPrompt;
+    case 'ios':
+      return SETTINGS_INSTALL.bodyIos;
+    case 'firefox':
+      return SETTINGS_INSTALL.bodyFirefox;
+    default:
+      return SETTINGS_INSTALL.bodyManual;
+  }
+}
 
 interface VaultSettingsProps {
   open: boolean;
   displayName: string;
   /** True when a vault key was opted in (Log out / retrieve). */
   hasVaultKey: boolean;
+  installMode: InstallOfferMode;
+  installHowOpen: boolean;
   busy: boolean;
   error: string | null;
   onClose: () => void;
   onRename: (name: string) => void;
   onEnableVault: () => void;
+  onInstall: () => void;
   onExport: () => void;
   onImportFile: (file: File) => void;
   onLogout: () => void;
@@ -37,7 +60,7 @@ export function VaultSettings(props: VaultSettingsProps) {
       />
       <aside
         data-testid="vault-settings"
-        className="relative z-10 flex h-full w-full max-w-sm flex-col border-l border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-5 py-6 shadow-xl"
+        className="drawer-sheet drawer-sheet--settings relative z-10 h-full"
       >
         <div className="mb-5 flex items-center justify-between gap-2">
           <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
@@ -58,8 +81,38 @@ export function VaultSettings(props: VaultSettingsProps) {
             : 'Chats stay in this browser. A vault key is optional — only if you want to lock or move them.'}
         </p>
 
+        <section className="mb-8 space-y-2" data-testid="settings-install">
+          <h3 className="text-sm font-semibold">{SETTINGS_INSTALL.heading}</h3>
+          <p className="text-xs leading-relaxed text-[color:var(--color-muted)]">
+            {settingsInstallBody(props.installMode)}
+          </p>
+          {props.installMode !== 'none' ? (
+            <>
+              {props.installHowOpen && props.installMode !== 'prompt' ? (
+                <p
+                  role="status"
+                  className="text-xs text-[color:var(--color-ink)]"
+                  data-testid="settings-install-how"
+                >
+                  {installHowForMode(props.installMode)}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                data-testid="settings-install-action"
+                onClick={props.onInstall}
+                className="btn-secondary btn-secondary--sm w-full text-left"
+              >
+                {props.installMode === 'prompt'
+                  ? SETTINGS_INSTALL.actionPrompt
+                  : SETTINGS_INSTALL.actionHow}
+              </button>
+            </>
+          ) : null}
+        </section>
+
         <label className="mb-2 block space-y-1.5">
-          <span className="text-sm text-[color:var(--color-muted)]">Your name</span>
+          <span className="field-label">Your name</span>
           <input
             data-testid="vault-rename"
             type="text"
@@ -68,7 +121,7 @@ export function VaultSettings(props: VaultSettingsProps) {
             data-1p-ignore
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
+            className="field field--inset"
           />
         </label>
         <button
@@ -76,14 +129,12 @@ export function VaultSettings(props: VaultSettingsProps) {
           data-testid="vault-rename-save"
           disabled={props.busy || !name.trim() || name.trim() === props.displayName}
           onClick={() => props.onRename(name.trim())}
-          className="mb-8 w-full rounded-xl border border-[color:var(--color-line)] px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+          className="btn-secondary btn-secondary--sm mb-8 w-full"
         >
           Save name
         </button>
 
-        {props.error ? (
-          <p className="mb-4 text-sm text-[color:var(--color-danger)]">{props.error}</p>
-        ) : null}
+        {props.error ? <p className="text-danger mb-4">{props.error}</p> : null}
 
         <div className="space-y-3 text-sm">
           {!props.hasVaultKey ? (
@@ -92,7 +143,7 @@ export function VaultSettings(props: VaultSettingsProps) {
               data-testid="enable-vault"
               disabled={props.busy}
               onClick={props.onEnableVault}
-              className="block w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-2.5 text-left font-semibold text-[color:var(--color-on-gold)] disabled:opacity-60"
+              className="btn-primary w-full text-left"
             >
               Add vault key
             </button>
@@ -101,11 +152,11 @@ export function VaultSettings(props: VaultSettingsProps) {
             type="button"
             data-testid="export-vault"
             onClick={props.onExport}
-            className="block w-full rounded-xl border border-[color:var(--color-line)] px-4 py-2.5 text-left font-semibold"
+            className="btn-secondary w-full text-left"
           >
             Export
           </button>
-          <label className="block w-full cursor-pointer rounded-xl border border-[color:var(--color-line)] px-4 py-2.5 font-semibold">
+          <label className="btn-secondary block w-full cursor-pointer text-left">
             Import
             <input
               data-testid="import-vault"
@@ -124,7 +175,7 @@ export function VaultSettings(props: VaultSettingsProps) {
               type="button"
               data-testid="vault-logout"
               onClick={props.onLogout}
-              className="block w-full rounded-xl border border-[color:var(--color-line)] px-4 py-2.5 text-left font-semibold"
+              className="btn-secondary w-full text-left"
             >
               Log out
             </button>
@@ -133,7 +184,7 @@ export function VaultSettings(props: VaultSettingsProps) {
             type="button"
             data-testid="switch-vault"
             onClick={props.onSwitchVault}
-            className="block w-full rounded-xl px-4 py-2.5 text-left text-[color:var(--color-muted)] underline-offset-2 hover:underline"
+            className="btn-quiet w-full text-left"
           >
             {props.hasVaultKey ? 'Switch vault' : 'Start over'}
           </button>

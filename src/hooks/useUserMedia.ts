@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createBackgroundBlurController } from '../domain/media/backgroundBlurController';
+import {
+  loadPrivacyBackdropId,
+  type PrivacyBackdropId,
+} from '../domain/media/backgroundBlurBackdrop';
+import {
+  createBackgroundBlurController,
+  type BackgroundBlurMode,
+} from '../domain/media/backgroundBlurController';
+import { loadMaskEdgeCut } from '../domain/media/backgroundBlurMask';
 import { isSoftwareBackgroundBlurSupported } from '../domain/media/backgroundBlurSupport';
 import type { SendQualityTier } from '../domain/media/constraints';
 import { devicesByKind, listMediaDevices, setAudioOutput } from '../domain/media/devices';
@@ -37,7 +45,12 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [backgroundBlur, setBackgroundBlur] = useState(false);
+  const [backgroundBlurMode, setBackgroundBlurMode] = useState<BackgroundBlurMode>('off');
   const [backgroundBlurSupported] = useState(() => isSoftwareBackgroundBlurSupported());
+  const [privacyBackdropId, setPrivacyBackdropId] = useState<PrivacyBackdropId>(() =>
+    loadPrivacyBackdropId(),
+  );
+  const [maskEdgeCut, setMaskEdgeCutState] = useState(() => loadMaskEdgeCut());
   const [error, setError] = useState<string | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -76,6 +89,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
         });
         blurRef.current.stop();
         setBackgroundBlur(false);
+        setBackgroundBlurMode('off');
         cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
         cameraStreamRef.current = next;
         streamRef.current = next;
@@ -125,6 +139,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       .then((yielded) => {
         if (yielded) {
           setBackgroundBlur(false);
+          setBackgroundBlurMode('off');
           setError('Background blur paused — call under load');
         }
       });
@@ -133,6 +148,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const stop = useCallback(() => {
     blurRef.current.stop();
     setBackgroundBlur(false);
+    setBackgroundBlurMode('off');
     cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     cameraStreamRef.current = null;
     streamRef.current = null;
@@ -201,14 +217,26 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       if (blurRef.current.enabled) {
         await blurRef.current.disable();
         setBackgroundBlur(false);
+        setBackgroundBlurMode('off');
         return;
       }
       const result = await blurRef.current.enable();
       setBackgroundBlur(result.ok);
+      setBackgroundBlurMode(result.ok ? blurRef.current.mode : 'off');
       if (!result.ok && result.reason) setError(result.reason);
     } finally {
       blurBusyRef.current = false;
     }
+  }, []);
+
+  const setPrivacyBackdrop = useCallback((id: PrivacyBackdropId) => {
+    blurRef.current.setBackdrop(id);
+    setPrivacyBackdropId(blurRef.current.backdropId);
+  }, []);
+
+  const setMaskEdgeCut = useCallback((value: number) => {
+    blurRef.current.setEdgeCut(value);
+    setMaskEdgeCutState(blurRef.current.edgeCut);
   }, []);
 
   const applyAudioOutput = useCallback(
@@ -240,6 +268,12 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     backgroundBlur,
     backgroundBlurSupported:
       backgroundBlurSupported || blurRef.current.supported,
+    /** Software blur only — native OS blur has no built-in fill chooser. */
+    privacyBackdropSelectable: backgroundBlur && backgroundBlurMode === 'software',
+    privacyBackdropId,
+    setPrivacyBackdrop,
+    maskEdgeCut,
+    setMaskEdgeCut,
     error,
     start,
     stop,

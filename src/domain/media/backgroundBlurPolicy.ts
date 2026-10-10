@@ -24,7 +24,14 @@ export function backgroundBlurTargetFps(p: BackgroundBlurPressure): number {
   return 10;
 }
 
+/** Privacy-strength radius — room detail should not read as a real place. */
 export function backgroundBlurRadiusPx(p: BackgroundBlurPressure): number {
-  if (p.peerCount <= 2 && p.qualityTier === 'high') return 12;
-  return 8;
+  if (p.peerCount <= 2 && p.qualityTier === 'high') return 28;
+  return 18;
+}
+
+/** How much of the blurred camera wash sits over the soft slate fill (0–1). */
+export function backgroundBlurWashOpacity(p: BackgroundBlurPressure): number {
+  if (p.peerCount <= 2 && p.qualityTier === 'high') return 0.38;
+  return 0.28;
 }

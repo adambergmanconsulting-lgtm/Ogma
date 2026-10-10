@@ -129,6 +129,14 @@ export function clearRoomFromUrl(): void {
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
+/** Bare app origin — home overview (no room / space capability in the address bar). */
+export function clearCapabilityFromUrl(): void {
+  const url = appBaseUrl();
+  url.search = '';
+  url.hash = '';
+  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+}
+
 /** Short code both people can read aloud to confirm same room. */
 export function roomDisplayCode(roomId: string): string {
   return roomId.slice(0, 6).toUpperCase();

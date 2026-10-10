@@ -4,8 +4,14 @@ import {
   loadRememberedSecrets,
   unlockDeviceKey,
   unwrapSpaceSecret,
-  wrapSpaceSecret,
 } from '../domain/loom/deviceKey';
+import {
+  SPACE_SECRET_MISSING,
+  hydrateLocalSecrets,
+  persistSpaceSecret,
+  secretFromSpaceRow,
+  wrapStoredSpaceSecrets,
+} from '../domain/loom/spaceSecretAccess';
 import { compareEnvelopes, openEnvelope, sealEnvelope } from '../domain/loom/envelope';
 import {
   hasUnloadableCold,
@@ -20,8 +26,7 @@ import {
   displaySpaceLabel,
   ensureSpaceRow,
   noteSpaceAuthors,
-  partitionSpaces,
-  setSpaceStatus,
+  sortSpacesRecentFirst,
 } from '../domain/loom/spaceIndex';
 import { getLoomStore } from '../domain/loom/store';
 import type { LoomStore } from '../domain/loom/storePort';
@@ -48,6 +53,7 @@ import {
 import { playNewMessageSound } from '../domain/loom/notifySound';
 import { pickWarmSpaceIds } from '../domain/loom/warm';
 import {
+  clearCapabilityFromUrl,
   createSpaceSecret,
   parseSpaceSecretFromLocation,
   replaceUrlWithSpace,
@@ -56,15 +62,13 @@ import {
 import { extractSpaceSecret, shareRoomLink } from '../domain/signaling/share';
 import type { SpaceMessageView } from '../components/SpaceView';
 
-export type LoomScreen = 'vault' | 'unlock' | 'reveal' | 'chats' | 'space' | 'thread';
+export type LoomScreen = 'vault' | 'unlock' | 'reveal' | 'home' | 'space' | 'thread';
 
+/** Vault key shown once after Create / Add vault key. Space invites live on the open chat. */
 export type RevealState = {
-  kind: 'vault' | 'space';
-  /** Shown to the user (vault key or full invite URL). */
+  kind: 'vault';
   secret: string;
   why: string;
-  /** For space: raw secret used to open after continue. */
-  spaceSecret?: string;
 };
 
 const SOUND_KEY = 'ogma.chatSound';
@@ -72,9 +76,9 @@ const SOUND_KEY = 'ogma.chatSound';
 function initialScreen(): LoomScreen {
   const v = readVault();
   if (!v) return 'vault';
-  // Stay in chats when session exists; restore wrap key in effect.
+  // Stay on home when session exists; restore wrap key in effect.
   if (v.hasDeviceKey && !readVaultSessionKey()) return 'unlock';
-  return 'chats';
+  return 'home';
 }
 
 export function useLoomController() {
@@ -110,9 +114,20 @@ export function useLoomController() {
     storeRef.current = store;
     const listed = await store.listSpaces();
     await backfillSpaceAuthors(store, listed);
-    setSpaces(await store.listSpaces());
+    let next = await store.listSpaces();
+    hydrateLocalSecrets(next, secretsRef.current);
+    // Persist any in-memory invites so Call/Chat reopen after refresh (no-vault + migrate).
+    for (const [spaceId, secret] of secretsRef.current) {
+      const row = next.find((r) => r.spaceId === spaceId);
+      if (!row) continue;
+      if (row.localSecret || row.wrappedSecret) continue;
+      await persistSpaceSecret(store, row, secret, wrapKey);
+    }
+    next = await store.listSpaces();
+    hydrateLocalSecrets(next, secretsRef.current);
+    setSpaces(next);
     await localSizeLevel(store);
-  }, []);
+  }, [wrapKey]);
 
   const decryptRows = useCallback(
     async (secret: string, rows: StoredMessage[]): Promise<SpaceMessageView[]> => {
@@ -213,14 +228,11 @@ export function useLoomController() {
         storeRef.current = store;
         const row = await ensureSpaceRow(store, secret);
         secretsRef.current.set(row.spaceId, secret);
+        await persistSpaceSecret(store, row, secret, wrapKey);
         focusedSpaceIdRef.current = row.spaceId;
         setFocusedSecret(secret);
         setFocusedSpaceId(row.spaceId);
         replaceUrlWithSpace(secret);
-        if (wrapKey && !row.wrappedSecret) {
-          const wrapped = await wrapSpaceSecret(wrapKey, secret);
-          await store.putSpace({ ...row, wrappedSecret: wrapped });
-        }
         await clearUnread(store, row.spaceId);
         await trimSpaceMessages(store, row.spaceId);
         setMessages([]);
@@ -268,7 +280,6 @@ export function useLoomController() {
       await refreshSpaces();
       const fromUrl = parseSpaceSecretFromLocation();
       if (fromUrl) {
-        setSpaceInput(fromUrl);
         await openSpaceWithSecret(fromUrl);
       }
     })();
@@ -288,7 +299,10 @@ export function useLoomController() {
       if (!meta) throw new Error('No vault key on this browser');
       const key = await unlockDeviceKey(vaultKey, meta);
       setWrapKey(key);
-      await loadRememberedSecrets(key, await store.listSpaces(), secretsRef.current);
+      const rows = await store.listSpaces();
+      hydrateLocalSecrets(rows, secretsRef.current);
+      await loadRememberedSecrets(key, rows, secretsRef.current);
+      await wrapStoredSpaceSecrets(key, store, await store.listSpaces(), secretsRef.current);
       if (persistSession) writeVaultSessionKey(vaultKey);
       await refreshSpaces();
     },
@@ -322,7 +336,7 @@ export function useLoomController() {
         localStorage.setItem('ogma.displayName', name.trim());
         setVault(rec);
         setWrapKey(null);
-        setScreen('chats');
+        setScreen('home');
         await refreshSpaces();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not continue');
@@ -377,23 +391,31 @@ export function useLoomController() {
       const vaultKey = generateVaultKey();
       const meta = await createDeviceKeyMeta(vaultKey);
       await store.setDeviceKeyMeta(meta);
-      setWrapKey(await unlockDeviceKey(vaultKey, meta));
+      const key = await unlockDeviceKey(vaultKey, meta);
+      setWrapKey(key);
       writeVaultSessionKey(vaultKey);
       const rec = { ...vault, hasDeviceKey: true };
       writeVault(rec);
       setVault(rec);
+      await wrapStoredSpaceSecrets(
+        key,
+        store,
+        await store.listSpaces(),
+        secretsRef.current,
+      );
       setReveal({
         kind: 'vault',
         secret: vaultKey,
         why: 'Save this vault key to retrieve your chats later (new browser, or after Log out). You stay signed in here until you log out. Ogma cannot recover the key.',
       });
       setScreen('reveal');
+      await refreshSpaces();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create vault key');
     } finally {
       setBusy(false);
     }
-  }, [vault]);
+  }, [vault, refreshSpaces]);
 
   /** Whether this browser already has a vault key (for Open vault). */
   const onProbeVault = useCallback(async () => {
@@ -432,7 +454,7 @@ export function useLoomController() {
       setError(null);
       try {
         await applyVaultKey(vaultKey, true);
-        setScreen('chats');
+        setScreen('home');
       } catch {
         setError('Wrong vault key');
       } finally {
@@ -498,17 +520,13 @@ export function useLoomController() {
     [refreshSpaces],
   );
 
-  const onRevealContinue = useCallback(async () => {
-    const current = reveal;
+  const onRevealContinue = useCallback(() => {
     setReveal(null);
-    if (current?.kind === 'space' && current.spaceSecret) {
-      await openSpaceWithSecret(current.spaceSecret);
-      return;
-    }
-    setScreen('chats');
-  }, [openSpaceWithSecret, reveal]);
+    setScreen('home');
+  }, []);
 
-  const partitioned = useMemo(() => partitionSpaces(spaces), [spaces]);
+  /** All chats, newest activity first (no Hide / archive UI). */
+  const chats = useMemo(() => sortSpacesRecentFirst(spaces), [spaces]);
   const focusedRow = spaces.find((s) => s.spaceId === focusedSpaceId) ?? null;
 
   return {
@@ -517,8 +535,7 @@ export function useLoomController() {
     setScreen,
     reveal,
     displayName,
-    recent: partitioned.recent,
-    archived: partitioned.archived,
+    chats,
     spaceInput,
     setSpaceInput,
     busy,
@@ -571,17 +588,9 @@ export function useLoomController() {
     onExport,
     onImportFile,
     onRevealContinue,
-    onCreateSpace: () => {
-      const spaceSecret = createSpaceSecret();
-      setReveal({
-        kind: 'space',
-        secret: spaceShareUrl(spaceSecret),
-        spaceSecret,
-        why: 'Anyone with this invite can read this chat. Share it only with people you trust.',
-      });
-      setScreen('reveal');
-    },
-    /** New Loom space (no invite reveal) — used when Call starts chat + Thread together. */
+    /** Land in the space immediately — invite lives on the space (not a dead-end reveal). */
+    onCreateSpace: () => openSpaceWithSecret(createSpaceSecret()),
+    /** Same as onCreateSpace; kept for Call-era callers. */
     createAndOpenSpace: (): Promise<string | null> =>
       openSpaceWithSecret(createSpaceSecret()),
     onJoinSpace: () => {
@@ -592,46 +601,39 @@ export function useLoomController() {
       }
       void openSpaceWithSecret(secret);
     },
-    onOpenSpace: async (spaceId: string) => {
-      let secret = secretsRef.current.get(spaceId);
-      if (!secret && wrapKey) {
-        const store = storeRef.current ?? (await getLoomStore());
-        const row = await store.getSpace(spaceId);
-        if (row?.wrappedSecret) {
-          try {
-            secret = await unwrapSpaceSecret(wrapKey, row.wrappedSecret);
-            secretsRef.current.set(spaceId, secret);
-          } catch {
-            setError('Paste the invite link to open this chat');
-            return;
-          }
+    /** Re-open a space by capability secret (e.g. return to a backgrounded Call). */
+    onOpenSpaceSecret: (secret: string): Promise<string | null> => openSpaceWithSecret(secret),
+    onOpenSpace: async (spaceId: string): Promise<string | null> => {
+      const store = storeRef.current ?? (await getLoomStore());
+      storeRef.current = store;
+      const row = await store.getSpace(spaceId);
+      let secret = secretFromSpaceRow(spaceId, row, secretsRef.current);
+      if (!secret && wrapKey && row?.wrappedSecret) {
+        try {
+          secret = await unwrapSpaceSecret(wrapKey, row.wrappedSecret);
+          secretsRef.current.set(spaceId, secret);
+        } catch {
+          setError(SPACE_SECRET_MISSING);
+          return null;
         }
       }
       if (!secret) {
-        setError('Paste the invite link to open this chat');
-        return;
+        setError(SPACE_SECRET_MISSING);
+        return null;
       }
-      await openSpaceWithSecret(secret);
+      secretsRef.current.set(spaceId, secret);
+      return openSpaceWithSecret(secret);
     },
-    onArchive: async (spaceId: string) => {
-      const store = storeRef.current ?? (await getLoomStore());
-      await setSpaceStatus(store, spaceId, 'archived');
-      stopSync(spaceId);
-      await refreshSpaces();
-    },
-    onUnarchive: async (spaceId: string) => {
-      const store = storeRef.current ?? (await getLoomStore());
-      await setSpaceStatus(store, spaceId, 'recent');
-      await refreshSpaces();
-    },
-    onBackToChats: () => {
+    onBackToHome: () => {
       focusedSpaceIdRef.current = null;
       setFocusedSpaceId(null);
       setFocusedSecret(null);
       setMessages([]);
       messagesRef.current = [];
       setHasMoreOlder(false);
-      setScreen('chats');
+      setSpaceInput('');
+      clearCapabilityFromUrl();
+      setScreen('home');
       void refreshSpaces();
     },
     onSend: async (text: string) => {

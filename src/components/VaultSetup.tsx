@@ -47,7 +47,7 @@ export function VaultSetup({
 
   const nameField = (
     <label className="block space-y-1.5">
-      <span className="text-sm text-[color:var(--color-muted)]">Your name</span>
+      <span className="field-label">Your name</span>
       <input
         data-testid="vault-name"
         type="text"
@@ -56,31 +56,29 @@ export function VaultSetup({
         data-1p-ignore
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
+        className="field"
         autoFocus={!vaultSplash}
       />
     </label>
   );
 
   return (
-    <div className="app-gutter-x relative mx-auto flex min-h-full w-full max-w-sm flex-col justify-center py-12 fade-up">
-      <h1 className="mb-10 flex items-center gap-3 font-[family-name:var(--font-display)] text-5xl tracking-tight">
+    <div className="app-gutter-x gate-shell relative fade-up">
+      <h1 className="mb-10 flex items-center gap-3 text-5xl tracking-tight">
         <OghamMark className="h-11 w-auto shrink-0 text-[color:var(--color-gold)]" />
-        <span>Ogma</span>
+        <span className="brand-wordmark">Ogma</span>
       </h1>
 
       <div className="mb-4">{nameField}</div>
 
-      {error && !vaultSplash ? (
-        <p className="mb-3 text-sm text-[color:var(--color-danger)]">{error}</p>
-      ) : null}
+      {error && !vaultSplash ? <p className="text-danger mb-3">{error}</p> : null}
 
       <button
         type="button"
         data-testid="name-continue"
         disabled={!ready}
         onClick={() => onContinue(name.trim())}
-        className="mb-8 w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] disabled:opacity-60"
+        className="btn-primary mb-8 w-full"
       >
         Continue
       </button>
@@ -90,7 +88,7 @@ export function VaultSetup({
         data-testid="vault-splash-open"
         disabled={busy}
         onClick={() => setVaultSplash(true)}
-        className="text-sm text-[color:var(--color-muted)] underline-offset-2 hover:underline disabled:opacity-60"
+        className="btn-quiet"
       >
         Use a vault
       </button>
@@ -105,14 +103,11 @@ export function VaultSetup({
             data-testid="vault-splash"
             role="dialog"
             aria-labelledby="vault-splash-title"
-            className="relative z-10 w-full max-w-sm rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-5 py-6 shadow-xl fade-up"
+            className="relative z-10 w-full max-w-sm rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)] px-5 py-6 shadow-xl fade-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-2">
-              <h2
-                id="vault-splash-title"
-                className="font-[family-name:var(--font-display)] text-2xl tracking-tight"
-              >
+              <h2 id="vault-splash-title" className="text-xl font-semibold tracking-tight">
                 Vault
               </h2>
               <button
@@ -126,7 +121,7 @@ export function VaultSetup({
               </button>
             </div>
 
-            <p className="mb-5 text-sm leading-relaxed text-[color:var(--color-muted)]">
+            <p className="text-muted mb-5 leading-relaxed">
               A vault locks this browser&apos;s chats behind a key you keep. Use it if you want to
               log out safely, or move chats with Export / Import. You can skip it and Continue with
               just a name.
@@ -134,7 +129,7 @@ export function VaultSetup({
 
             <div className="mb-4">
               <label className="block space-y-1.5">
-                <span className="text-sm text-[color:var(--color-muted)]">Your name</span>
+                <span className="field-label">Your name</span>
                 <input
                   data-testid="vault-splash-name"
                   type="text"
@@ -143,21 +138,16 @@ export function VaultSetup({
                   data-1p-ignore
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-bg)] px-3 py-2.5 outline-none focus:border-[color:var(--color-gold)]"
+                  className="field field--inset"
                   autoFocus
                 />
               </label>
             </div>
 
-            {error ? (
-              <p className="mb-4 text-sm text-[color:var(--color-danger)]">{error}</p>
-            ) : null}
+            {error ? <p className="text-danger mb-4">{error}</p> : null}
 
             {canOpenVault === false && !error ? (
-              <p
-                data-testid="vault-splash-empty"
-                className="mb-4 text-sm text-[color:var(--color-muted)]"
-              >
+              <p data-testid="vault-splash-empty" className="text-muted mb-4">
                 No vault on this browser yet. Create one, or close and Continue.
               </p>
             ) : null}
@@ -168,7 +158,7 @@ export function VaultSetup({
                 data-testid="vault-create"
                 disabled={!ready}
                 onClick={() => onCreateVault(name.trim())}
-                className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] disabled:opacity-60"
+                className="btn-primary w-full"
               >
                 Create vault
               </button>
@@ -177,7 +167,7 @@ export function VaultSetup({
                 data-testid="vault-open"
                 disabled={busy || canOpenVault !== true}
                 onClick={onOpenVault}
-                className="w-full rounded-xl border border-[color:var(--color-line)] px-4 py-3 font-semibold disabled:opacity-60"
+                className="btn-secondary w-full"
               >
                 Open vault
               </button>

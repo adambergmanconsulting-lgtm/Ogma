@@ -2,7 +2,7 @@ import type { SpaceIndexRow } from './types';
 import { WARM_CAP } from './types';
 
 /**
- * Pick warm space ids: focused first, then recent rows that have a secret available.
+ * Pick warm space ids: focused first, then by last activity (secret available).
  * Cap = WARM_CAP (3).
  */
 export function pickWarmSpaceIds(
@@ -27,10 +27,10 @@ export function pickWarmSpaceIds(
 
   push(opts.focusedSpaceId);
 
-  const recent = [...rows]
-    .filter((r) => r.status === 'recent' && !r.muted)
+  const byActivity = [...rows]
+    .filter((r) => !r.muted)
     .sort((a, b) => Math.max(b.lastMessageAt, b.lastOpenedAt) - Math.max(a.lastMessageAt, a.lastOpenedAt));
 
-  for (const row of recent) push(row.spaceId);
+  for (const row of byActivity) push(row.spaceId);
   return out;
 }

@@ -32,8 +32,13 @@ export type SpaceIndexRow = {
   lastMessageAt: number;
   unreadCount: number;
   muted?: boolean;
-  /** Device-key-wrapped space secret (Remember). */
+  /** Device-key-wrapped space secret (vault / Remember). */
   wrappedSecret?: string;
+  /**
+   * Browser-local invite when there is no vault key (Continue without vault).
+   * Cleared once wrappedSecret is written. Same trust as other on-device Loom data.
+   */
+  localSecret?: string;
 };
 
 export type StoredMessage = LoomEnvelope & { spaceId: string };

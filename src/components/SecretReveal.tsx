@@ -10,7 +10,7 @@ interface SecretRevealProps {
   continueLabel?: string;
 }
 
-/** Moment: show the only secret the user must keep, and why. */
+/** Moment: vault key (must keep). Space invites live on the open chat. */
 export function SecretReveal({
   title,
   why,
@@ -22,12 +22,13 @@ export function SecretReveal({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="app-gutter-x mx-auto flex min-h-full w-full max-w-sm flex-col justify-center py-12 fade-up">
-      <h1 className="mb-4 flex items-center gap-3 font-[family-name:var(--font-display)] text-3xl tracking-tight">
-        <OghamMark className="h-8 w-auto shrink-0 text-[color:var(--color-gold)]" />
-        <span>{title}</span>
-      </h1>
-      <p className="mb-5 text-sm text-[color:var(--color-muted)]">{why}</p>
+    <div className="app-gutter-x gate-shell fade-up">
+      <div className="mb-6 flex items-center gap-2">
+        <OghamMark className="h-7 w-auto shrink-0 text-[color:var(--color-gold)]" />
+        <span className="brand-wordmark text-lg">Ogma</span>
+      </div>
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight">{title}</h1>
+      <p className="text-muted mb-5">{why}</p>
       <div
         data-testid="secret-value"
         className="mb-3 break-all rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-panel)]/80 px-3 py-3 font-mono text-sm"
@@ -46,7 +47,7 @@ export function SecretReveal({
           setCopied(true);
           window.setTimeout(() => setCopied(false), 1500);
         }}
-        className="mb-8 w-full rounded-xl border border-[color:var(--color-line)] px-4 py-3 font-semibold"
+        className="btn-secondary mb-8 w-full"
       >
         {copied ? 'Copied' : 'Copy'}
       </button>
@@ -55,7 +56,7 @@ export function SecretReveal({
         data-testid="secret-continue"
         disabled={busy}
         onClick={onContinue}
-        className="w-full rounded-xl bg-[color:var(--color-gold)] px-4 py-3 font-semibold text-[color:var(--color-on-gold)] disabled:opacity-60"
+        className="btn-primary w-full"
       >
         {continueLabel}
       </button>

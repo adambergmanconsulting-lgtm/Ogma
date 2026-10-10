@@ -7,7 +7,7 @@
 - Text-only sealed append log in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
 - Space secret → UTF-8 bytes → HKDF → AES-256-GCM (Web Crypto). **Locked:** UTF-8 of `#space=` string (never change).
 - Availability = members online; Ogma stores nothing.
-- Display **name** required before Chat / Call. **Vault key optional** (cold **Use a vault** or Settings **Add vault key**): wraps Remembered secrets + Log out / retrieve; not required to use the app.
+- Display **name** required before Chat / Call. **Vault key optional** (cold **Use a vault** or Settings **Add vault key**): wraps Remembered secrets + Log out / retrieve; not required to use the app. Without a vault key, each space keeps `localSecret` on-device so Previous spaces can reopen after refresh; Add vault key migrates those into `wrappedSecret`.
 - Host Call binds Thread room + `#space=` so in-call text is this Loom log ([capability-urls.md](capability-urls.md), [overview.md](../../product/overview.md)).
 
 ## Envelope (wire + disk)

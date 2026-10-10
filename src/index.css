@@ -18,7 +18,7 @@
   /* Moss / sacred-tree connected */
   --color-ok: #10b981;
   --color-danger: #e35d6a;
-  /* Shell gutters + column — top bar and chat canvas share these (in-page-layout). */
+  /* Shell gutters + home column — chrome and canvas share gutters (in-page-layout). */
   --spacing-gutter: 1.25rem;
   --spacing-gutter-lg: 1.75rem;
   --width-app-column: 32rem; /* ~max-w-lg */
@@ -30,7 +30,7 @@
   padding-right: var(--spacing-gutter);
 }
 
-/** Centered content column (nav inner + Chat / Space). Call video stays full-bleed. */
+/** Centered content column (home). Chrome is full-bleed + gutter; open space is video-left / chat-right. */
 .app-column {
   width: 100%;
   max-width: var(--width-app-column);
@@ -43,6 +43,198 @@
     padding-left: var(--spacing-gutter-lg);
     padding-right: var(--spacing-gutter-lg);
   }
+}
+
+/**
+ * Shared chrome primitives — one pattern per job (ui-principles Consistency).
+ * Fraunces (brand-wordmark) only on the Ogma name; job titles stay sans.
+ */
+.brand-wordmark {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+/** Cold / unlock / reveal / invite-join: centered narrow column, no work canvas. */
+.gate-shell {
+  width: 100%;
+  max-width: 24rem; /* max-w-sm */
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.field {
+  width: 100%;
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background-color: color-mix(in srgb, var(--color-panel) 80%, transparent);
+  padding: 0.625rem 0.75rem;
+  outline: none;
+}
+
+.field:focus {
+  border-color: var(--color-gold);
+}
+
+/** Dense compose / chat column fields. */
+.field--compact {
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+/** Tight horizontal inset for space panes (video + chat). */
+.space-pane-pad {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/** Field sitting on a solid panel (drawer / splash) — darker inset. */
+.field--inset {
+  background-color: var(--color-bg);
+}
+
+.btn-primary {
+  border-radius: 0.75rem;
+  background-color: var(--color-gold);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--color-on-gold);
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-honey);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+}
+
+.btn-primary--sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn-secondary {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-panel-2) 55%, transparent);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+}
+
+.btn-secondary--sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-quiet {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  text-underline-offset: 2px;
+}
+
+.btn-quiet:hover:not(:disabled) {
+  text-decoration: underline;
+  color: var(--color-ink);
+}
+
+.btn-quiet:disabled {
+  opacity: 0.6;
+}
+
+.btn-ghost {
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--color-ink);
+}
+
+/** Install / vault Moments on home — interactive card, not decorative chrome. */
+.moment-card {
+  margin-bottom: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background-color: color-mix(in srgb, var(--color-panel) 80%, transparent);
+  padding: 0.75rem;
+}
+
+/** Side sheets: Devices, room-only chat, Settings. */
+.drawer-sheet {
+  display: flex;
+  width: 100%;
+  max-width: 28rem;
+  flex-direction: column;
+  border-left: 1px solid var(--color-line);
+  background-color: color-mix(in srgb, var(--color-panel) 95%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+@media (min-width: 768px) {
+  .drawer-sheet {
+    width: 20rem;
+  }
+}
+
+.drawer-sheet--settings {
+  max-width: 24rem;
+  background-color: var(--color-panel);
+  backdrop-filter: none;
+  padding: 1.5rem 1.25rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.link-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.link-action:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.link-action:disabled {
+  opacity: 0.6;
+}
+
+.text-danger {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.text-muted {
+  font-size: 0.875rem;
+  color: var(--color-muted);
 }
 
 html,
