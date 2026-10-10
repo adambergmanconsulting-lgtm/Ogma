@@ -55,7 +55,7 @@
 | Chat column tabs | **Chat** \| **Spaces** | Stacking both at once; "Recents" / "Chats" as a section title |
 | Home invite cue | Quiet **Have an invite?** → Join | Loud parallel Join CTA |
 | Soft-nav return | **Back to call**; Leave | Synonym strip labels ("Return", "Exit room") |
-| Chat list title | Other participants' names (comma); custom **label** if set; else **Only you** | Opaque short ids; **New chat**; including yourself in the participant title |
+| Chat list title | Other participants' names (comma); custom **label** if set; else **No one else yet** | Opaque short ids; **New chat**; **Only you** (reads as occupancy); including yourself in the participant title |
 | Older messages | Quiet **Load older** (+50) | Manual archive chore wording |
 | Space empty (Moment) | **This chat stays here. Copy the invite to add people.** | Framing Call as a separate place; long tutorials |
 | Call lobby title | **Call** (invite join only) | Cold Create lobby with paste field |

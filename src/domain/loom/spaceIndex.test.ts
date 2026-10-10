@@ -22,7 +22,7 @@ describe('space labels from participants', () => {
     expect(formatParticipantLabel(['Ada'], 'Ada')).toBeNull();
   });
 
-  it('prefers custom label, then participants, then Only you', () => {
+  it('prefers custom label, then participants, then No one else yet', () => {
     const row: SpaceIndexRow = {
       spaceId: 'abcdefghijklmnop',
       authors: ['Ada', 'Bo'],
@@ -33,8 +33,8 @@ describe('space labels from participants', () => {
     };
     expect(displaySpaceLabel(row, 'Ada')).toBe('Bo');
     expect(displaySpaceLabel({ ...row, label: 'Project' }, 'Ada')).toBe('Project');
-    expect(displaySpaceLabel({ ...row, authors: ['Ada'] }, 'Ada')).toBe('Only you');
-    expect(displaySpaceLabel({ ...row, authors: undefined }, 'Ada')).toBe('Only you');
+    expect(displaySpaceLabel({ ...row, authors: ['Ada'] }, 'Ada')).toBe('No one else yet');
+    expect(displaySpaceLabel({ ...row, authors: undefined }, 'Ada')).toBe('No one else yet');
   });
 
   it('persists newly seen authors on the space row', async () => {

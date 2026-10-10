@@ -30,8 +30,8 @@
 
 | Lock | Prefer | Avoid |
 |------|--------|--------|
-| Chrome | Permanent **top bar**: brand · **Start new** (Chat/Call) · Settings; brand → **Spaces** tab (soft-nav when in Call); inner = full-bleed **`.app-gutter-x`** | **Call** for the open space in the top bar; nav hamburger; brand as non-interactive decoration; a Spaces-only page |
-| Side margins | Shared **`.app-gutter-x`** on the top bar; gutters step up on wide viewports | Per-view inventing `px-3` / `px-6` that misalign with chrome |
+| Chrome | Permanent **top bar**: brand · **Start new** (Chat/Call) · Settings; brand → **Spaces** tab (soft-nav when in Call); side inset matches the video and chat pane heads | **Call** for the open space in the top bar; nav hamburger; brand as non-interactive decoration; a Spaces-only page |
+| Side margins | Branded top bar uses **`.space-pane-pad`** (same 0.75rem as video and chat). **`.app-gutter-x`** still steps up on gates (vault, lobby, reveal) | Stepped page gutter on the branded row; per-view `px-3` / `px-6` that miss the pane heads |
 | Work shell | **Video \| Chat** under the top bar; bare `/` resumes last space or idle workspace (no auto-create) | Separate `/` Spaces-only screen; a Start-new band above video |
 | Chat column | Tabs **Chat** \| **Spaces** — one visible; Chat = title, invite, log, compose; Spaces = space list + quiet invite; opening a space returns to Chat | Stacking the list on the open chat; a second Start new inside Spaces |
 | Previous spaces | Name opens that chat; **Call** is the secondary act on the row | A Chat button beside a Chat tab; full-width list over video |

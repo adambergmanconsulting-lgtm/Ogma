@@ -59,7 +59,7 @@ test.describe('Chat and Call entry', () => {
     await expect(page.getByTestId('space-view')).toBeVisible();
     await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('previous-spaces')).toBeVisible();
-    await expect(page.getByTestId('previous-spaces').getByText('Only you')).toBeVisible();
+    await expect(page.getByTestId('previous-spaces').getByText('No one else yet')).toBeVisible();
     await expect(page.locator('[data-testid^="space-activity-"]').first()).toBeVisible();
     await page.locator('[data-testid^="space-call-"]').first().click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });

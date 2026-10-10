@@ -39,13 +39,13 @@ export function formatParticipantLabel(authors: string[], selfName: string): str
   return `${others.slice(0, 2).join(', ')} +${others.length - 2}`;
 }
 
-/** Human title when nobody else has spoken yet (avoid opaque ids in the list). */
-export const ONLY_YOU_LABEL = 'Only you';
+/** Title while no other participant has written (not a claim that the call is empty). */
+const NO_ONE_ELSE_LABEL = 'No one else yet';
 
 export function displaySpaceLabel(row: SpaceIndexRow, selfName = ''): string {
   const custom = row.label?.trim();
   if (custom) return custom;
-  return formatParticipantLabel(row.authors ?? [], selfName) || ONLY_YOU_LABEL;
+  return formatParticipantLabel(row.authors ?? [], selfName) || NO_ONE_ELSE_LABEL;
 }
 
 /** Fill authors from stored envelopes when the index row never learned them. */

@@ -32,7 +32,7 @@
 |-----|---------|
 | Name | Required once per browser profile to chat/call |
 | Vault (optional) | Cold **Use a vault** splash → **Create vault** / **Open vault**; or Settings **Add vault key**; session until **Log out** |
-| Chat (Loom) | `#space=<secret>`; sealed history; list by last activity; warm sync while tab open; titles from other participants or **Only you**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
+| Chat (Loom) | `#space=<secret>`; sealed history; list by last activity; warm sync while tab open; titles from other participants or **No one else yet**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
 | **Host Call** | **Start new** Chat or Call → space (invite on-space) → video-pane **Call**; same Loom log + compose; call invite `?room=` + `#space=` — shell: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
 | In call | Mute, camera, background blur, leave; soft-nav keeps Thread live; hang up only on Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |

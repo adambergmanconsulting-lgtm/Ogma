@@ -22,7 +22,7 @@ export function AppNav(props: AppNavProps) {
       data-testid="app-nav"
       className="shrink-0 border-b border-[color:var(--color-line)]/70 bg-[color:var(--color-panel)]/90 backdrop-blur-sm"
     >
-      <div className="app-gutter-x flex items-center gap-2 py-2 sm:gap-3">
+      <div className="space-pane-pad flex items-center gap-2 py-2 sm:gap-3">
         <button
           type="button"
           data-testid="nav-home"

@@ -18,7 +18,7 @@
   /* Moss / sacred-tree connected */
   --color-ok: #10b981;
   --color-danger: #e35d6a;
-  /* Shell gutters + home column — chrome and canvas share gutters (in-page-layout). */
+  /* Stepped page gutters for gates. The branded top bar uses the pane inset instead. */
   --spacing-gutter: 1.25rem;
   --spacing-gutter-lg: 1.75rem;
   --spacing-gutter-xl: 2.5rem;
@@ -26,7 +26,7 @@
   --width-app-column: 32rem; /* ~max-w-lg; list width stays fixed */
 }
 
-/** Horizontal page margins for top chrome and primary canvas. Scales up on wide viewports. */
+/** Horizontal page margins for gates (vault, lobby, reveal). Scales up on wide viewports. */
 .app-gutter-x {
   padding-left: var(--spacing-gutter);
   padding-right: var(--spacing-gutter);
