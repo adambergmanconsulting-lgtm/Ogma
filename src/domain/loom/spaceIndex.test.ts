@@ -31,19 +31,22 @@ describe('space labels from participants', () => {
     expect(spacePeopleNames(undefined, 'Ada')).toEqual(['Ada']);
   });
 
-  it('prefers custom label, then lastPreview, then Chat', () => {
+  it('titles from other people as a,b,c; custom label wins; solo is Chat', () => {
     const row: SpaceIndexRow = {
       spaceId: 'abcdefghijklmnop',
-      authors: ['Ada', 'Bo'],
+      authors: ['Ada', 'Bo', 'Cam Reed'],
       lastPreview: 'hello there',
       status: 'recent',
       lastOpenedAt: 0,
       lastMessageAt: 0,
       unreadCount: 0,
     };
-    expect(displaySpaceLabel(row, 'Ada')).toBe('hello there');
+    expect(displaySpaceLabel(row, 'Ada')).toBe('Bo,Cam');
+    expect(displaySpaceLabel(row, 'Bo')).toBe('Ada,Cam');
     expect(displaySpaceLabel({ ...row, label: 'Project' }, 'Ada')).toBe('Project');
-    expect(displaySpaceLabel({ ...row, lastPreview: undefined }, 'Ada')).toBe('Chat');
+    expect(
+      displaySpaceLabel({ ...row, authors: ['Ada'], lastPreview: undefined }, 'Ada'),
+    ).toBe('Chat');
   });
 
   it('clips long previews', () => {

@@ -167,7 +167,7 @@ export function useCallController(opts: CallControllerOpts) {
     onCreate,
     onJoin,
     /** Join/create a Thread; pass spaceSecret so Call chat is that Loom log. */
-    startCall: (roomId: string, spaceSecret?: string) => void enterRoom(roomId, spaceSecret),
+    startCall: (roomId: string, spaceSecret?: string) => enterRoom(roomId, spaceSecret),
     /** Space secret bound to this call (Loom chat), if any. */
     boundSpaceSecret,
     onLeave,

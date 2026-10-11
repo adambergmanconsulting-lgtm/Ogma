@@ -2,14 +2,21 @@ import { splitMessageLinks } from '../domain/thread/messageLinks';
 
 interface ChatMessageTextProps {
   text: string;
+  /** Flush with the row: own messages end, others start. */
+  align?: 'start' | 'end';
 }
 
-export function ChatMessageText({ text }: ChatMessageTextProps) {
+export function ChatMessageText({ text, align = 'start' }: ChatMessageTextProps) {
   const origin = typeof globalThis.location !== 'undefined' ? globalThis.location.origin : undefined;
   const parts = splitMessageLinks(text, origin);
 
   return (
-    <div className="whitespace-pre-wrap break-words text-left">
+    <div
+      className={[
+        'whitespace-pre-wrap break-words',
+        align === 'end' ? 'text-right' : 'text-left',
+      ].join(' ')}
+    >
       {parts.map((part, i) => {
         if (part.kind === 'text') {
           return <span key={i}>{part.text}</span>;

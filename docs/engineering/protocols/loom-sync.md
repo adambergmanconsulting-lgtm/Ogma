@@ -45,6 +45,8 @@
 
 **Invite:** **Invite** seals a space secret to the person's box key and sends it on that room. From an open chat it seals that chat's secret. From People it seals a new secret and opens it here. Their open tab opens the space. The tracker sees the meeting room, not the secret. This is not an Ogma-sent invite and does not wake a closed app.
 
+**Call ring (ephemeral):** While Loom sync is open for a space, **Call** broadcasts `{ type: "call", author, ts }` on the same Trystero room (not sealed history). Peers with that space warm see **Accept** / **Not now**. Leaving sends `{ type: "call-end" }`. Late peers get a re-announce on join while the caller is still in Call. Does not wake a closed app.
+
 ## Sync protocol (when space open)
 
 1. Join Trystero room `loom:<spaceId>` (spaceId derived from hash of secret, not the secret itself if we need a public swarm id — **public room key** = `SHA-256(spaceSecret)[:16]` hex; **enc key** from full secret).

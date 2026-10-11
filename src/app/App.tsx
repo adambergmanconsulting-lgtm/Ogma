@@ -23,6 +23,7 @@ import {
 } from '../domain/shell/pwaInstall';
 import { resolveCallSurface } from '../domain/thread/callSurface';
 import type { ChatMessage } from '../domain/types';
+import { IncomingCallBanner } from '../components/IncomingCallBanner';
 import { AppSettingsDrawer } from './AppSettingsDrawer';
 import { buildSpaceCallBand } from './buildSpaceCallBand';
 import { useCallController } from './useCallController';
@@ -30,6 +31,7 @@ import { useLoomController } from './useLoomController';
 import { usePersonPresence } from './usePersonPresence';
 import { usePwaInstall } from './usePwaInstall';
 import { usePwaUpdate } from './usePwaUpdate';
+import { useSpaceCallRing } from './useSpaceCallRing';
 
 export default function App() {
   const loom = useLoomController();
@@ -69,7 +71,26 @@ export default function App() {
       loom.unlocked &&
       (loom.screen === 'thread' || Boolean(loom.vault && parseRoomIdFromLocation())),
   });
+  const callRing = useSpaceCallRing({
+    displayName: loom.displayName,
+    inCall: call.inCall,
+    spaceSecret: loom.spaceSecret,
+  });
   usePwaUpdate({ inCall: call.inCall });
+
+  useEffect(() => {
+    loom.setCallRingHandlers({
+      getCallAnnounce: callRing.getCallAnnounce,
+      onCall: callRing.onCallWire,
+      onCallEnd: callRing.onCallEndWire,
+    });
+    return () => loom.setCallRingHandlers(null);
+  }, [
+    loom.setCallRingHandlers,
+    callRing.getCallAnnounce,
+    callRing.onCallWire,
+    callRing.onCallEndWire,
+  ]);
 
   const hasLocalChats = loom.chats.length > 0;
   const homeAnchor = pickHomeAnchor({
@@ -191,9 +212,16 @@ export default function App() {
     }
   };
 
-  const startCallWithSecret = async (secret: string) => {
+  const startCallWithSecret = async (secret: string, spaceId?: string | null) => {
     const roomId = await threadSecretFromSpace(secret);
-    call.startCall(roomId, secret);
+    const id = spaceId ?? loom.focusedSpaceId;
+    if (id) callRing.markCalling(id);
+    try {
+      await call.startCall(roomId, secret);
+      if (id) loom.announceCall(id, loom.displayName.trim() || 'Guest');
+    } catch {
+      if (id) callRing.clearCalling(id);
+    }
   };
 
   const returnToCall = () => {
@@ -240,7 +268,7 @@ export default function App() {
     void (async () => {
       const secret = await loom.onOpenSpace(spaceId);
       if (!secret) return;
-      await startCallWithSecret(secret);
+      await startCallWithSecret(secret, spaceId);
     })();
   };
 
@@ -261,9 +289,35 @@ export default function App() {
     : call.webrtc.messages;
 
   const leaveCall = () => {
+    const callingId = callRing.callingSpaceId;
+    if (callingId) {
+      loom.announceCallEnd(callingId);
+      callRing.clearCalling(callingId);
+    }
     call.onLeave();
     setRoomShellOpen(false);
   };
+
+  const acceptIncomingCall = () => {
+    const incoming = callRing.incomingCall;
+    if (!incoming || call.inCall) return;
+    callRing.dismissIncomingCall();
+    void (async () => {
+      await loom.onOpenSpaceSecret(incoming.spaceSecret);
+      await startCallWithSecret(incoming.spaceSecret, incoming.spaceId);
+    })();
+  };
+
+  const incomingBanner =
+    callRing.incomingCall && !call.inCall ? (
+      <IncomingCallBanner
+        author={callRing.incomingCall.author}
+        selfName={loom.displayName}
+        personId={loom.personId}
+        onAccept={acceptIncomingCall}
+        onDismiss={callRing.dismissIncomingCall}
+      />
+    ) : null;
 
   const spaceCallBand =
     callSurface === 'space-call' ? buildSpaceCallBand(call, loom, leaveCall) : null;
@@ -316,6 +370,7 @@ export default function App() {
         onCopyInvite={call.onCopyInvite}
         call={spaceCallBand}
         callBusy={loom.busy || call.busy}
+        incomingCall={incomingBanner}
         {...paneProps}
       />
     );
@@ -336,11 +391,17 @@ export default function App() {
         onCopyInvite={loom.onCopyInvite}
         onStartCall={call.inCall ? undefined : goCall}
         callBusy={loom.busy || call.busy}
+        incomingCall={incomingBanner}
         {...paneProps}
       />
     );
   } else {
-    workspace = <WorkspaceIdle {...paneProps} />;
+    workspace = (
+      <>
+        {incomingBanner}
+        <WorkspaceIdle {...paneProps} />
+      </>
+    );
   }
 
   let body: ReactNode;
@@ -470,7 +531,7 @@ export default function App() {
               : null
           }
           pwa={pwa}
-          call={call}
+          call={{ inCall: call.inCall, onLeave: leaveCall }}
           onAfterLeaveShell={() => setRoomShellOpen(false)}
         />
       </div>

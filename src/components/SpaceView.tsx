@@ -45,6 +45,8 @@ interface SpaceViewProps {
   onChatPane: (pane: ChatPane) => void;
   spacesPane: ReactNode;
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
+  /** Peer started Call — Accept / Not now. */
+  incomingCall?: ReactNode;
 }
 
 export function SpaceView(props: SpaceViewProps) {
@@ -78,7 +80,11 @@ export function SpaceView(props: SpaceViewProps) {
   }, [call]);
 
   useEffect(() => {
-    if (call) setVideoOpen(true);
+    if (!call) return;
+    setVideoOpen(true);
+    // Mobile stack: Call fills the column; chat stays one fold away.
+    const narrow = globalThis.matchMedia?.('(max-width: 767px)').matches;
+    if (narrow) setChatOpen(false);
   }, [call]);
 
   const foldVideo = () => {
@@ -93,13 +99,18 @@ export function SpaceView(props: SpaceViewProps) {
       <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
         <VideoIdle resting={!quiet} />
       </div>
+      {props.incomingCall}
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         {videoOpen ? (
           <aside
             data-testid="space-presence"
             className={[
               'relative z-10 flex shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:border-b-0 md:border-r',
-              chatOpen ? 'min-h-[11rem] md:min-w-0 md:flex-1' : 'min-h-0 flex-1',
+              call && chatOpen
+                ? 'min-h-0 flex-1 md:min-w-0'
+                : chatOpen
+                  ? 'min-h-[11rem] md:min-w-0 md:flex-1'
+                  : 'min-h-0 flex-1',
             ].join(' ')}
           >
             <header className="shrink-0">
@@ -252,7 +263,11 @@ export function SpaceView(props: SpaceViewProps) {
             onPane={props.onChatPane}
             className={[
               'relative z-10 flex min-h-0 min-w-0 flex-col bg-[color:var(--color-panel)]/25',
-              videoOpen ? 'flex-1 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none' : 'flex-1',
+              videoOpen
+                ? call
+                  ? 'max-h-[40%] flex-none md:max-h-none md:w-[min(22rem,38%)] md:max-w-sm'
+                  : 'flex-1 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none'
+                : 'flex-1',
             ].join(' ')}
             onFold={foldChat}
             foldDisabled={!canFoldChat}
@@ -303,10 +318,13 @@ export function SpaceView(props: SpaceViewProps) {
                 ) : (
                   <div
                     key={m.id}
-                    className={`max-w-[92%] text-[13px] leading-snug ${m.self ? 'ml-auto text-right' : ''}`}
+                    className={[
+                      'max-w-[92%] text-[13px] leading-snug',
+                      m.self ? 'ml-auto' : 'mr-auto',
+                    ].join(' ')}
                   >
                     {!m.self ? (
-                      <div className="mb-0.5 text-[11px] text-[color:var(--color-muted)]">
+                      <div className="mb-0.5 text-left text-[11px] text-[color:var(--color-muted)]">
                         <PersonName
                           name={m.author}
                           selfName={props.selfName}
@@ -314,7 +332,7 @@ export function SpaceView(props: SpaceViewProps) {
                         />
                       </div>
                     ) : null}
-                    <ChatMessageText text={m.text} />
+                    <ChatMessageText text={m.text} align={m.self ? 'end' : 'start'} />
                   </div>
                 ),
               )}

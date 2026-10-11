@@ -16,6 +16,10 @@ export type LoomSyncHandlers = {
   /** This vault's card, when a person id exists. */
   getOwnCard?: () => PersonCardWire | null;
   onCard?: (card: PersonCardWire) => void;
+  /** While this tab is in Call for the space, return the display name to re-announce. */
+  getCallAnnounce?: () => string | null;
+  onCall?: (author: string, ts: number) => void;
+  onCallEnd?: () => void;
 };
 
 export type LoomSyncSession = {
@@ -24,6 +28,8 @@ export type LoomSyncSession = {
   broadcastHave: () => Promise<void>;
   sendEntries: (entries: LoomEnvelope[]) => Promise<void>;
   sendCard: () => Promise<void>;
+  announceCall: (author: string) => Promise<void>;
+  announceCallEnd: () => Promise<void>;
 };
 
 function isVisible(): boolean {
@@ -72,6 +78,19 @@ export async function openLoomSync(
     const card = handlers.getOwnCard?.();
     if (!card) return;
     await sync.send({ type: 'card', card }, peerId ? { target: peerId } : undefined);
+  };
+
+  const sendCallAnnounce = async (author: string, peerId?: string) => {
+    if (!isVisible() || !author.trim()) return;
+    await sync.send(
+      { type: 'call', author: author.trim(), ts: Date.now() },
+      peerId ? { target: peerId } : undefined,
+    );
+  };
+
+  const sendCallEnd = async () => {
+    if (!isVisible()) return;
+    await sync.send({ type: 'call-end', ts: Date.now() });
   };
 
   const sendHave = async (peerId?: string) => {
@@ -123,6 +142,13 @@ export async function openLoomSync(
         return;
       }
       if (data.type === 'card' && data.card) handlers.onCard?.(data.card);
+      if (data.type === 'call' && typeof data.author === 'string' && typeof data.ts === 'number') {
+        handlers.onCall?.(data.author, data.ts);
+        return;
+      }
+      if (data.type === 'call-end') {
+        handlers.onCallEnd?.();
+      }
     })();
   };
 
@@ -132,6 +158,8 @@ export async function openLoomSync(
     handlers.onPeerCount?.(peerCount());
     void sendHave(peerId);
     void sendCard(peerId);
+    const calling = handlers.getCallAnnounce?.();
+    if (calling) void sendCallAnnounce(calling, peerId);
   };
   room.onPeerLeave = () => handlers.onPeerCount?.(peerCount());
 
@@ -148,6 +176,8 @@ export async function openLoomSync(
     },
     broadcastHave: () => sendHave(),
     sendCard: () => sendCard(),
+    announceCall: (author) => sendCallAnnounce(author),
+    announceCallEnd: () => sendCallEnd(),
     sendEntries: async (entries) => {
       if (!isVisible() || entries.length === 0) return;
       for (let i = 0; i < entries.length; i += CHUNK_MAX_ENTRIES) {

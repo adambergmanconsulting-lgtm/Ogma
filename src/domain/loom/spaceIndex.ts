@@ -36,14 +36,27 @@ export function clipSpacePreview(text: string, max = PREVIEW_MAX): string {
 }
 
 /**
- * Spaces list label: custom label → last preview → Chat.
- * Open chat uses the people row + join lines instead of this string.
+ * Spaces list title: custom label → other people as `a,b,c` → Chat.
+ * Self omitted; first-token short names; lastPreview stays search-only.
  */
-export function displaySpaceLabel(row: SpaceIndexRow, _selfName = ''): string {
+export function displaySpaceLabel(row: SpaceIndexRow, selfName = ''): string {
   const custom = row.label?.trim();
   if (custom) return custom;
-  const preview = row.lastPreview?.trim();
-  if (preview) return preview;
+  const self = selfName.trim().toLowerCase();
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const raw of row.authors ?? []) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    if (self && trimmed.toLowerCase() === self) continue;
+    const name = shortDisplayName(trimmed);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    parts.push(name);
+  }
+  if (parts.length > 0) return parts.join(',');
   return DEFAULT_SPACE_LABEL;
 }
 

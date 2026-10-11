@@ -55,50 +55,70 @@ export function VideoGrid({
   compact,
 }: VideoGridProps) {
   const total = 1 + remotePeers.length;
+  const pad = compact ? 'h-full gap-1.5 p-0' : 'h-full flex-1 gap-2 p-2 md:gap-3 md:p-3';
 
-  return (
-    <div
-      className={`grid min-h-0 ${
-        compact ? 'h-full gap-1.5 p-0' : 'h-full flex-1 gap-2 p-2 md:gap-3 md:p-3'
-      } ${gridClass(total)}`}
-    >
-      <VideoTile
-        stream={localStream}
-        label={localLabel}
-        selfName={localLabel}
-        personId={personId}
-        muted
-        mirrored={!localScreen}
-        fit={localScreen ? 'contain' : 'cover'}
-        micOff={localMicOff}
-        showMicLevel
-        overlay={
-          !localScreen && blurSupported && onToggleBlur ? (
-            <VideoBlurControls
-              enabled={blurEnabled}
-              backdropSelectable={backdropSelectable}
-              backdropId={backdropId}
-              edgeCut={edgeCut}
-              onToggle={onToggleBlur}
-              onBackdropChange={onBackdropChange}
-              onEdgeCutChange={onEdgeCutChange}
-            />
-          ) : null
-        }
-      />
-      {remotePeers.map((peer) => (
-        <VideoTile
-          key={peer.peerId}
-          stream={peer.stream}
-          label={peer.displayName}
-          selfName={localLabel}
-          personId={personId}
-          fit={peer.sharingScreen ? 'contain' : 'cover'}
-          pinned={pinnedPeerIds.includes(peer.peerId)}
-          onTogglePin={onTogglePin ? () => onTogglePin(peer.peerId) : undefined}
-          applyAudioOutput={applyAudioOutput}
-        />
-      ))}
-    </div>
+  const renderLocal = (key: string) => (
+    <VideoTile
+      key={key}
+      stream={localStream}
+      label={localLabel}
+      selfName={localLabel}
+      personId={personId}
+      muted
+      mirrored={!localScreen}
+      fit={localScreen ? 'contain' : 'cover'}
+      micOff={localMicOff}
+      showMicLevel
+      overlay={
+        !localScreen && blurSupported && onToggleBlur ? (
+          <VideoBlurControls
+            enabled={blurEnabled}
+            backdropSelectable={backdropSelectable}
+            backdropId={backdropId}
+            edgeCut={edgeCut}
+            onToggle={onToggleBlur}
+            onBackdropChange={onBackdropChange}
+            onEdgeCutChange={onEdgeCutChange}
+          />
+        ) : null
+      }
+    />
   );
+
+  const remoteTiles = remotePeers.map((peer) => (
+    <VideoTile
+      key={peer.peerId}
+      stream={peer.stream}
+      label={peer.displayName}
+      selfName={localLabel}
+      personId={personId}
+      fit={peer.sharingScreen ? 'contain' : 'cover'}
+      pinned={pinnedPeerIds.includes(peer.peerId)}
+      onTogglePin={onTogglePin ? () => onTogglePin(peer.peerId) : undefined}
+      applyAudioOutput={applyAudioOutput}
+    />
+  ));
+
+  // With peers: remotes first. On narrow viewports local is PiP so others fill the pane.
+  if (remotePeers.length > 0) {
+    return (
+      <div className={`relative min-h-0 ${compact ? 'h-full' : 'h-full flex-1'}`}>
+        <div className={`grid min-h-0 md:hidden ${pad} ${gridClass(remotePeers.length)}`}>
+          {remoteTiles}
+        </div>
+        <div className={`hidden min-h-0 md:grid ${pad} ${gridClass(total)}`}>
+          {remoteTiles}
+          {renderLocal('local-desk')}
+        </div>
+        <div
+          data-testid="local-pip"
+          className="absolute bottom-2 right-2 z-10 h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24 md:hidden"
+        >
+          {renderLocal('local-pip')}
+        </div>
+      </div>
+    );
+  }
+
+  return <div className={`grid min-h-0 ${pad} ${gridClass(total)}`}>{renderLocal('local')}</div>;
 }

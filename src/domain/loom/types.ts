@@ -73,7 +73,10 @@ export type SyncWire =
   | { type: 'have'; ids: string[] }
   | { type: 'need'; ids: string[] }
   | { type: 'entries'; entries: LoomEnvelope[] }
-  | { type: 'card'; card: PersonCardWire };
+  | { type: 'card'; card: PersonCardWire }
+  /** Ephemeral: someone started Call in this space (not sealed history). */
+  | { type: 'call'; author: string; ts: number }
+  | { type: 'call-end'; ts: number };
 
 /** Signed name + person id + box key. Public. The space secret is not in it. */
 export type PersonCardWire = {

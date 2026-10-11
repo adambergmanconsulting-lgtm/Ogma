@@ -76,10 +76,10 @@ export function ChatDrawer({
             return (
               <div
                 key={m.id}
-                className={`max-w-[90%] text-sm ${mine ? 'ml-auto text-right' : ''}`}
+                className={['max-w-[90%] text-sm', mine ? 'ml-auto' : 'mr-auto'].join(' ')}
               >
                 {!mine ? (
-                  <div className="mb-0.5 text-[11px] text-[color:var(--color-muted)]">
+                  <div className="mb-0.5 text-left text-[11px] text-[color:var(--color-muted)]">
                     <PersonName
                       name={m.displayName}
                       selfName={selfName}
@@ -87,7 +87,7 @@ export function ChatDrawer({
                     />
                   </div>
                 ) : null}
-                <ChatMessageText text={m.text} />
+                <ChatMessageText text={m.text} align={mine ? 'end' : 'start'} />
               </div>
             );
           })

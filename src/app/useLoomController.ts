@@ -70,6 +70,13 @@ import {
 import { extractSpaceSecret, shareRoomLink } from '../domain/signaling/share';
 import type { SpaceMessageView } from '../components/SpaceView';
 
+/** Ephemeral Call ring handlers bound from the app shell (warm Loom sync). */
+export type LoomCallRingHandlers = {
+  getCallAnnounce: (spaceId: string) => string | null;
+  onCall: (spaceId: string, author: string, ts: number) => void;
+  onCallEnd: (spaceId: string) => void;
+};
+
 export type LoomScreen = 'vault' | 'unlock' | 'reveal' | 'home' | 'space' | 'thread';
 
 /** Vault key shown once after Create / Add vault key. Space invites live on the open chat. */
@@ -109,6 +116,7 @@ export function useLoomController() {
   const secretsRef = useRef(new Map<string, string>());
   const syncRef = useRef(new Map<string, LoomSyncSession>());
   const ownCardRef = useRef<PersonCardWire | null>(null);
+  const callRingRef = useRef<LoomCallRingHandlers | null>(null);
   const storeRef = useRef<LoomStore | null>(null);
   const focusedSpaceIdRef = useRef<string | null>(null);
   const messagesRef = useRef<SpaceMessageView[]>([]);
@@ -274,6 +282,10 @@ export function useLoomController() {
     for (const session of syncRef.current.values()) void session.sendCard();
   }, []);
 
+  const setCallRingHandlers = useCallback((handlers: LoomCallRingHandlers | null) => {
+    callRingRef.current = handlers;
+  }, []);
+
   const ensureSync = useCallback(
     async (spaceId: string, secret: string) => {
       if (syncRef.current.has(spaceId)) return;
@@ -285,6 +297,9 @@ export function useLoomController() {
         onCard: (card) => {
           void rememberPersonCard(card);
         },
+        getCallAnnounce: () => callRingRef.current?.getCallAnnounce(spaceId) ?? null,
+        onCall: (author, ts) => callRingRef.current?.onCall(spaceId, author, ts),
+        onCallEnd: () => callRingRef.current?.onCallEnd(spaceId),
       });
       syncRef.current.set(spaceId, session);
     },
@@ -650,6 +665,14 @@ export function useLoomController() {
     /** Space capability secret for the open chat (Call derives Thread room from this). */
     focusedSecret,
     focusedSpaceId,
+    spaceSecret: (spaceId: string) => secretsRef.current.get(spaceId),
+    setCallRingHandlers,
+    announceCall: (spaceId: string, author: string) => {
+      void syncRef.current.get(spaceId)?.announceCall(author);
+    },
+    announceCallEnd: (spaceId: string) => {
+      void syncRef.current.get(spaceId)?.announceCallEnd();
+    },
     people: spacePeopleNames(focusedRow?.authors, displayName),
     messages,
     hasMoreOlder,

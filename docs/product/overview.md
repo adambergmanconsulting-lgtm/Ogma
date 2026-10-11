@@ -32,8 +32,9 @@
 |-----|---------|
 | Name | Required once per browser profile to chat/call |
 | Vault (optional) | Cold **Use a vault** splash → **Create vault** / **Open vault**; or Settings **Add vault key**; session until **Log out**. A vault holds a person id (public key). The name stays a label. The vault key is not the id |
-| Chat (Loom) | `#space=<secret>`; sealed history + join events; list by last activity / preview; **`{name} joined`** in open chat; warm sync while tab open; This chat **Copy link** (+ Active **Invite a person** into this chat); All **People** **Invite** starts a new space while **Active**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
+| Chat (Loom) | `#space=<secret>`; sealed history + join events; list by last activity; titles **`a,b,c`** (other people); **`{name} joined`** in open chat; warm sync while tab open; This chat **Copy link** (+ Active **Invite a person** into this chat); All **People** **Invite** starts a new space while **Active**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
 | **Host Call** | Chat-column **New** → space (invite on-space) → video-pane **Call**; same Loom log + compose; call invite `?room=` + `#space=` — shell: [in-page-layout.md](heuristics/in-page-layout.md) |
+| Accept Call | Peer with the space warm sees **`{name} started a call`** → **Accept** / **Not now**; Accept starts the same Thread. Link Join still works without a warm tab |
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
 | In call | Mute, camera, **Share screen** (replaces the camera until **Stop sharing**), background blur, leave; soft-nav keeps Thread live; hang up only on Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Move device | Export file → Import (+ vault key if one was added) |
