@@ -34,10 +34,12 @@ import {
   sortSpacesRecentFirst,
   spacePeopleNames,
 } from '../domain/loom/spaceIndex';
+import { rememberPersonCard } from '../domain/loom/peopleDirectory';
+import { attachPersonId } from '../domain/loom/personKey';
 import { getLoomStore } from '../domain/loom/store';
 import type { LoomStore } from '../domain/loom/storePort';
 import { openLoomSync, type LoomSyncSession } from '../domain/loom/sync';
-import type { LoomEnvelope, SpaceIndexRow, StoredMessage } from '../domain/loom/types';
+import type { LoomEnvelope, PersonCardWire, SpaceIndexRow, StoredMessage } from '../domain/loom/types';
 import {
   applyVaultRename,
   clearLocalVaultRecord,
@@ -96,6 +98,7 @@ export function useLoomController() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wrapKey, setWrapKey] = useState<CryptoKey | null>(null);
+  const [personId, setPersonId] = useState<string | null>(null);
   const [focusedSecret, setFocusedSecret] = useState<string | null>(null);
   const [focusedSpaceId, setFocusedSpaceId] = useState<string | null>(null);
   const [messages, setMessages] = useState<SpaceMessageView[]>([]);
@@ -105,6 +108,7 @@ export function useLoomController() {
 
   const secretsRef = useRef(new Map<string, string>());
   const syncRef = useRef(new Map<string, LoomSyncSession>());
+  const ownCardRef = useRef<PersonCardWire | null>(null);
   const storeRef = useRef<LoomStore | null>(null);
   const focusedSpaceIdRef = useRef<string | null>(null);
   const messagesRef = useRef<SpaceMessageView[]>([]);
@@ -265,6 +269,11 @@ export function useLoomController() {
     syncRef.current.delete(spaceId);
   }, []);
 
+  const setOwnCard = useCallback((card: PersonCardWire | null) => {
+    ownCardRef.current = card;
+    for (const session of syncRef.current.values()) void session.sendCard();
+  }, []);
+
   const ensureSync = useCallback(
     async (spaceId: string, secret: string) => {
       if (syncRef.current.has(spaceId)) return;
@@ -272,6 +281,10 @@ export function useLoomController() {
       const session = await openLoomSync(secret, store, {
         onEntries: (entries) => void ingestEntries(spaceId, entries, true),
         onError: (message) => setError(message),
+        getOwnCard: () => ownCardRef.current,
+        onCard: (card) => {
+          void rememberPersonCard(card);
+        },
       });
       syncRef.current.set(spaceId, session);
     },
@@ -385,6 +398,7 @@ export function useLoomController() {
       if (!meta) throw new Error('No vault key on this browser');
       const key = await unlockDeviceKey(vaultKey, meta);
       setWrapKey(key);
+      setPersonId(await attachPersonId(store, key, meta));
       const rows = await store.listSpaces();
       hydrateLocalSecrets(rows, secretsRef.current);
       await loadRememberedSecrets(key, rows, secretsRef.current);
@@ -444,7 +458,9 @@ export function useLoomController() {
         const vaultKey = generateVaultKey();
         const meta = await createDeviceKeyMeta(vaultKey);
         await store.setDeviceKeyMeta(meta);
-        setWrapKey(await unlockDeviceKey(vaultKey, meta));
+        const key = await unlockDeviceKey(vaultKey, meta);
+        setWrapKey(key);
+        setPersonId(await attachPersonId(store, key, meta));
         writeVaultSessionKey(vaultKey);
         const rec = createVaultRecord(name, true);
         writeVault(rec);
@@ -479,6 +495,7 @@ export function useLoomController() {
       await store.setDeviceKeyMeta(meta);
       const key = await unlockDeviceKey(vaultKey, meta);
       setWrapKey(key);
+      setPersonId(await attachPersonId(store, key, meta));
       writeVaultSessionKey(vaultKey);
       const rec = { ...vault, hasDeviceKey: true };
       writeVault(rec);
@@ -555,6 +572,7 @@ export function useLoomController() {
     secretsRef.current.clear();
     clearVaultSession();
     setWrapKey(null);
+    setPersonId(null);
     setFocusedSecret(null);
     setFocusedSpaceId(null);
     focusedSpaceIdRef.current = null;
@@ -570,6 +588,7 @@ export function useLoomController() {
     clearLocalVaultRecord();
     setVault(null);
     setWrapKey(null);
+    setPersonId(null);
     setReveal(null);
     setFocusedSecret(null);
     setFocusedSpaceId(null);
@@ -671,15 +690,15 @@ export function useLoomController() {
     onLogout,
     onSwitchVault,
     hasVaultKey: Boolean(vault?.hasDeviceKey),
+    personId,
+    wrapKey,
+    setOwnCard,
     onRenameVault,
     onExport,
     onImportFile,
     onRevealContinue,
     /** Land in the space immediately — invite lives on the space (not a dead-end reveal). */
     onCreateSpace: () => openSpaceWithSecret(createSpaceSecret()),
-    /** Same as onCreateSpace; kept for Call-era callers. */
-    createAndOpenSpace: (): Promise<string | null> =>
-      openSpaceWithSecret(createSpaceSecret()),
     onJoinSpace: () => {
       const secret = extractSpaceSecret(spaceInput);
       if (!secret) {

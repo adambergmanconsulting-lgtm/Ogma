@@ -22,3 +22,8 @@ export function b64ToBytes(b64: string): Uint8Array {
 export function bytesToB64Url(bytes: Uint8Array): string {
   return bytesToB64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
+
+export function b64UrlToBytes(value: string): Uint8Array {
+  const pad = value.length % 4 === 0 ? '' : '='.repeat(4 - (value.length % 4));
+  return b64ToBytes(value.replace(/-/g, '+').replace(/_/g, '/') + pad);
+}

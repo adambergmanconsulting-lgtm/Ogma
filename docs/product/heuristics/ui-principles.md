@@ -37,7 +37,7 @@ Optimize for efficiency: user attention, support load, build energy. Waste = dup
 
 Moments that tilt tensions: first visit, irreversible action, error recovery, empty state, permission denied, success after a long chore. Name the Moment when breaking a default lean.
 
-**Host (Ogma):** First visit / work shell — labels in [ui-naming.md](ui-naming.md); top-bar Start new, Chat \| Spaces tabs, Call placement, soft-nav in [in-page-layout.md](in-page-layout.md); jobs (invite on-space, hang up only on Leave or page close) in [overview.md](../overview.md).
+**Host (Ogma):** First visit / work shell — labels in [ui-naming.md](ui-naming.md); This chat \| All · New + All search, video Call placement, soft-nav in [in-page-layout.md](in-page-layout.md); jobs (invite on-space, hang up only on Leave or page close) in [overview.md](../overview.md).
 
 ## Ship checklist
 

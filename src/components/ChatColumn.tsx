@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { FoldButton } from './SpacePaneChrome';
+import { StartNew } from './StartNew';
 
 export type ChatPane = 'chat' | 'spaces';
 
@@ -10,10 +11,12 @@ interface ChatColumnProps {
   onFold?: () => void;
   foldDisabled?: boolean;
   spaces: ReactNode;
+  /** Create a new chat space. Absent when create is unavailable. */
+  startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
   children: ReactNode;
 }
 
-/** Chat column: one tab visible — this chat, or the spaces list. */
+/** Chat column: one tab visible — this chat, or all chats. */
 export function ChatColumn(props: ChatColumnProps) {
   return (
     <section data-testid="space-chat" className={props.className}>
@@ -27,16 +30,23 @@ export function ChatColumn(props: ChatColumnProps) {
           selected={props.pane === 'chat'}
           onClick={() => props.onPane('chat')}
         >
-          Chat
+          This chat
         </Tab>
         <Tab
           testId="chat-pane-spaces"
           selected={props.pane === 'spaces'}
           onClick={() => props.onPane('spaces')}
         >
-          Spaces
+          All
         </Tab>
         <div className="min-w-0 flex-1" />
+        {props.startNew ? (
+          <StartNew
+            busy={props.startNew.busy}
+            disabled={props.startNew.disabled}
+            onNewChat={props.startNew.onNewChat}
+          />
+        ) : null}
         {props.onFold ? (
           <FoldButton
             testId="space-fold-chat"

@@ -6,7 +6,7 @@
 
 - Sealed append log (text + join) in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
 - Space secret → UTF-8 bytes → HKDF → AES-256-GCM (Web Crypto). **Locked:** UTF-8 of `#space=` string (never change).
-- Availability = members online; Ogma stores nothing.
+- Availability = members online; Ogma stores nothing. Leave and reopen: missing ids catch up via the same `have`/`need`/`entries` from peers who still have them; no Ogma backlog while everyone with that history is offline.
 - Display **name** required before Chat / Call. **Vault key optional** (cold **Use a vault** or Settings **Add vault key**): wraps Remembered secrets + Log out / retrieve; not required to use the app. Without a vault key, each space keeps `localSecret` on-device so Previous spaces can reopen after refresh; Add vault key migrates those into `wrappedSecret`.
 - Host Call binds Thread room + `#space=` so in-call text is this Loom log ([capability-urls.md](capability-urls.md), [overview.md](../../product/overview.md)).
 
@@ -39,7 +39,11 @@
 
 **v1 trust:** anyone with the space link can decrypt. No member removal / FS.
 
-**Author:** display label only (spoofable). Optional ed25519 per device later.
+**Author:** display label only (spoofable). When a vault key exists, that vault also holds an Ed25519 person id (public key, wrapped private key on the device-key record) and a P-256 box key. The id is not the vault passphrase and is not written into the author string. The mark sits beside a name when that person's id is known. Other people stay names until their signed card has been seen in a shared space.
+
+**Presence:** room `person:<sha256(personPublicId)[:16] hex>`. While the tab is visible and **Active** is on, that vault announces a fresh signed here. Peers who already have the card mark them **Active**. **Hidden**, or a hidden tab, leaves the room.
+
+**Invite:** **Invite** seals a space secret to the person's box key and sends it on that room. From an open chat it seals that chat's secret. From People it seals a new secret and opens it here. Their open tab opens the space. The tracker sees the meeting room, not the secret. This is not an Ogma-sent invite and does not wake a closed app.
 
 ## Sync protocol (when space open)
 
@@ -47,6 +51,8 @@
 2. On peer connect: send `{ type: "have", ids: ["...", ...] }` (or ranged summary if large).
 3. Peer replies `{ type: "need", ids: [...] }` then chunk `{ type: "entries", entries: [envelope, ...] }` (max ~64–256 KiB per chunk).
 4. Persist new ids; re-broadcast `have` occasionally.
+
+**Catch-up:** Closing the chat stops live sync for that peer. Opening again runs the same exchange; peers who kept the envelopes seed the gap. If no peer with those ids is online, the gap stays until one is.
 
 **Seeding:** only while document visible (`document.visibilityState === 'visible'`).
 

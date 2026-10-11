@@ -8,12 +8,17 @@ import { ChatDrawer } from './ChatDrawer';
 import { ControlBar } from './ControlBar';
 import { InviteLinkBar } from './InviteLinkBar';
 import { SettingsDrawer } from './SettingsDrawer';
+import { SpacePeople } from './SpacePeople';
+import type { PersonReach } from './PersonReach';
 import { VideoGrid } from './VideoGrid';
 
 type Drawer = 'none' | 'chat' | 'settings';
 
 interface CallShellProps {
   displayName: string;
+  personId?: string | null;
+  people?: string[];
+  reach?: PersonReach | null;
   connectionLabel: string;
   roomCode: string;
   inviteUrl: string;
@@ -96,6 +101,16 @@ export function CallShell(props: CallShellProps) {
             <InviteLinkBar inviteUrl={props.inviteUrl} onCopyInvite={props.onCopyInvite} />
           </div>
         ) : null}
+        {(props.people?.length ?? 0) > 0 ? (
+          <div className="mt-1.5">
+            <SpacePeople
+              people={props.people ?? []}
+              selfName={props.displayName}
+              personId={props.personId}
+              reach={props.reach}
+            />
+          </div>
+        ) : null}
         {props.linkHint ? (
           <p role="status" className="mt-1 text-[11px] text-[color:var(--color-muted)]">
             {props.linkHint}
@@ -108,6 +123,7 @@ export function CallShell(props: CallShellProps) {
           <VideoGrid
             localStream={props.localStream}
             localLabel={props.displayName}
+            personId={props.personId}
             localMicOff={props.localMicOff}
             localScreen={props.screenSharing}
             blurSupported={props.backgroundBlurSupported}
@@ -157,6 +173,8 @@ export function CallShell(props: CallShellProps) {
           open={props.drawer === 'chat'}
           messages={props.messages}
           selfId={props.selfId}
+          selfName={props.displayName}
+          personId={props.personId}
           hasMoreOlder={props.hasMoreOlder}
           loadingOlder={props.loadingOlder}
           onLoadOlder={props.onLoadOlder}

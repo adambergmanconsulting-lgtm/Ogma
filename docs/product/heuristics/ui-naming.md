@@ -49,21 +49,26 @@
 | Vault unlock | Title **Open vault**; field **Vault key**; **Open**; quiet **Back** | Heading = display name; unlock on every visit |
 | Vault session | Stay signed in until **Log out** (only if vault key exists) | Re-prompt vault key on reload |
 | Space invite | **InviteLinkBar**: **Copy** → **Copied** (share sheet on phone); same control on Call | Blocking invite essay; fake Copied without clipboard result; one-off quiet Copy |
-| Top-bar brand | **Ogma** (mark + name); opens the **Spaces** tab (soft-nav when in Call) | Synonym product title in chrome; treating brand as a separate Home app |
+| Top-bar brand | **Ogma** (mark + name); opens the **All** tab (soft-nav when in Call); aria **All chats** | Synonym product title in chrome; treating brand as a separate Home app |
 | Settings gear | **Settings**; the same control opens and closes (top bar and the call bar) | "Preferences"; "Account" for the gear; a gear that only opens |
 | Space **Call** | Button: **Call** (gold while video is off) | Synonym ("Start video", "Join call") on the video pane |
-| Home **Start new** | Top bar: **Start new** · **Chat** / **Call** | A second Start new inside the Spaces tab; separate tile titles |
-| Chat column tabs | **Chat** \| **Spaces** | Stacking both at once; "Recents" / "Chats" as a section title |
+| Home create | Chat column: **New** (creates a space; aria **New chat**). Disabled while the open chat is alone with no text yet (would only stack empties). **All** continues an old one. Video **Call** starts A/V on the open space | Creating another empty solo chat; visible **New chat** beside **This chat**; dual Chat/Call create; create on the top bar |
+| Chat column tabs | **This chat** \| **All** | **Chat** \| **Spaces**; **Current** / **Previous**; **Recents**; stacking both at once |
+| All search | Quiet **Search** field above the list (filters chats + People) | No way to find a chat once the list grows; a loud search Moment |
 | Pane fold | Chevron toward the edge the pane leaves: left (up when stacked) for video, right (down when stacked) for chat. The collapsed rail uses the opposite chevron. Labels **Hide video** / **Hide chat** / **Show video** / **Show chat** | A panel-window glyph; an X |
 | Home invite cue | Quiet **Have an invite?** → Join | Loud parallel Join CTA |
 | Soft-nav return | **Back to call**; Leave | Synonym strip labels ("Return", "Exit room") |
 | Chat list title | Custom **label** if set; else **lastPreview** (last text, or `{name} joined`); else **Chat** | Participant-name titles; **No one yet**; opaque short ids; **New chat**; **Only you** (occupancy) |
-| Open chat header | People row: short first-token names, full name in `title` / aria; invite Copy under; no chat title | Title chrome (`No one yet` / participant headline); online dots on the people row |
+| Open chat invite | One quiet row, ends pulled apart: **Invite** · **N Active** (left; dimmed at **0 Active**) · **Copy link** → **Copied** (right). When enabled, opens a vertical panel of Active people (Invite into this chat). `{name} joined` stays in the log | **Invite a person**; **No one to invite yet** instead of **0 Active**; horizontal people row; gold Copy; standing URL field |
+| All people | Heading **People**; browse + Search; **Invite** starts a **new** chat while Active; **Hidden** when not | Full directory under This chat; treating Invite as into the open chat from All |
 | Join system line | Centered muted **`{name} joined`** (sealed once per author on open) | Leave lines; inventing join without a sealed event |
 | Older messages | Quiet **Load older** (+50) | Manual archive chore wording |
-| Space empty | No standing sentence in the log. The invite row and `{name} joined` already cover an empty chat | **This chat stays here. Copy the invite…**; a second copy cue under the invite row |
+| Space empty | No standing sentence in the log. **Copy link** and `{name} joined` already cover an empty chat | **This chat stays here. Copy the invite…**; a second copy cue under Copy link |
 | Call lobby title | **Call** (invite join only) | Cold Create lobby with paste field |
 | Vault settings | **Save name**; optional **Add vault key**; **Export** / **Import**; **Log out** only with key; **Start over** / **Switch vault** | Vault key required; Log out without a key |
+| Person id | Fingerprint beside a name when that person's id is known (this vault, or a card from a shared space). Hover or focus shows the id. The name text stays the name | A mark with no id; the raw id inside the name; the vault key as the id |
+| Person active | Quiet dot + **Active** / **Hidden** before Settings (also in Settings) | A bordered chip beside the brand; gold text like **Chat** / **Call**; the control beside **All** |
+| Call people | Once a call is up, short names on the video pane. **Invite** beside someone else only while they are **Active**, into this space | A people row in the chat header |
 | Vault scope copy | Without key: chats stay in this browser…; with key: vault session copy | Device-wide / cross-OS claims |
 | Install Moment (after first chat) | Title **Keep Ogma on your home screen**; body: chats stay in this browser; **Install** / **How to add** / **How to install** + **Not now** | Standing install essay on empty home; push notifications |
 | Install how (iOS) | **Share → Add to Home Screen** | Long Safari tutorial |

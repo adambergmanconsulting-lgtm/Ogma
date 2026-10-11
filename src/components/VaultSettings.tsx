@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { PersonIdMark } from './PersonIdMark';
+import { AppearActive } from './PersonReach';
 import {
   SETTINGS_INSTALL,
   installHowForMode,
@@ -32,6 +34,11 @@ interface VaultSettingsProps {
   displayName: string;
   /** True when a vault key was opted in (Log out / retrieve). */
   hasVaultKey: boolean;
+  /** Public person id for this vault. Absent until a vault key exists. */
+  personId?: string | null;
+  appearActive?: boolean;
+  tabVisible?: boolean;
+  onToggleAppearActive?: () => void;
   installMode: InstallOfferMode;
   installHowOpen: boolean;
   turnUri: string;
@@ -97,19 +104,35 @@ export function VaultSettings(props: VaultSettingsProps) {
               ? 'This vault stays in this browser. You stay signed in until Log out.'
               : 'Chats stay in this browser. A vault key is optional — only if you want to lock or move them.'}
           </p>
-          <label className="block space-y-1.5">
-            <span className="field-label">Your name</span>
-            <input
-              data-testid="vault-rename"
-              type="text"
-              name="displayName"
-              autoComplete="nickname"
-              data-1p-ignore
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="field field--inset"
-            />
-          </label>
+          <div className="space-y-1.5">
+            <label className="field-label" htmlFor="vault-display-name">
+              Your name
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                id="vault-display-name"
+                data-testid="vault-rename"
+                type="text"
+                name="displayName"
+                autoComplete="nickname"
+                data-1p-ignore
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="field field--inset min-w-0 flex-1"
+              />
+              {props.personId ? <PersonIdMark id={props.personId} /> : null}
+            </div>
+          </div>
+          {props.personId && props.onToggleAppearActive ? (
+            <p className="flex items-center justify-between gap-2 text-xs text-[color:var(--color-muted)]">
+              <span>While Ogma is open, people who know you can invite you.</span>
+              <AppearActive
+                active={Boolean(props.appearActive && props.tabVisible)}
+                onToggle={props.onToggleAppearActive}
+                testId="settings-appear-active"
+              />
+            </p>
+          ) : null}
           <button
             type="button"
             data-testid="vault-rename-save"

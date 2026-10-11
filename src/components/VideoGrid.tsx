@@ -6,6 +6,8 @@ import { VideoTile } from './VideoTile';
 interface VideoGridProps {
   localStream: MediaStream | null;
   localLabel: string;
+  /** Vault id, shown beside a label only when that label is this person. */
+  personId?: string | null;
   localMicOff: boolean;
   /** Local picture is a screen, so do not mirror or crop it. */
   localScreen?: boolean;
@@ -35,6 +37,7 @@ function gridClass(count: number): string {
 export function VideoGrid({
   localStream,
   localLabel,
+  personId,
   localMicOff,
   localScreen = false,
   blurSupported = false,
@@ -62,6 +65,8 @@ export function VideoGrid({
       <VideoTile
         stream={localStream}
         label={localLabel}
+        selfName={localLabel}
+        personId={personId}
         muted
         mirrored={!localScreen}
         fit={localScreen ? 'contain' : 'cover'}
@@ -86,6 +91,8 @@ export function VideoGrid({
           key={peer.peerId}
           stream={peer.stream}
           label={peer.displayName}
+          selfName={localLabel}
+          personId={personId}
           fit={peer.sharingScreen ? 'contain' : 'cover'}
           pinned={pinnedPeerIds.includes(peer.peerId)}
           onTogglePin={onTogglePin ? () => onTogglePin(peer.peerId) : undefined}

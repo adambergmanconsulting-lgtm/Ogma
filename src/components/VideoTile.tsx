@@ -8,10 +8,14 @@ import {
   unlockRemoteAudio,
 } from '../domain/media/remoteAudioUnlock';
 import { MicLevel } from './MicLevel';
+import { PersonName } from './PersonName';
 
 interface VideoTileProps {
   stream: MediaStream | null;
   label: string;
+  /** This vault's id when `label` is that person. */
+  selfName?: string;
+  personId?: string | null;
   /** Local tile: mute playback to avoid echo. */
   muted?: boolean;
   mirrored?: boolean;
@@ -65,6 +69,8 @@ function useAudioInputOff(stream: MediaStream | null): boolean {
 export function VideoTile({
   stream,
   label,
+  selfName,
+  personId,
   muted = false,
   mirrored = false,
   fit = 'cover',
@@ -162,7 +168,13 @@ export function VideoTile({
         </button>
       ) : null}
       <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
-        <span className="truncate text-sm font-medium">{label}</span>
+        <PersonName
+          name={label}
+          selfName={selfName}
+          personId={personId}
+          truncate
+          className="text-sm font-medium"
+        />
         <div className="flex shrink-0 items-center gap-2">
           {onTogglePin ? (
             <button

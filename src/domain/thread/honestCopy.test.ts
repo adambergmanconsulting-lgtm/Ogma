@@ -16,6 +16,7 @@ describe('honestCopy', () => {
 
   it('ships Loom honest claims without overclaim words', () => {
     expect(LOOM_HONEST_COPY).toMatch(/encrypted with the vault key/i);
+    expect(LOOM_HONEST_COPY).toMatch(/catches up from peers/i);
     expect(LOOM_HONEST_COPY).toMatch(/no central copy/i);
     expect(LOOM_HONEST_COPY).toMatch(/Anyone with the space link/i);
     expect(LOOM_HONEST_COPY).not.toMatch(/fully anonymous/i);

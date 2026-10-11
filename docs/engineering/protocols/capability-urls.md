@@ -29,7 +29,7 @@
 
 ## UI copy
 
-- Share controls use **InviteLinkBar** (**Copy** → **Copied**; share sheet on phone) in-call and on the open chat — copy ≠ join.
+- Share controls use **InviteLinkBar** (**Copy** → **Copied**; share sheet on phone) in-call and under This chat **Copy link** — copy ≠ join.
 - Space-bound Call invites: `?room=<thread>#space=<space>` so guests get A/V and the same Loom log.
 - Show a short room code in-call so both people can confirm they match.
 - Labels: [ui-naming.md](../../product/heuristics/ui-naming.md).

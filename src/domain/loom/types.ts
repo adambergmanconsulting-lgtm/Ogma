@@ -50,6 +50,14 @@ export type DeviceKeyMeta = {
   /** Verifier: encrypt fixed string; proves passphrase without storing it. */
   verifierNonceB64: string;
   verifierCipherB64: string;
+  /** Ed25519 public id. Present once a vault key exists. Not the passphrase. */
+  personPublicB64?: string;
+  /** PKCS8 private key, wrapped by the vault device key. */
+  personPrivateWrappedB64?: string;
+  /** P-256 box public key (SPKI). Used to seal an invite. Not the person id. */
+  boxPublicB64?: string;
+  /** P-256 box private key, wrapped by the vault device key. */
+  boxPrivateWrappedB64?: string;
 };
 
 export type LoomBackupV1 = {
@@ -64,4 +72,13 @@ export type LoomBackupV1 = {
 export type SyncWire =
   | { type: 'have'; ids: string[] }
   | { type: 'need'; ids: string[] }
-  | { type: 'entries'; entries: LoomEnvelope[] };
+  | { type: 'entries'; entries: LoomEnvelope[] }
+  | { type: 'card'; card: PersonCardWire };
+
+/** Signed name + person id + box key. Public. The space secret is not in it. */
+export type PersonCardWire = {
+  name: string;
+  personPublicB64: string;
+  boxPublicB64: string;
+  sigB64: string;
+};

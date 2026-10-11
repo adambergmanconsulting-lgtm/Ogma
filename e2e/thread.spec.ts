@@ -20,10 +20,12 @@ test.describe('Name + home', () => {
     await expect(page.getByTestId('secret-value')).toHaveCount(0);
     await expect(page.getByTestId('app-work-shell')).toBeVisible();
     await expect(page.getByTestId('app-home')).toBeVisible();
-    await expect(page.getByTestId('home-start-new')).toBeVisible();
-    await expect(page.getByTestId('home-start-new').getByText('Start new')).toBeVisible();
-    await expect(page.getByTestId('home-chat')).toBeVisible();
-    await expect(page.getByTestId('home-call')).toBeVisible();
+    await expect(page.getByTestId('space-chat').getByTestId('home-new-chat')).toBeVisible();
+    await expect(page.getByTestId('home-new-chat')).toContainText('New');
+    await expect(page.getByTestId('home-new-chat')).toHaveAttribute('aria-label', 'New chat');
+    await expect(page.getByTestId('chat-pane-chat')).toHaveText('This chat');
+    await expect(page.getByTestId('chat-pane-spaces')).toHaveText('All');
+    await expect(page.getByTestId('app-nav').getByTestId('home-new-chat')).toHaveCount(0);
     await expect(page.getByTestId('space-view')).toBeVisible();
     await expect(page.getByTestId('space-presence-idle')).toBeVisible();
     await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
@@ -40,15 +42,22 @@ test.describe('Chat and Call entry', () => {
     page,
   }) => {
     await ensureVault(page, 'Host');
-    await page.getByTestId('home-chat').click();
+    await page.getByTestId('home-new-chat').click();
     await expect(page.getByTestId('space-join')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('space-people')).toContainText('Host');
+    await expect(page.getByTestId('space-people')).toHaveCount(0);
+    await expect(page.getByTestId('person-id')).toHaveCount(0);
+    await expect(page.getByTestId('appear-active')).toHaveCount(0);
+    await expect(page.getByTestId('nav-appear-active')).toHaveCount(0);
+    await expect(page.getByTestId('person-invite')).toHaveCount(0);
+    await expect(page.getByTestId('chat-invite')).toBeVisible();
+    await expect(page.getByTestId('share-link')).toHaveText(/Copy link/);
+    await expect(page.getByTestId('chat-invite-person')).toHaveCount(0);
     await expect(page.getByTestId('space-join')).toContainText(/Host joined/i);
     await expect(page.getByTestId('app-work-shell')).toBeVisible();
     await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('space-presence')).toBeVisible();
     await expect(page.getByTestId('space-presence-idle')).toBeVisible();
-    await expect(page.getByTestId('share-link')).toBeVisible();
+    await expect(page.getByTestId('chat-invite')).toBeVisible();
     await expect(page.getByTestId('space-call')).toBeVisible();
     await expect(page.getByTestId('nav-call')).toHaveCount(0);
     await page.getByTestId('space-fold-video').click();
@@ -65,6 +74,7 @@ test.describe('Chat and Call entry', () => {
     await expect(page.locator('[data-testid^="space-activity-"]').first()).toBeVisible();
     await page.locator('[data-testid^="space-call-"]').first().click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('space-people')).toContainText('Host');
     await expect(page.getByTestId('toggle-screen-share')).toBeVisible();
     await expect(page.getByTestId('video-blur')).toBeVisible();
     await expect(page.getByTestId('toggle-background-blur')).toHaveText(/Blur background/);
@@ -75,25 +85,29 @@ test.describe('Chat and Call entry', () => {
     await expect(page.getByTestId('mask-edge-cut')).toHaveCount(0);
     await page.getByTestId('call-settings').click();
     await expect(page.getByRole('heading', { name: 'Devices' })).toHaveCount(0);
-    await expect(page.getByTestId('share-link')).toBeVisible();
+    await expect(page.getByTestId('chat-invite')).toBeVisible();
     await expect(page.getByTestId('connection-label')).toContainText(/Waiting|Connected/);
     await expect(page).toHaveURL(/[?&]room=/);
     await expect(page.getByTestId('mic-level')).toBeVisible();
     await openCallChat(page);
   });
 
-  test('home Call starts Thread immediately', async ({ page }) => {
+  test('New then video Call starts Thread', async ({ page }) => {
     await ensureVault(page, 'Host');
-    await page.getByTestId('home-call').click();
+    await page.getByTestId('home-new-chat').click();
+    await expect(page.getByTestId('space-call')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('space-call').click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('share-link')).toBeVisible();
+    await expect(page.getByTestId('chat-invite')).toBeVisible();
     await expect(page).toHaveURL(/#space=/);
     await openCallChat(page);
   });
 
   test('brand soft-nav keeps Call live; Back to call restores', async ({ page }) => {
     await ensureVault(page, 'Host');
-    await page.getByTestId('home-call').click();
+    await page.getByTestId('home-new-chat').click();
+    await expect(page.getByTestId('space-call')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('space-call').click();
     await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
     await expect(page).toHaveURL(/[?&]room=/);
     await page.getByTestId('nav-home').click();
@@ -113,7 +127,7 @@ test.describe('Home anchor', () => {
   }) => {
     await ensureVault(page, 'Host');
     await expect(page.getByTestId('home-anchor-install')).toHaveCount(0);
-    await page.getByTestId('home-chat').click();
+    await page.getByTestId('home-new-chat').click();
     await expect(page.getByTestId('space-join')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('nav-home').click();
     await expect(page.getByTestId('app-home')).toBeVisible();
@@ -122,6 +136,7 @@ test.describe('Home anchor', () => {
     await expect(page.getByTestId('home-anchor-vault')).toBeVisible();
     await page.getByTestId('nav-settings').click();
     await expect(page.getByTestId('settings-you')).toBeVisible();
+    await expect(page.getByTestId('person-id')).toHaveCount(0);
     await page.getByTestId('nav-settings').click();
     await expect(page.getByTestId('settings-you')).toHaveCount(0);
     await page.getByTestId('nav-settings').click();
@@ -167,5 +182,56 @@ test.describe('Thread two-peer', () => {
 
     await hostContext.close();
     await guestContext.close();
+  });
+});
+
+test.describe('Person id', () => {
+  test('a vault key adds an id beside Your name', async ({ page }) => {
+    await ensureVault(page, 'Ada');
+    await page.getByTestId('nav-settings').click();
+    await expect(page.getByTestId('person-id')).toHaveCount(0);
+    await page.getByTestId('enable-vault').click();
+    const vaultKey = (await page.getByTestId('secret-value').innerText()).trim();
+    await page.getByTestId('secret-continue').click();
+    await expect(page.getByTestId('app-home')).toBeVisible();
+    await page.getByTestId('nav-settings').click();
+    const mark = page.getByTestId('person-id');
+    await expect(mark).toBeVisible();
+    const personId = await mark.getAttribute('title');
+    expect(personId).toBeTruthy();
+    expect(personId).not.toBe(vaultKey);
+    await expect(page.getByTestId('vault-rename')).toHaveValue('Ada');
+    const appear = page.getByTestId('settings-appear-active');
+    await expect(appear).toHaveAttribute('aria-pressed', 'true');
+    await appear.click();
+    await expect(appear).toHaveAttribute('aria-pressed', 'false');
+    await appear.click();
+    await expect(appear).toHaveAttribute('aria-pressed', 'true');
+    await mark.hover();
+    await expect(page.getByRole('tooltip')).toHaveText(personId!);
+    await page.getByTestId('nav-settings').click();
+    await page.getByTestId('home-new-chat').click();
+    await expect(page.getByTestId('space-join')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('space-people')).toHaveCount(0);
+    await expect(page.getByTestId('space-join').getByTestId('person-id')).toBeVisible();
+    await expect(page.getByTestId('chat-invite')).toBeVisible();
+    await expect(page.getByTestId('share-link')).toHaveText(/Copy link/);
+    await expect(page.getByTestId('chat-invite-person')).toContainText(/Invite/);
+    await expect(page.getByTestId('chat-invite-person')).toContainText(/0 Active/);
+    await expect(page.getByTestId('chat-invite-person')).toBeDisabled();
+    await expect(page.getByTestId('chat-invite-person')).toHaveAttribute(
+      'title',
+      'No one is Active',
+    );
+    await expect(page.getByTestId('chat-invite-panel')).toHaveCount(0);
+    await page.getByTestId('chat-pane-spaces').click();
+    await expect(page.getByTestId('known-people')).toBeVisible();
+    await expect(page.getByTestId('known-people')).toContainText(/Invite starts a new chat/i);
+    await expect(page.getByTestId('app-nav').getByTestId('nav-appear-active')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('space-chat').getByTestId('nav-appear-active')).toHaveCount(0);
+    await expect(page.getByTestId('space-join')).toContainText('joined');
   });
 });

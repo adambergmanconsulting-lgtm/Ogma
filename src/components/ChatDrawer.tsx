@@ -2,11 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { Send, X } from 'lucide-react';
 import type { ChatMessage } from '../domain/types';
 import { ChatMessageText } from './ChatMessageText';
+import { PersonName } from './PersonName';
 
 interface ChatDrawerProps {
   open: boolean;
   messages: ChatMessage[];
   selfId: string;
+  selfName?: string;
+  personId?: string | null;
   hasMoreOlder?: boolean;
   loadingOlder?: boolean;
   onLoadOlder?: () => void;
@@ -18,6 +21,8 @@ export function ChatDrawer({
   open,
   messages,
   selfId,
+  selfName,
+  personId,
   hasMoreOlder,
   loadingOlder,
   onLoadOlder,
@@ -75,7 +80,11 @@ export function ChatDrawer({
               >
                 {!mine ? (
                   <div className="mb-0.5 text-[11px] text-[color:var(--color-muted)]">
-                    {m.displayName}
+                    <PersonName
+                      name={m.displayName}
+                      selfName={selfName}
+                      personId={personId}
+                    />
                   </div>
                 ) : null}
                 <ChatMessageText text={m.text} />

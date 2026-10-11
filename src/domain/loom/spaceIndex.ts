@@ -52,6 +52,41 @@ export function spacePeopleNames(authors: string[] | undefined, selfName: string
   return mergeAuthors(authors, selfName.trim() ? [selfName.trim()] : []);
 }
 
+/**
+ * Open chat is alone and has no text yet — creating another space would only stack empties.
+ * `people` is the display list (may include self).
+ */
+export function isFreshSoloChat(
+  people: string[],
+  selfName: string,
+  hasTextMessage: boolean,
+): boolean {
+  if (hasTextMessage) return false;
+  const self = selfName.trim().toLowerCase();
+  return !people.some((p) => {
+    const name = p.trim().toLowerCase();
+    return Boolean(name) && name !== self;
+  });
+}
+
+/** Case-insensitive Spaces search over label, preview, and author names. */
+export function spaceMatchesQuery(
+  row: SpaceIndexRow,
+  query: string,
+  selfName = '',
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const label = displaySpaceLabel(row, selfName).toLowerCase();
+  if (label.includes(q)) return true;
+  if (row.label?.toLowerCase().includes(q)) return true;
+  if (row.lastPreview?.toLowerCase().includes(q)) return true;
+  for (const author of row.authors ?? []) {
+    if (author.toLowerCase().includes(q)) return true;
+  }
+  return false;
+}
+
 /** Fill authors from stored envelopes when the index row never learned them. */
 export async function backfillSpaceAuthors(
   store: LoomStore,

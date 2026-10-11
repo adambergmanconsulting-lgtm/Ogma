@@ -6,8 +6,10 @@ import {
   formatSpaceActivity,
   mergeAuthors,
   noteSpaceAuthors,
+  isFreshSoloChat,
   shortDisplayName,
   spaceActivityAt,
+  spaceMatchesQuery,
   spacePeopleNames,
 } from './spaceIndex';
 import type { SpaceIndexRow } from './types';
@@ -47,6 +49,30 @@ describe('space labels from participants', () => {
   it('clips long previews', () => {
     expect(clipSpacePreview('a'.repeat(100)).length).toBeLessThanOrEqual(80);
     expect(clipSpacePreview('a'.repeat(100)).endsWith('…')).toBe(true);
+  });
+
+  it('detects a fresh solo chat (no others, no text)', () => {
+    expect(isFreshSoloChat(['Ada'], 'Ada', false)).toBe(true);
+    expect(isFreshSoloChat([], 'Ada', false)).toBe(true);
+    expect(isFreshSoloChat(['Ada'], 'Ada', true)).toBe(false);
+    expect(isFreshSoloChat(['Ada', 'Bo'], 'Ada', false)).toBe(false);
+  });
+
+  it('matches Spaces search against label, preview, and authors', () => {
+    const row: SpaceIndexRow = {
+      spaceId: 'abcdefghijklmnop',
+      authors: ['Ada Lovelace', 'Bo'],
+      lastPreview: 'shipping notes',
+      status: 'recent',
+      lastOpenedAt: 0,
+      lastMessageAt: 0,
+      unreadCount: 0,
+    };
+    expect(spaceMatchesQuery(row, '')).toBe(true);
+    expect(spaceMatchesQuery(row, 'ship')).toBe(true);
+    expect(spaceMatchesQuery(row, 'lovelace')).toBe(true);
+    expect(spaceMatchesQuery({ ...row, label: 'Project X' }, 'project')).toBe(true);
+    expect(spaceMatchesQuery(row, 'zzz')).toBe(false);
   });
 
   it('persists newly seen authors on the space row', async () => {

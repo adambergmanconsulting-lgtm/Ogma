@@ -4,7 +4,7 @@ import { buildIceServers } from '../thread/iceConfig';
 import { THREAD_TRACKER_URLS } from '../thread/relayHealth';
 import { isLoomEnvelope } from './envelope';
 import type { LoomStore } from './storePort';
-import type { LoomEnvelope, SyncWire } from './types';
+import type { LoomEnvelope, PersonCardWire, SyncWire } from './types';
 
 const LOOM_APP_ID = 'ogma-loom-v1';
 const CHUNK_MAX_ENTRIES = 32;
@@ -13,6 +13,9 @@ export type LoomSyncHandlers = {
   onEntries: (entries: LoomEnvelope[]) => void | Promise<void>;
   onPeerCount?: (n: number) => void;
   onError?: (message: string) => void;
+  /** This vault's card, when a person id exists. */
+  getOwnCard?: () => PersonCardWire | null;
+  onCard?: (card: PersonCardWire) => void;
 };
 
 export type LoomSyncSession = {
@@ -20,6 +23,7 @@ export type LoomSyncSession = {
   leave: () => void;
   broadcastHave: () => Promise<void>;
   sendEntries: (entries: LoomEnvelope[]) => Promise<void>;
+  sendCard: () => Promise<void>;
 };
 
 function isVisible(): boolean {
@@ -62,6 +66,13 @@ export async function openLoomSync(
   const sync = room.makeAction<SyncWire>('loomSync');
 
   const localIds = async () => store.listMessageIds(spaceId);
+
+  const sendCard = async (peerId?: string) => {
+    if (!isVisible()) return;
+    const card = handlers.getOwnCard?.();
+    if (!card) return;
+    await sync.send({ type: 'card', card }, peerId ? { target: peerId } : undefined);
+  };
 
   const sendHave = async (peerId?: string) => {
     if (!isVisible()) return;
@@ -109,7 +120,9 @@ export async function openLoomSync(
       if (data.type === 'entries' && Array.isArray(data.entries)) {
         const ok = data.entries.filter(isLoomEnvelope);
         if (ok.length) await handlers.onEntries(ok);
+        return;
       }
+      if (data.type === 'card' && data.card) handlers.onCard?.(data.card);
     })();
   };
 
@@ -118,10 +131,12 @@ export async function openLoomSync(
   room.onPeerJoin = (peerId) => {
     handlers.onPeerCount?.(peerCount());
     void sendHave(peerId);
+    void sendCard(peerId);
   };
   room.onPeerLeave = () => handlers.onPeerCount?.(peerCount());
 
   void sendHave();
+  void sendCard();
 
   return {
     spaceId,
@@ -132,6 +147,7 @@ export async function openLoomSync(
       void room.leave();
     },
     broadcastHave: () => sendHave(),
+    sendCard: () => sendCard(),
     sendEntries: async (entries) => {
       if (!isVisible() || entries.length === 0) return;
       for (let i = 0; i < entries.length; i += CHUNK_MAX_ENTRIES) {

@@ -38,10 +38,12 @@ export async function openCallChat(page: Page) {
   await expect(page.getByTestId('chat-input')).toBeVisible();
 }
 
-/** Home Call — new space + Thread on the same chat shell. */
+/** New, then video-pane Call — Thread on the same chat shell. */
 export async function createRoom(page: Page, name: string) {
   await ensureVault(page, name);
-  await page.getByTestId('home-call').click();
+  await page.getByTestId('home-new-chat').click();
+  await expect(page.getByTestId('space-call')).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId('space-call').click();
   await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId('share-link')).toBeVisible();
   await expect(page.getByTestId('space-compose')).toBeVisible();

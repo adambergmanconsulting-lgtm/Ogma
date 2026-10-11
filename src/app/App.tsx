@@ -3,6 +3,7 @@ import { AppNav, type AppNavPlace } from '../components/AppNav';
 import { AppWorkShell } from '../components/AppWorkShell';
 import type { ChatPane } from '../components/ChatColumn';
 import { PreviousSpacesList } from '../components/PreviousSpacesList';
+import type { PersonReach } from '../components/PersonReach';
 import { CallShell } from '../components/CallShell';
 import { InCallBar } from '../components/InCallBar';
 import { Lobby } from '../components/Lobby';
@@ -11,6 +12,7 @@ import { SpaceView } from '../components/SpaceView';
 import { VaultSetup } from '../components/VaultSetup';
 import { VaultUnlock } from '../components/VaultUnlock';
 import { WorkspaceIdle } from '../components/WorkspaceIdle';
+import { isFreshSoloChat } from '../domain/loom/spaceIndex';
 import { parseRoomIdFromLocation } from '../domain/signaling/room';
 import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
 import {
@@ -25,11 +27,33 @@ import { AppSettingsDrawer } from './AppSettingsDrawer';
 import { buildSpaceCallBand } from './buildSpaceCallBand';
 import { useCallController } from './useCallController';
 import { useLoomController } from './useLoomController';
+import { usePersonPresence } from './usePersonPresence';
 import { usePwaInstall } from './usePwaInstall';
 import { usePwaUpdate } from './usePwaUpdate';
 
 export default function App() {
   const loom = useLoomController();
+  const presence = usePersonPresence({
+    wrapKey: loom.wrapKey,
+    displayName: loom.displayName,
+    setOwnCard: loom.setOwnCard,
+    onOpenSecret: (secret) => loom.onOpenSpaceSecret(secret),
+  });
+  const reach: PersonReach = {
+    selfPersonId: presence.selfPersonId,
+    appearActive: presence.appearActive,
+    tabVisible: presence.tabVisible,
+    people: presence.people,
+    cardForName: presence.cardForName,
+    onToggleAppearActive: presence.toggleAppearActive,
+    onInvite: (id) => void presence.invite(id),
+    onInviteHere: loom.focusedSecret
+      ? (id) => {
+          const secret = loom.focusedSecret;
+          if (secret) void presence.invite(id, secret);
+        }
+      : undefined,
+  };
   const pwa = usePwaInstall();
   const preferSpaces = useRef(false);
   const [chatPane, setChatPane] = useState<ChatPane>('spaces');
@@ -95,7 +119,7 @@ export default function App() {
     call.restoreShareUrl();
   }, [call.inCall, call.restoreShareUrl, loom.focusedSecret, loom.screen]);
 
-  // Resume opens the chat unless the user asked for the Spaces tab.
+  // Resume opens the chat unless the user asked for the All tab.
   useEffect(() => {
     if (preferSpaces.current) return;
     if (loom.focusedSecret) setChatPane('chat');
@@ -181,26 +205,21 @@ export default function App() {
     setRoomShellOpen(true);
   };
 
-  const goStartChat = () => {
+  const freshSoloChat =
+    Boolean(loom.focusedSecret) &&
+    isFreshSoloChat(
+      loom.people,
+      loom.displayName,
+      loom.messages.some((m) => m.kind === 'text'),
+    );
+
+  const goNewChat = () => {
     showChat();
+    if (freshSoloChat) return;
     void loom.onCreateSpace();
   };
 
-  const goStartCall = () => {
-    if (call.inCall) {
-      returnToCall();
-      return;
-    }
-    showChat();
-    if (loom.busy) return;
-    void (async () => {
-      const secret = await loom.createAndOpenSpace();
-      if (!secret) return;
-      await startCallWithSecret(secret);
-    })();
-  };
-
-  /** Upgrade open space to Call (nav). */
+  /** Upgrade open space to Call (video pane). */
   const goCall = () => {
     if (call.inCall || loom.busy || !loom.focusedSecret) return;
     void startCallWithSecret(loom.focusedSecret);
@@ -261,6 +280,7 @@ export default function App() {
       onJoinSpace={loom.onJoinSpace}
       onOpenChat={goOpenChat}
       onOpenCall={goOpenCall}
+      reach={reach}
     />
   );
 
@@ -271,13 +291,21 @@ export default function App() {
       else showChat();
     },
     spacesPane,
+    startNew: {
+      busy: loom.busy || call.busy,
+      disabled: freshSoloChat,
+      onNewChat: goNewChat,
+    },
   };
 
   let workspace: ReactNode;
   if (callSurface === 'space-call') {
     workspace = (
       <SpaceView
+        selfName={loom.displayName}
+        personId={loom.personId}
         people={loom.people}
+        reach={reach}
         inviteUrl={call.shareUrl || loom.inviteUrl}
         messages={loom.messages}
         error={loom.error}
@@ -294,7 +322,10 @@ export default function App() {
   } else if (loom.screen === 'space') {
     workspace = (
       <SpaceView
+        selfName={loom.displayName}
+        personId={loom.personId}
         people={loom.people}
+        reach={reach}
         inviteUrl={loom.inviteUrl}
         messages={loom.messages}
         error={loom.error}
@@ -317,6 +348,9 @@ export default function App() {
     body = (
       <CallShell
         displayName={loom.displayName.trim() || 'Guest'}
+        personId={loom.personId}
+        people={loom.people}
+        reach={reach}
         connectionLabel={call.statusLabel}
         roomCode={call.roomCode}
         inviteUrl={call.shareUrl}
@@ -370,6 +404,7 @@ export default function App() {
     body = (
       <Lobby
         displayName={loom.displayName}
+        personId={loom.personId}
         mediaError={call.media.error || call.webrtc.error}
         busy={call.busy}
         canJoin={Boolean(call.roomInput.trim())}
@@ -406,12 +441,11 @@ export default function App() {
     <div data-testid="app-home" className="flex h-full min-h-0 flex-col">
       <AppNav
         place={place}
-        busy={loom.busy || call.busy}
         onHome={goHome}
-        onStartChat={goStartChat}
-        onStartCall={goStartCall}
         onSettings={openSettings}
         settingsOpen={settingsOpen}
+        appearActive={Boolean(reach.selfPersonId && reach.appearActive && reach.tabVisible)}
+        onToggleAppearActive={reach.selfPersonId ? reach.onToggleAppearActive : undefined}
       />
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{body}</main>
@@ -426,6 +460,15 @@ export default function App() {
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
           loom={loom}
+          presence={
+            presence.selfPersonId
+              ? {
+                  appearActive: presence.appearActive,
+                  tabVisible: presence.tabVisible,
+                  onToggle: presence.toggleAppearActive,
+                }
+              : null
+          }
           pwa={pwa}
           call={call}
           onAfterLeaveShell={() => setRoomShellOpen(false)}

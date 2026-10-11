@@ -5,6 +5,7 @@ import { useTurnSettings } from './useTurnSettings';
 type SettingsLoom = {
   displayName: string;
   hasVaultKey: boolean;
+  personId: string | null;
   busy: boolean;
   error: string | null;
   onRenameVault: (name: string) => void;
@@ -21,6 +22,12 @@ type SettingsPwa = {
   runInstall: () => void | Promise<void>;
 };
 
+type SettingsPresence = {
+  appearActive: boolean;
+  tabVisible: boolean;
+  onToggle: () => void;
+};
+
 type SettingsCall = {
   inCall: boolean;
   onLeave: () => void;
@@ -30,6 +37,7 @@ type AppSettingsDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   loom: SettingsLoom;
+  presence: SettingsPresence | null;
   pwa: SettingsPwa;
   call: SettingsCall;
   onAfterLeaveShell: () => void;
@@ -38,7 +46,7 @@ type AppSettingsDrawerProps = {
 /** Settings drawer + optional TURN — keeps App.tsx under size warn. */
 export function AppSettingsDrawer(props: AppSettingsDrawerProps) {
   const turn = useTurnSettings();
-  const { loom, pwa, call } = props;
+  const { loom, pwa, call, presence } = props;
 
   const close = () => {
     turn.clearTurnError();
@@ -57,6 +65,10 @@ export function AppSettingsDrawer(props: AppSettingsDrawerProps) {
       open={props.open}
       displayName={loom.displayName}
       hasVaultKey={loom.hasVaultKey}
+      personId={loom.personId}
+      appearActive={presence?.appearActive}
+      tabVisible={presence?.tabVisible}
+      onToggleAppearActive={presence?.onToggle}
       installMode={pwa.mode}
       installHowOpen={pwa.howOpen}
       turnUri={turn.turnUri}

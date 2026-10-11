@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Phone } from 'lucide-react';
-import { shortDisplayName } from '../domain/loom/spaceIndex';
 import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
 import type { ShareResult } from '../domain/signaling/share';
 import { ControlBar } from './ControlBar';
 import { ChatMessageText } from './ChatMessageText';
-import { InviteLinkBar } from './InviteLinkBar';
 import { ChatColumn, type ChatPane } from './ChatColumn';
+import { ChatInvite } from './ChatInvite';
 import { CollapsedRail, FoldButton } from './SpacePaneChrome';
 import { SettingsDrawer } from './SettingsDrawer';
 import type { SpaceCallBand } from './spaceCallBand';
+import { PersonName } from './PersonName';
+import type { PersonReach } from './PersonReach';
+import { SpacePeople } from './SpacePeople';
 import { VideoGrid } from './VideoGrid';
 import { VideoIdle } from './VideoIdle';
 
@@ -23,6 +25,10 @@ export type SpaceMessageView = {
 } & ({ kind: 'text'; text: string } | { kind: 'join' });
 
 interface SpaceViewProps {
+  selfName: string;
+  /** Public id for `selfName`. Absent until this vault has one. */
+  personId?: string | null;
+  reach?: PersonReach | null;
   people: string[];
   inviteUrl: string | null;
   messages: SpaceMessageView[];
@@ -38,6 +44,7 @@ interface SpaceViewProps {
   chatPane: ChatPane;
   onChatPane: (pane: ChatPane) => void;
   spacesPane: ReactNode;
+  startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
 }
 
 export function SpaceView(props: SpaceViewProps) {
@@ -152,6 +159,16 @@ export function SpaceView(props: SpaceViewProps) {
                   {call.linkHint}
                 </p>
               ) : null}
+              {call && props.people.length > 0 ? (
+                <div className="space-pane-pad pb-1">
+                  <SpacePeople
+                    people={props.people}
+                    selfName={props.selfName}
+                    personId={props.personId}
+                    reach={props.reach}
+                  />
+                </div>
+              ) : null}
             </header>
 
             <div className="space-pane-pad min-h-0 flex-1 overflow-hidden py-2">
@@ -160,6 +177,7 @@ export function SpaceView(props: SpaceViewProps) {
                   compact
                   localStream={call.localStream}
                   localLabel={call.displayName}
+                  personId={props.personId}
                   localMicOff={call.localMicOff}
                   localScreen={call.screenSharing}
                   blurSupported={call.backgroundBlurSupported}
@@ -239,39 +257,20 @@ export function SpaceView(props: SpaceViewProps) {
             onFold={foldChat}
             foldDisabled={!canFoldChat}
             spaces={props.spacesPane}
+            startNew={props.startNew}
           >
-            <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">
-              {props.people.length > 0 ? (
-                <ul
-                  data-testid="space-people"
-                  className="flex flex-wrap gap-x-2 gap-y-1"
-                  aria-label="People in this chat"
-                >
-                  {props.people.map((full) => {
-                    const short = shortDisplayName(full) || full;
-                    return (
-                      <li key={full.toLowerCase()}>
-                        <span
-                          className="text-xs text-[color:var(--color-muted)]"
-                          title={full}
-                          aria-label={full}
-                        >
-                          {short}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
-              {props.inviteUrl ? (
-                <div className={props.people.length > 0 ? 'mt-1.5' : undefined}>
-                  <InviteLinkBar dense inviteUrl={props.inviteUrl} onCopyInvite={props.onCopyInvite} />
-                </div>
-              ) : null}
-              {props.error ? (
-                <p className="mt-1.5 text-sm text-[color:var(--color-danger)]">{props.error}</p>
-              ) : null}
-            </header>
+            {props.inviteUrl || props.error ? (
+              <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-3">
+                <ChatInvite
+                  inviteUrl={props.inviteUrl}
+                  onCopyInvite={props.onCopyInvite}
+                  reach={props.reach}
+                />
+                {props.error ? (
+                  <p className="mt-3 text-sm text-[color:var(--color-danger)]">{props.error}</p>
+                ) : null}
+              </header>
+            ) : null}
 
             <div className="space-pane-pad min-h-0 flex-1 space-y-2 overflow-y-auto py-2">
               {props.hasMoreOlder ? (
@@ -294,7 +293,12 @@ export function SpaceView(props: SpaceViewProps) {
                     data-testid="space-join"
                     className="py-0.5 text-center text-[11px] text-[color:var(--color-muted)]"
                   >
-                    {m.author} joined
+                    <PersonName
+                      name={m.author}
+                      selfName={props.selfName}
+                      personId={props.personId}
+                    />{' '}
+                    joined
                   </p>
                 ) : (
                   <div
@@ -303,7 +307,11 @@ export function SpaceView(props: SpaceViewProps) {
                   >
                     {!m.self ? (
                       <div className="mb-0.5 text-[11px] text-[color:var(--color-muted)]">
-                        {m.author}
+                        <PersonName
+                          name={m.author}
+                          selfName={props.selfName}
+                          personId={props.personId}
+                        />
                       </div>
                     ) : null}
                     <ChatMessageText text={m.text} />

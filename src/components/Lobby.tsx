@@ -1,7 +1,9 @@
 import { THREAD_FREE_HONEST_COPY } from '../domain/thread/honestCopy';
+import { PersonName } from './PersonName';
 
 interface LobbyProps {
   displayName: string;
+  personId?: string | null;
   mediaError: string | null;
   busy: boolean;
   canJoin: boolean;
@@ -16,7 +18,9 @@ export function Lobby(props: LobbyProps) {
   return (
     <div className="app-gutter-x gate-shell fade-up">
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">Call</h1>
-      <p className="text-muted mb-2">{props.displayName}</p>
+      <p className="text-muted mb-2">
+        <PersonName name={props.displayName} selfName={props.displayName} personId={props.personId} />
+      </p>
       <p data-testid="thread-honest-copy" className="text-muted mb-8 leading-relaxed">
         {THREAD_FREE_HONEST_COPY}
       </p>

@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Phone } from 'lucide-react';
 import {
   displaySpaceLabel,
   formatSpaceActivity,
   spaceActivityAt,
+  spaceMatchesQuery,
 } from '../domain/loom/spaceIndex';
 import type { SpaceIndexRow } from '../domain/loom/types';
+import { PersonName } from './PersonName';
+import { PersonInvite, type PersonReach } from './PersonReach';
 
 export interface PreviousSpacesListProps {
   chats: SpaceIndexRow[];
@@ -17,20 +21,43 @@ export interface PreviousSpacesListProps {
   onJoinSpace: () => void;
   onOpenChat: (spaceId: string) => void;
   onOpenCall: (spaceId: string) => void;
+  reach?: PersonReach | null;
 }
 
-/** Spaces tab: open a space by name, Call as the secondary act, quiet invite. */
+/** All tab: search, open a chat, Call as the secondary act, quiet invite. */
 export function PreviousSpacesList(props: PreviousSpacesListProps) {
+  const [query, setQuery] = useState('');
   const joining = Boolean(props.spaceInput.trim());
+  const q = query.trim().toLowerCase();
+  const chats = props.chats.filter((row) =>
+    spaceMatchesQuery(row, query, props.displayName),
+  );
+  const people = (props.reach?.people ?? []).filter(
+    (person) => !q || person.name.toLowerCase().includes(q),
+  );
 
   return (
     <div data-testid="previous-spaces" className="space-pane-pad py-2">
       {props.error ? <p className="text-danger mb-2 text-sm">{props.error}</p> : null}
+
+      {props.chats.length > 0 || (props.reach?.people.length ?? 0) > 0 ? (
+        <input
+          data-testid="spaces-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search chats and people"
+          placeholder="Search"
+          className="field field--compact mb-2 w-full"
+        />
+      ) : null}
+
       {props.chats.length === 0 ? (
         <p className="py-2 text-xs text-[color:var(--color-muted)]">No spaces yet.</p>
+      ) : chats.length === 0 ? (
+        <p className="py-2 text-xs text-[color:var(--color-muted)]">No matching chats.</p>
       ) : (
         <ul>
-          {props.chats.map((row) => {
+          {chats.map((row) => {
             const label = displaySpaceLabel(row, props.displayName);
             const activity = formatSpaceActivity(spaceActivityAt(row));
             const active = row.spaceId === props.activeSpaceId;
@@ -84,6 +111,50 @@ export function PreviousSpacesList(props: PreviousSpacesListProps) {
           })}
         </ul>
       )}
+
+      {props.reach && (props.reach.people.length > 0 || props.reach.selfPersonId) ? (
+        <section className="mt-5" data-testid="known-people">
+          <h3 className="text-sm font-semibold tracking-tight text-[color:var(--color-ink)]">
+            People
+          </h3>
+          <p className="mt-0.5 mb-2 text-[11px] leading-snug text-[color:var(--color-muted)]">
+            Invite starts a new chat while they are Active.
+          </p>
+          {people.length === 0 ? (
+            <p className="py-1 text-xs text-[color:var(--color-muted)]">No matching people.</p>
+          ) : (
+            <ul className="space-y-1">
+              {people.map((person) => (
+                <li
+                  key={person.personPublicB64}
+                  className="flex items-center gap-2 py-1"
+                >
+                  <PersonName
+                    name={person.name}
+                    selfName=""
+                    markId={person.personPublicB64}
+                    className="min-w-0 flex-1 text-[13px]"
+                  />
+                  {person.active ? (
+                    <>
+                      <span className="text-[10px] text-[color:var(--color-muted)]">Active</span>
+                      <PersonInvite
+                        active
+                        title="Invite to a new chat"
+                        onInvite={() => props.reach?.onInvite(person.personPublicB64)}
+                      />
+                    </>
+                  ) : (
+                    <span className="shrink-0 text-[10px] text-[color:var(--color-muted)]">
+                      Hidden
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       <details className="mt-3" data-testid="home-join">
         <summary className="cursor-pointer select-none text-xs text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]">
