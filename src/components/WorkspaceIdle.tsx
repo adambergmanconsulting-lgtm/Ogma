@@ -12,10 +12,13 @@ interface WorkspaceIdleProps {
 export function WorkspaceIdle(props: WorkspaceIdleProps) {
   return (
     <div data-testid="space-view" className="relative flex h-full min-h-0 flex-col">
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        <VideoIdle />
+      </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <aside
           data-testid="space-presence"
-          className="flex min-h-[11rem] shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:flex-1 md:border-b-0 md:border-r"
+          className="relative z-10 flex min-h-[11rem] shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:flex-1 md:border-b-0 md:border-r"
         >
           <header className="space-pane-head">
             <span
@@ -26,15 +29,13 @@ export function WorkspaceIdle(props: WorkspaceIdleProps) {
               Video off
             </span>
           </header>
-          <div className="space-pane-pad min-h-0 flex-1 overflow-hidden py-2">
-            <VideoIdle />
-          </div>
+          <div className="min-h-0 flex-1" />
         </aside>
 
         <ChatColumn
           pane={props.chatPane}
           onPane={props.onChatPane}
-          className="flex min-h-0 min-w-0 flex-1 flex-col bg-[color:var(--color-panel)]/25 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none"
+          className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col bg-[color:var(--color-panel)]/25 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none"
           spaces={props.spacesPane}
         >
           <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">

@@ -62,7 +62,7 @@ export function CollapsedRail(props: {
     <div
       data-testid={props.testId}
       className={[
-        'flex shrink-0 items-center gap-2 border-b border-[color:var(--color-line)]/60 bg-[color:var(--color-panel)]/40 px-2 py-2 md:h-full md:w-12 md:flex-col md:justify-start md:gap-2 md:border-b-0 md:px-1.5 md:py-3',
+        'relative z-10 flex shrink-0 items-center gap-2 border-b border-[color:var(--color-line)]/60 bg-[color:var(--color-panel)]/40 px-2 py-2 md:h-full md:w-12 md:flex-col md:justify-start md:gap-2 md:border-b-0 md:px-1.5 md:py-3',
         border,
       ].join(' ')}
     >

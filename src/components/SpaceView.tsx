@@ -48,6 +48,8 @@ export function SpaceView(props: SpaceViewProps) {
   const lastMessageIdRef = useRef<string | null>(null);
   const call = props.call ?? null;
   const waitingAlone = Boolean(call && call.remotePeers.length === 0);
+  const quiet =
+    !call && draft.trim() === '' && props.messages.every((m) => m.kind !== 'text');
   const canFoldVideo = videoOpen && chatOpen;
   const canFoldChat = chatOpen && videoOpen;
 
@@ -81,12 +83,15 @@ export function SpaceView(props: SpaceViewProps) {
 
   return (
     <div data-testid="space-view" className="relative flex h-full min-h-0 flex-col">
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        <VideoIdle resting={!quiet} />
+      </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         {videoOpen ? (
           <aside
             data-testid="space-presence"
             className={[
-              'flex shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:border-b-0 md:border-r',
+              'relative z-10 flex shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:border-b-0 md:border-r',
               chatOpen ? 'min-h-[11rem] md:min-w-0 md:flex-1' : 'min-h-0 flex-1',
             ].join(' ')}
           >
@@ -171,7 +176,7 @@ export function SpaceView(props: SpaceViewProps) {
                   applyAudioOutput={call.applyAudioOutput}
                 />
               ) : (
-                <VideoIdle />
+                <div className="h-full" />
               )}
             </div>
 
@@ -228,7 +233,7 @@ export function SpaceView(props: SpaceViewProps) {
             pane={props.chatPane}
             onPane={props.onChatPane}
             className={[
-              'flex min-h-0 min-w-0 flex-col bg-[color:var(--color-panel)]/25',
+              'relative z-10 flex min-h-0 min-w-0 flex-col bg-[color:var(--color-panel)]/25',
               videoOpen ? 'flex-1 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none' : 'flex-1',
             ].join(' ')}
             onFold={foldChat}
