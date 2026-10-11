@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FoldButton } from './SpacePaneChrome';
+import { FoldButton, PaneMark } from './SpacePaneChrome';
 import { StartNew } from './StartNew';
 
 export type ChatPane = 'chat' | 'spaces';
@@ -28,6 +28,7 @@ export function ChatColumn(props: ChatColumnProps) {
         aria-label="Chat column"
         className="space-pane-head"
       >
+        <PaneMark kind="chat" />
         <Tab
           testId="chat-pane-chat"
           selected={props.pane === 'chat'}
@@ -51,12 +52,11 @@ export function ChatColumn(props: ChatColumnProps) {
             onNewChat={props.startNew.onNewChat}
           />
         ) : null}
-        {props.onFold ? (
+        {props.onFold && !props.foldDisabled ? (
           <FoldButton
             testId="space-fold-chat"
             label="Hide chat"
             edge="end"
-            disabled={props.foldDisabled}
             onClick={props.onFold}
           />
         ) : null}

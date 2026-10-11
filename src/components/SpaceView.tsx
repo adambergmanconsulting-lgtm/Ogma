@@ -6,7 +6,7 @@ import { ControlBar } from './ControlBar';
 import { ChatMessageText } from './ChatMessageText';
 import { ChatColumn, type ChatPane } from './ChatColumn';
 import { ChatInvite } from './ChatInvite';
-import { CollapsedRail, FoldButton } from './SpacePaneChrome';
+import { CollapsedRail, FoldButton, PaneMark } from './SpacePaneChrome';
 import { SettingsDrawer } from './SettingsDrawer';
 import type { SpaceCallBand } from './spaceCallBand';
 import { PersonName } from './PersonName';
@@ -14,6 +14,7 @@ import type { PersonReach } from './PersonReach';
 import { SpacePeople } from './SpacePeople';
 import type { LoomSystemKind } from '../domain/loom/systemLine';
 import { systemLineVerb } from '../domain/loom/systemLine';
+import { useIdleWashResting } from '../hooks/useIdleWashResting';
 import { VideoGrid } from './VideoGrid';
 import { VideoIdle } from './VideoIdle';
 
@@ -53,18 +54,26 @@ interface SpaceViewProps {
   incomingCall?: ReactNode;
 }
 
+function isNarrowStack(): boolean {
+  return Boolean(globalThis.matchMedia?.('(max-width: 767px)').matches);
+}
+
 export function SpaceView(props: SpaceViewProps) {
   const [draft, setDraft] = useState('');
-  const [videoOpen, setVideoOpen] = useState(true);
+  /** On phone, chat leads; Call stays on the collapsed video rail until opened. */
+  const [videoOpen, setVideoOpen] = useState(() => !isNarrowStack());
   const [chatOpen, setChatOpen] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageIdRef = useRef<string | null>(null);
   const call = props.call ?? null;
   const waitingAlone = Boolean(call && call.remotePeers.length === 0);
-  const quiet =
-    !call && draft.trim() === '' && props.messages.every((m) => m.kind !== 'text');
   const canFoldVideo = videoOpen && chatOpen;
   const canFoldChat = chatOpen && videoOpen;
+  const lastMessageId = props.messages[props.messages.length - 1]?.id ?? '';
+  const washResting = useIdleWashResting({
+    hold: Boolean(call),
+    tick: `${lastMessageId}\0${draft}`,
+  });
 
   useEffect(() => {
     const lastId = props.messages[props.messages.length - 1]?.id ?? null;
@@ -84,11 +93,17 @@ export function SpaceView(props: SpaceViewProps) {
   }, [call]);
 
   useEffect(() => {
-    if (!call) return;
-    setVideoOpen(true);
-    // Mobile stack: Call fills the column; chat stays one fold away.
-    const narrow = globalThis.matchMedia?.('(max-width: 767px)').matches;
-    if (narrow) setChatOpen(false);
+    const narrow = isNarrowStack();
+    if (call) {
+      setVideoOpen(true);
+      // Mobile stack: Call fills the column; chat stays one fold away.
+      if (narrow) setChatOpen(false);
+      return;
+    }
+    if (narrow) {
+      setChatOpen(true);
+      setVideoOpen(false);
+    }
   }, [call]);
 
   const foldVideo = () => {
@@ -101,24 +116,25 @@ export function SpaceView(props: SpaceViewProps) {
   return (
     <div data-testid="space-view" className="relative flex h-full min-h-0 flex-col">
       <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
-        <VideoIdle resting={!quiet} />
+        <VideoIdle resting={washResting} />
       </div>
       {props.incomingCall}
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col md:flex-row">
         {videoOpen ? (
           <aside
             data-testid="space-presence"
             className={[
-              'relative z-10 flex shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:border-b-0 md:border-r',
+              'relative flex shrink-0 flex-col border-b border-[color:var(--color-line)]/50 bg-[color:var(--color-panel)]/25 md:min-h-0 md:border-b-0 md:border-r',
               call && chatOpen
                 ? 'min-h-0 flex-1 md:min-w-0'
                 : chatOpen
-                  ? 'min-h-[11rem] md:min-w-0 md:flex-1'
+                  ? 'min-h-[7.5rem] md:min-w-0 md:flex-1'
                   : 'min-h-0 flex-1',
             ].join(' ')}
           >
             <header className="shrink-0">
               <div className="space-pane-head">
+                <PaneMark kind="video" />
                 <div className="min-w-0 flex-1 truncate text-xs text-[color:var(--color-muted)]">
                   {call ? (
                     <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -149,13 +165,14 @@ export function SpaceView(props: SpaceViewProps) {
                     Call
                   </button>
                 ) : null}
-                <FoldButton
-                  testId="space-fold-video"
-                  label="Hide video"
-                  edge="start"
-                  disabled={!canFoldVideo}
-                  onClick={foldVideo}
-                />
+                {canFoldVideo ? (
+                  <FoldButton
+                    testId="space-fold-video"
+                    label="Hide video"
+                    edge="start"
+                    onClick={foldVideo}
+                  />
+                ) : null}
               </div>
               {call?.capacityWarning ? (
                 <p
@@ -247,7 +264,7 @@ export function SpaceView(props: SpaceViewProps) {
                   data-testid="space-call"
                   disabled={props.callBusy}
                   onClick={props.onStartCall}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-[color:var(--color-gold)] hover:bg-[color:var(--color-panel-2)] disabled:opacity-60"
+                  className="btn-primary inline-flex h-8 shrink-0 items-center gap-1 rounded-lg px-2.5 text-sm"
                 >
                   <Phone className="h-3.5 w-3.5" aria-hidden />
                   Call
@@ -266,7 +283,7 @@ export function SpaceView(props: SpaceViewProps) {
             pane={props.chatPane}
             onPane={props.onChatPane}
             className={[
-              'relative z-10 flex min-h-0 min-w-0 flex-col bg-[color:var(--color-panel)]/25',
+              'relative flex min-h-0 min-w-0 flex-col bg-[color:var(--color-panel)]/25',
               videoOpen
                 ? call
                   ? 'max-h-[40%] flex-none md:max-h-none md:w-[min(22rem,38%)] md:max-w-sm'
@@ -280,14 +297,14 @@ export function SpaceView(props: SpaceViewProps) {
             startNew={props.startNew}
           >
             {props.inviteUrl || props.error ? (
-              <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-3">
+              <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-1.5">
                 <ChatInvite
                   inviteUrl={props.inviteUrl}
                   onCopyInvite={props.onCopyInvite}
                   reach={props.reach}
                 />
                 {props.error ? (
-                  <p className="mt-3 text-sm text-[color:var(--color-danger)]">{props.error}</p>
+                  <p className="mt-2 text-sm text-[color:var(--color-danger)]">{props.error}</p>
                 ) : null}
               </header>
             ) : null}

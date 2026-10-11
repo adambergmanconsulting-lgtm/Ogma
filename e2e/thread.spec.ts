@@ -32,7 +32,8 @@ test.describe('Name + home', () => {
     await expect(page.getByTestId('chat-pane-spaces')).toHaveText('All');
     await expect(page.getByTestId('app-nav').getByTestId('home-new-chat')).toHaveCount(0);
     await expect(page.getByTestId('space-view')).toBeVisible();
-    await expect(page.getByTestId('space-presence-idle')).toBeVisible();
+    // Wash waits 5s after mount before fading in.
+    await expect(page.getByTestId('space-presence-idle')).toBeVisible({ timeout: 8_000 });
     await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('nav-home').getByText('Ogma')).toBeVisible();
     await expect(page.getByTestId('home-join')).toBeVisible();
@@ -64,13 +65,15 @@ test.describe('Chat and Call entry', () => {
     await expect(page.getByTestId('app-work-shell')).toBeVisible();
     await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('space-presence')).toBeVisible();
-    await expect(page.getByTestId('space-presence-idle')).toBeVisible();
+    // New chat seals a join line — wash re-arms for 5s after that activity.
+    await expect(page.getByTestId('space-presence-idle')).toBeVisible({ timeout: 8_000 });
     await expect(page.getByTestId('chat-invite')).toBeVisible();
     await expect(page.getByTestId('space-call')).toBeVisible();
     await expect(page.getByTestId('nav-call')).toHaveCount(0);
     await page.getByTestId('space-fold-video').click();
     await expect(page.getByTestId('space-presence-collapsed')).toBeVisible();
-    await expect(page.getByTestId('space-fold-chat')).toBeDisabled();
+    // Only one pane open — hide the dead fold control instead of showing it disabled.
+    await expect(page.getByTestId('space-fold-chat')).toHaveCount(0);
     await page.getByTestId('space-expand-video').click();
     await expect(page.getByTestId('space-presence')).toBeVisible();
     await page.getByTestId('nav-home').click();

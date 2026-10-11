@@ -58,6 +58,7 @@
 | Chat column tabs | People title **`a,b,c`** (same as list) or **This chat** when alone \| **All** | Standing **This chat** when others are known; **Chat** \| **Spaces**; **Current** / **Previous**; **Recents**; stacking both at once |
 | All search | Quiet **Search** field above the list (filters chats + People) | No way to find a chat once the list grows; a loud search Moment |
 | Pane fold | Chevron toward the edge the pane leaves: left (up when stacked) for video, right (down when stacked) for chat. The collapsed rail uses the opposite chevron. Labels **Hide video** / **Hide chat** / **Show video** / **Show chat** | A panel-window glyph; an X |
+| Pane region mark | Quiet muted **Video** / **Chat** glyphs on each pane head (and on the collapsed expand control) | Extra “Video” / “Chat” text labels beside the glyphs; gold or Call-loud icons |
 | Home invite cue | Quiet **Have an invite?** → Join | Loud parallel Join CTA |
 | Soft-nav return | **Back to call**; **Leave** (ends this chat’s Call for everyone still on it) | Synonym strip labels ("Return", "Exit room"); Leave that only mutes locally while peers stay “in call” |
 | Chat list title | Custom **label** if set; else other people as **`a,b,c`** (short first names, self omitted); else **Chat** when alone. lastPreview is not the title | **lastPreview** as the title; **No one yet**; opaque short ids; **New chat**; **Only you** (occupancy) |

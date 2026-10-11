@@ -4,11 +4,29 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  MessageSquare,
+  Video,
 } from 'lucide-react';
 
 export type PaneEdge = 'start' | 'end';
 
 const iconClass = 'h-4 w-4';
+
+/** Quiet region mark so Video | Chat reads without decoding the stack. */
+export function PaneMark(props: { kind: 'video' | 'chat' }) {
+  const Icon = props.kind === 'video' ? Video : MessageSquare;
+  const label = props.kind === 'video' ? 'Video' : 'Chat';
+  return (
+    <span
+      data-testid={`pane-mark-${props.kind}`}
+      className="inline-flex shrink-0 text-[color:var(--color-muted)]"
+      title={label}
+      aria-hidden
+    >
+      <Icon className="h-3.5 w-3.5" />
+    </span>
+  );
+}
 
 /** Fold control: chevron toward the edge this pane leaves (up/down when stacked, left/right when split). */
 export function FoldButton(props: {
@@ -75,7 +93,8 @@ export function CollapsedRail(props: {
         title={`Show ${props.label.toLowerCase()}`}
       >
         <ExpandIcons edge={edge} />
-        <span className="md:sr-only">{props.label}</span>
+        {edge === 'start' ? <PaneMark kind="video" /> : <PaneMark kind="chat" />}
+        <span className="sr-only">{props.label}</span>
       </button>
       {props.trailing ? (
         <div className="flex min-w-0 items-center md:mt-auto md:w-full md:flex-col md:gap-1">

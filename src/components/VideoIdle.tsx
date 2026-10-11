@@ -2,7 +2,7 @@ const FIREFLIES = 6;
 
 /**
  * Quiet wash behind the whole work canvas (video and chat).
- * `resting` pauses it once a call or a message is underway.
+ * `resting` fades it after activity; the parent re-arms after a quiet window.
  */
 export function VideoIdle(props: { resting?: boolean }) {
   return (
