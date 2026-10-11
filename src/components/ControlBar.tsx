@@ -99,6 +99,7 @@ export function ControlBar(props: ControlBarProps) {
         label={props.cameraEnabled ? 'Turn camera off' : 'Turn camera on'}
         onClick={props.onToggleCamera}
         active={!props.cameraEnabled}
+        testId="toggle-camera"
       >
         {props.cameraEnabled ? <Video className={icon} /> : <VideoOff className={icon} />}
       </CtrlButton>

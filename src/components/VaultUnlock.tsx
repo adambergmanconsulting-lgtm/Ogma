@@ -5,11 +5,12 @@ interface VaultUnlockProps {
   busy: boolean;
   error: string | null;
   onUnlock: (vaultKey: string) => void;
-  onBack: () => void;
+  /** Clear this vault and start Create (new key). */
+  onCreateNew: () => void;
 }
 
 /** Open a vault on this browser with its vault key. */
-export function VaultUnlock({ busy, error, onUnlock, onBack }: VaultUnlockProps) {
+export function VaultUnlock({ busy, error, onUnlock, onCreateNew }: VaultUnlockProps) {
   const [key, setKey] = useState('');
 
   return (
@@ -19,7 +20,10 @@ export function VaultUnlock({ busy, error, onUnlock, onBack }: VaultUnlockProps)
         <span className="brand-wordmark text-lg">Ogma</span>
       </div>
       <h1 className="mb-2 text-2xl font-semibold tracking-tight">Open vault</h1>
-      <p className="text-muted mb-8">Enter the vault key for the vault on this browser.</p>
+      <p className="text-muted mb-8">
+        Enter the vault key for the vault on this browser. Create a new vault erases chats saved
+        here.
+      </p>
 
       <label className="mb-4 block space-y-1.5">
         <span className="field-label">Vault key</span>
@@ -46,8 +50,13 @@ export function VaultUnlock({ busy, error, onUnlock, onBack }: VaultUnlockProps)
         Open
       </button>
 
-      <button type="button" data-testid="switch-vault" onClick={onBack} className="btn-quiet">
-        Back
+      <button
+        type="button"
+        data-testid="switch-vault"
+        onClick={onCreateNew}
+        className="btn-quiet"
+      >
+        Create a new vault
       </button>
     </div>
   );

@@ -35,8 +35,25 @@ export async function publicSpaceId(spaceSecret: string): Promise<string> {
   );
 }
 
+/** System events in the sealed log (join, Call, screen share). */
+export const LOOM_SYSTEM_KINDS = [
+  'join',
+  'call-start',
+  'call-end',
+  'screen-share',
+  'screen-share-end',
+] as const;
+
+export type LoomSystemKind = (typeof LOOM_SYSTEM_KINDS)[number];
+
+export function isLoomSystemKind(kind: string): kind is LoomSystemKind {
+  return (LOOM_SYSTEM_KINDS as readonly string[]).includes(kind);
+}
+
 /** Sealed Loom plaintext (inside AES-GCM). Legacy `{ text }` still opens as text. */
-export type LoomSealPayload = { kind: 'text'; text: string } | { kind: 'join' };
+export type LoomSealPayload =
+  | { kind: 'text'; text: string }
+  | { kind: LoomSystemKind };
 
 export async function sealPayload(
   spaceSecret: string,
@@ -48,7 +65,9 @@ export async function sealPayload(
   const key = await deriveEncKey(spaceSecret);
   const nonce = crypto.getRandomValues(new Uint8Array(12));
   const body =
-    payload.kind === 'join' ? { kind: 'join' as const } : { kind: 'text' as const, text: payload.text };
+    payload.kind === 'text'
+      ? { kind: 'text' as const, text: payload.text }
+      : { kind: payload.kind };
   const plain = new TextEncoder().encode(JSON.stringify(body));
   const cipher = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv: toBufferSource(nonce) },
@@ -78,7 +97,9 @@ export async function openPayload(
     kind?: unknown;
     text?: unknown;
   };
-  if (parsed?.kind === 'join') return { kind: 'join' };
+  if (typeof parsed?.kind === 'string' && isLoomSystemKind(parsed.kind)) {
+    return { kind: parsed.kind };
+  }
   if (parsed?.kind === 'text' && typeof parsed.text === 'string') {
     return { kind: 'text', text: parsed.text };
   }

@@ -4,10 +4,10 @@
 
 ## Fast path (read first)
 
-- Sealed append log (text + join) in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
+- Sealed append log (text + join + Call/screen system lines) in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
 - Space secret → UTF-8 bytes → HKDF → AES-256-GCM (Web Crypto). **Locked:** UTF-8 of `#space=` string (never change).
 - Availability = members online; Ogma stores nothing. Leave and reopen: missing ids catch up via the same `have`/`need`/`entries` from peers who still have them; no Ogma backlog while everyone with that history is offline.
-- Display **name** required before Chat / Call. **Vault key optional** (cold **Use a vault** or Settings **Add vault key**): wraps Remembered secrets + Log out / retrieve; not required to use the app. Without a vault key, each space keeps `localSecret` on-device so Previous spaces can reopen after refresh; Add vault key migrates those into `wrappedSecret`.
+- Display **name** + **vault key** on cold start (Continue creates the key, shown once). Vault key wraps Remembered secrets + Log out / retrieve / move. **Create** / **Switch vault** then Continue erases this browser’s Loom store + people directory (no sealed orphans). Legacy profiles without a key keep `localSecret` on-device; Settings **Add vault key** migrates those into `wrappedSecret`.
 - Host Call binds Thread room + `#space=` so in-call text is this Loom log ([capability-urls.md](capability-urls.md), [overview.md](../../product/overview.md)).
 
 ## Envelope (wire + disk)
@@ -26,7 +26,10 @@
 **Plaintext inside ciphertext** (UTF-8 JSON, max 4 KiB):
 - Text: `{ "kind": "text", "text": "..." }`
 - Join (once per author when they open the space): `{ "kind": "join" }`
+- Call / screen (system lines, like join): `{ "kind": "call-start" }` · `{ "kind": "call-end" }` · `{ "kind": "screen-share" }` · `{ "kind": "screen-share-end" }`
 - Legacy still opens: `{ "text": "..." }` (treated as text)
+
+**All-list tip / lastMessageAt:** text only. System kinds do not write the tip (Call sort still uses `lastCallAt`).
 
 **Dedupe:** by `id`. **Order:** `ts` then `id`. Clock skew: accept; UI sorts stably.
 
@@ -45,7 +48,7 @@
 
 **Invite:** **Invite** seals a space secret to the person's box key and sends it on that room. From an open chat it seals that chat's secret. From People it seals a new secret and opens it here. Their open tab opens the space. The tracker sees the meeting room, not the secret. This is not an Ogma-sent invite and does not wake a closed app.
 
-**Call ring (ephemeral):** While Loom sync is open for a space, **Call** broadcasts `{ type: "call", author, ts }` on the same Trystero room (not sealed history). Peers with that space warm see **Accept** / **Not now**. Leaving sends `{ type: "call-end" }`. Late peers get a re-announce on join while the caller is still in Call. Does not wake a closed app.
+**Call ring (ephemeral):** While Loom sync is open for a space, **Call** broadcasts `{ type: "call", author, ts }` on the same Trystero room (not sealed history) as soon as Call starts (before camera/mic finishes). Peers with that space warm see **Accept** / **Not now**. The caller suppresses echo by marking the space as calling — not by matching display names (labels are not unique). **Leave** sends `{ type: "call-end" }`; peers in that space’s Call hang up too (and a pending Accept clears). While still in Call, re-announce on peer join, when the tab becomes visible, and on a short pulse so a missed first announce can still offer Accept. Does not wake a closed app.
 
 ## Sync protocol (when space open)
 
@@ -56,7 +59,7 @@
 
 **Catch-up:** Closing the chat stops live sync for that peer. Opening again runs the same exchange; peers who kept the envelopes seed the gap. If no peer with those ids is online, the gap stays until one is.
 
-**Seeding:** only while document visible (`document.visibilityState === 'visible'`).
+**Seeding (outbound have/entries/card/call):** only while document visible (`document.visibilityState === 'visible'`). **Inbound** always applies; becoming visible again re-broadcasts `have` (and call announce if in Call) so a briefly hidden tab does not drop catch-up forever.
 
 ## Size guards
 

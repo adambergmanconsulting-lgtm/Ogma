@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
-  INSTALL_DISMISS_KEY,
   installOfferMode,
   isFirefoxLike,
   isIosLike,
   isStandaloneDisplay,
-  readDismissed,
   type InstallOfferMode,
-  writeDismissed,
 } from '../domain/shell/pwaInstall';
 
 type BeforeInstallPromptEvent = Event & {
@@ -22,10 +19,6 @@ export function usePwaInstall() {
   const [standalone, setStandalone] = useState(() => isStandaloneDisplay());
   const [canPrompt, setCanPrompt] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installDismissed, setInstallDismissed] = useState(() =>
-    readDismissed(INSTALL_DISMISS_KEY),
-  );
-  const [howOpen, setHowOpen] = useState(false);
 
   useEffect(() => {
     const onBip = (e: Event) => {
@@ -38,7 +31,6 @@ export function usePwaInstall() {
       setStandalone(true);
       setCanPrompt(false);
       setDeferred(null);
-      setHowOpen(false);
     };
     window.addEventListener('beforeinstallprompt', onBip);
     window.addEventListener('appinstalled', onInstalled);
@@ -55,35 +47,20 @@ export function usePwaInstall() {
     firefox: isFirefoxLike(),
   });
 
-  const dismissInstall = () => {
-    writeDismissed(INSTALL_DISMISS_KEY);
-    setInstallDismissed(true);
-    setHowOpen(false);
-  };
-
   const runInstall = async () => {
-    if (mode === 'prompt' && deferred) {
-      await deferred.prompt();
-      const choice = await deferred.userChoice;
-      setDeferred(null);
-      setCanPrompt(false);
-      if (choice.outcome === 'accepted') {
-        setStandalone(true);
-      } else {
-        dismissInstall();
-      }
-      return;
+    if (mode !== 'prompt' || !deferred) return;
+    await deferred.prompt();
+    const choice = await deferred.userChoice;
+    setDeferred(null);
+    setCanPrompt(false);
+    if (choice.outcome === 'accepted') {
+      setStandalone(true);
     }
-    setHowOpen(true);
   };
 
   return {
     standalone,
     mode,
-    installDismissed,
-    howOpen,
-    setHowOpen,
-    dismissInstall,
     runInstall,
   };
 }

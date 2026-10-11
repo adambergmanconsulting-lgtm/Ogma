@@ -27,11 +27,14 @@ export type SpaceIndexRow = {
   label?: string;
   /** Distinct message authors seen in this space (display labels). */
   authors?: string[];
-  /** Short list row preview (last text body, or "{name} joined"). */
+  /** Short list row preview (last text body only — joins do not write this). */
   lastPreview?: string;
   status: SpaceStatus;
   lastOpenedAt: number;
+  /** Newest text message time — joins do not bump this. */
   lastMessageAt: number;
+  /** Newest Call (A/V) time for this space. */
+  lastCallAt?: number;
   unreadCount: number;
   muted?: boolean;
   /** Device-key-wrapped space secret (vault / Remember). */

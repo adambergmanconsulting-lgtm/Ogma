@@ -7,7 +7,7 @@ export const THREAD_FREE_HONEST_COPY =
   'Video, audio, and live chat stay between peers. Ogma runs no media or chat server on the free path. Public trackers only help you meet; STUN may be used for connectivity. Anyone with the link can join.';
 
 export const LOOM_HONEST_COPY =
-  'Text history is encrypted with the vault key, kept on members’ devices, and syncs when someone has the space open. Reopen after time away catches up from peers who still have the missing messages. Ogma keeps no central copy. Anyone with the space link can read that history.';
+  'Text history is encrypted with the chat invite, kept on members’ devices, and syncs when someone has the space open. Reopen after time away catches up from peers who still have the missing messages. Ogma keeps no central copy. Anyone with the space link can read that history.';
 
 /** Public meta / niche packaging — no “serverless” / “anonymous” / unaudited E2EE. */
 export const SITE_META_DESCRIPTION =

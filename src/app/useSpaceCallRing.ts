@@ -4,6 +4,7 @@ import {
   type IncomingCall,
 } from '../domain/loom/callRing';
 import { playNewMessageSound } from '../domain/loom/notifySound';
+import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
 
 /**
  * Ephemeral Call ring over Loom sync: announce when we start A/V, offer Accept to peers.
@@ -16,6 +17,7 @@ export function useSpaceCallRing(opts: {
 }) {
   const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [callingSpaceId, setCallingSpaceId] = useState<string | null>(null);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
   const callingIdsRef = useRef(new Set<string>());
   const displayNameRef = useRef(opts.displayName);
   displayNameRef.current = opts.displayName;
@@ -26,12 +28,14 @@ export function useSpaceCallRing(opts: {
 
   const dismissIncomingCall = useCallback(() => {
     setIncomingCall(null);
+    setAcceptError(null);
   }, []);
 
   const markCalling = useCallback((spaceId: string) => {
     callingIdsRef.current.add(spaceId);
     setCallingSpaceId(spaceId);
     setIncomingCall((cur) => (cur?.spaceId === spaceId ? null : cur));
+    setAcceptError(null);
   }, []);
 
   const clearCalling = useCallback((spaceId: string) => {
@@ -41,11 +45,11 @@ export function useSpaceCallRing(opts: {
 
   const getCallAnnounce = useCallback((spaceId: string): string | null => {
     if (!callingIdsRef.current.has(spaceId)) return null;
-    const name = displayNameRef.current.trim();
-    return name || null;
+    return displayNameRef.current.trim() || 'Guest';
   }, []);
 
   const onCallWire = useCallback((spaceId: string, author: string, ts: number) => {
+    // Caller already marked this space — ignore echo of our own announce.
     if (callingIdsRef.current.has(spaceId)) return;
     if (
       !shouldOfferIncomingCall({
@@ -59,17 +63,36 @@ export function useSpaceCallRing(opts: {
     }
     const secret = spaceSecretRef.current(spaceId);
     if (!secret) return;
-    setIncomingCall({ spaceId, spaceSecret: secret, author: author.trim(), ts });
-    playNewMessageSound();
+    void (async () => {
+      let roomId = '';
+      try {
+        roomId = await threadSecretFromSpace(secret);
+      } catch {
+        // Accept can derive the room under the click if this fails
+      }
+      if (callingIdsRef.current.has(spaceId) || inCallRef.current) return;
+      setIncomingCall({
+        spaceId,
+        spaceSecret: secret,
+        roomId,
+        author: author.trim(),
+        ts,
+      });
+      setAcceptError(null);
+      playNewMessageSound();
+    })();
   }, []);
 
   const onCallEndWire = useCallback((spaceId: string) => {
     setIncomingCall((cur) => (cur?.spaceId === spaceId ? null : cur));
+    setAcceptError(null);
   }, []);
 
   return {
     incomingCall,
     callingSpaceId,
+    acceptError,
+    setAcceptError,
     dismissIncomingCall,
     markCalling,
     clearCalling,

@@ -36,6 +36,8 @@ export interface RemotePeer {
   connectionState: 'connecting' | 'connected' | 'disconnected';
   /** Their picture is a screen, window, or tab — letterbox it. */
   sharingScreen?: boolean;
+  /** They muted their microphone (from peer meta). */
+  micOff?: boolean;
 }
 
 export const ICE_SERVERS: RTCIceServer[] = [

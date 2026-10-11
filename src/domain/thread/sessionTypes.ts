@@ -3,7 +3,12 @@ import type { TextChatPayload } from './chatEnvelope';
 import type { MediaPlane } from './mediaPlane';
 import type { RoomMode } from './roomMode';
 
-export type MetaWire = { displayName: string; sharingScreen?: boolean };
+export type MetaWire = {
+  displayName: string;
+  sharingScreen?: boolean;
+  /** True when this peer muted their microphone. */
+  micOff?: boolean;
+};
 
 export type ControlWire =
   | { type: 'speaking'; level: number; ts: number }
@@ -33,6 +38,11 @@ export interface ThreadSession {
   sendSpeaking: (level: number) => Promise<void>;
   sendSubscribe: (msg: SubscribeControl) => Promise<void>;
   addStream: (stream: MediaStream) => void;
+  /**
+   * Point at the published stream after a track swap without republishing.
+   * Outbound video policy reads video from this reference.
+   */
+  holdStream: (stream: MediaStream) => void;
   replaceTrack: (oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack) => void;
   setOutboundVideoEnabled: (
     peerId: string,

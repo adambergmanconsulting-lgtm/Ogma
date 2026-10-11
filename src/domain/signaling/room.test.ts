@@ -79,10 +79,11 @@ describe('roomShareUrl', () => {
     expect(href.startsWith('http')).toBe(true);
   });
 
-  it('adds #space= when the call is bound to a chat', () => {
+  it('adds space query and hash when the call is bound to a chat', () => {
     vi.stubGlobal('location', { origin: 'https://host.example' });
     const href = roomShareUrl('AbCdEf123456', { spaceSecret: 'space-sec' });
     expect(href).toContain('?room=AbCdEf123456');
+    expect(href).toContain('space=space-sec');
     expect(href).toContain('#space=space-sec');
   });
 });
@@ -93,9 +94,11 @@ describe('space location', () => {
     expect(parseSpaceSecretFromLocation({ search: '?space=from-q', hash: '' })).toBe('from-q');
   });
 
-  it('builds space share url with hash', () => {
+  it('builds space share url with query (and hash for older clients)', () => {
     vi.stubGlobal('location', { origin: 'https://host.example' });
-    expect(spaceShareUrl('sec')).toContain('#space=sec');
+    const href = spaceShareUrl('sec');
+    expect(href).toContain('?space=sec');
+    expect(href).toContain('#space=sec');
   });
 
   it('clears room and space from the address bar for home', () => {

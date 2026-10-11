@@ -78,3 +78,14 @@ export function writeAppearActive(on: boolean): void {
   localStorage.setItem(ACTIVE_KEY, on ? '1' : '0');
   emit();
 }
+
+/** Drop known people when this browser’s vault is erased (Create / Switch). */
+export function clearPeopleDirectory(): void {
+  try {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(ACTIVE_KEY);
+  } catch {
+    /* ignore */
+  }
+  emit();
+}

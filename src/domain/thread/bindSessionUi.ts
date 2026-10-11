@@ -8,8 +8,10 @@ export interface SessionUiBindings {
   names: Map<string, string>;
   streams: Map<string, MediaStream>;
   screenShares: Map<string, boolean>;
+  micOffs: Map<string, boolean>;
   displayName: () => string;
   sharingScreen: () => boolean;
+  micOff: () => boolean;
   publishPeers: () => void;
   setConnectionState: (state: 'connected' | 'error') => void;
   setError: (message: string | null) => void;
@@ -28,13 +30,18 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
       ui.names.set(id, ui.names.get(id) ?? 'Peer');
       ui.setConnectionState('connected');
       ui.publishPeers();
-      ui.sendMeta({ displayName: ui.displayName(), sharingScreen: ui.sharingScreen() });
+      ui.sendMeta({
+        displayName: ui.displayName(),
+        sharingScreen: ui.sharingScreen(),
+        micOff: ui.micOff(),
+      });
     },
     onPeerLeave: (id) => {
       if (ui.cancelled()) return;
       ui.names.delete(id);
       ui.streams.delete(id);
       ui.screenShares.delete(id);
+      ui.micOffs.delete(id);
       ui.publishPeers();
     },
     onPeerStream: (id, stream) => {
@@ -66,6 +73,11 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
       if (typeof meta.sharingScreen === 'boolean') {
         if (meta.sharingScreen) ui.screenShares.set(id, true);
         else ui.screenShares.delete(id);
+        changed = true;
+      }
+      if (typeof meta.micOff === 'boolean') {
+        if (meta.micOff) ui.micOffs.set(id, true);
+        else ui.micOffs.delete(id);
         changed = true;
       }
       if (changed) ui.publishPeers();

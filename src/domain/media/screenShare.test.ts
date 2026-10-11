@@ -3,6 +3,7 @@ import {
   canShareScreen,
   captureScreenTrack,
   isScreenShareCancelled,
+  resolveScreenSpotlight,
   screenShareFailure,
   shouldSendLocalVideo,
 } from './screenShare';
@@ -12,6 +13,33 @@ describe('shouldSendLocalVideo', () => {
     expect(shouldSendLocalVideo(true, false)).toBe(true);
     expect(shouldSendLocalVideo(false, false)).toBe(false);
     expect(shouldSendLocalVideo(false, true)).toBe(true);
+  });
+});
+
+describe('resolveScreenSpotlight', () => {
+  it('features local share over remotes', () => {
+    expect(
+      resolveScreenSpotlight({
+        localScreen: true,
+        remotePeers: [{ peerId: 'a', sharingScreen: true }],
+      }),
+    ).toEqual({ kind: 'local' });
+  });
+
+  it('features the first remote sharing a screen', () => {
+    expect(
+      resolveScreenSpotlight({
+        localScreen: false,
+        remotePeers: [
+          { peerId: 'a' },
+          { peerId: 'b', sharingScreen: true },
+        ],
+      }),
+    ).toEqual({ kind: 'remote', peerId: 'b' });
+  });
+
+  it('is null when nobody is sharing', () => {
+    expect(resolveScreenSpotlight({ localScreen: false, remotePeers: [{ peerId: 'a' }] })).toBeNull();
   });
 });
 

@@ -18,7 +18,6 @@ type SettingsLoom = {
 
 type SettingsPwa = {
   mode: InstallOfferMode;
-  howOpen: boolean;
   runInstall: () => void | Promise<void>;
 };
 
@@ -70,7 +69,6 @@ export function AppSettingsDrawer(props: AppSettingsDrawerProps) {
       tabVisible={presence?.tabVisible}
       onToggleAppearActive={presence?.onToggle}
       installMode={pwa.mode}
-      installHowOpen={pwa.howOpen}
       turnUri={turn.turnUri}
       turnError={turn.turnError}
       busy={loom.busy}

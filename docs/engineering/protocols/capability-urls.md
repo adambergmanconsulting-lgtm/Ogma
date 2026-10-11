@@ -6,7 +6,8 @@
 
 - Knowledge of the secret **is** access (password-equivalent).
 - **Share / invite (Thread):** `?room=<secret>` — many messengers strip `#…`, which stranded guests in empty lobbies.
-- **Legacy / Loom:** `#room=<secret>` or `#space=<secret>` still accepted.
+- **Share / invite (Loom):** `?space=<secret>` (+ `#space=` for older clients). Same strip risk as Thread.
+- **Legacy:** `#room=<secret>` or `#space=<secret>` still accepted.
 - Secrets are high-entropy. Query form may appear in static-host access logs; prefer rotating the room over long-lived secrets.
 
 ## Formats
@@ -14,8 +15,8 @@
 | Kind | Preferred share | Also accepted | Used for |
 |------|-----------------|---------------|----------|
 | Thread room | `?room=<secret>` | `#room=<secret>`, bare `#id` | Live A/V; ephemeral text only if no space |
-| Loom space | `#space=<secret>` | `?space=` | Persistent encrypted text + Call |
-| Call from chat | `?room=<thread>&` `#space=<space>` | — | Same Loom chat in the call drawer |
+| Loom space | `?space=<secret>` (+ `#space=`) | `#space=` alone | Persistent encrypted text + Call |
+| Call from chat | `?room=<thread>&space=<space>` (+ `#space=`) | `?room=` + `#space=` | Same Loom chat in the call drawer |
 
 **Secret generation (Thread M1):** 96+ bits entropy, URL-safe base64 or hex (12+ chars opaque id minimum; prefer 16+ bytes random → base64url).
 

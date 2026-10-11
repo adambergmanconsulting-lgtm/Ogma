@@ -5,6 +5,7 @@ export function listRemotePeers(
   streams: Map<string, MediaStream>,
   names: Map<string, string>,
   sharingScreen: Map<string, boolean> = new Map(),
+  micOff: Map<string, boolean> = new Map(),
 ): RemotePeer[] {
   const list: RemotePeer[] = [];
   const seen = new Set<string>();
@@ -16,6 +17,7 @@ export function listRemotePeers(
       stream,
       connectionState: 'connected',
       sharingScreen: sharingScreen.get(id) === true,
+      micOff: micOff.get(id) === true,
     });
   }
   for (const [id, name] of names) {
@@ -26,6 +28,7 @@ export function listRemotePeers(
       stream: null,
       connectionState: 'connecting',
       sharingScreen: sharingScreen.get(id) === true,
+      micOff: micOff.get(id) === true,
     });
   }
   return list;
@@ -49,4 +52,7 @@ export function syncLocalStream(
       return;
     }
   }
+  // Keep session.localStream on the published MediaStream (screen share, blur).
+  // Otherwise setOutboundVideoEnabled can put the camera back on senders.
+  session.holdStream(next);
 }

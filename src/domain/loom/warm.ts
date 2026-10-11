@@ -1,8 +1,9 @@
+import { spaceActivityAt } from './spaceIndex';
 import type { SpaceIndexRow } from './types';
 import { WARM_CAP } from './types';
 
 /**
- * Pick warm space ids: focused first, then by last activity (secret available).
+ * Pick warm space ids: focused first, then by text/Call activity (secret available).
  * Cap = WARM_CAP (3).
  */
 export function pickWarmSpaceIds(
@@ -29,7 +30,7 @@ export function pickWarmSpaceIds(
 
   const byActivity = [...rows]
     .filter((r) => !r.muted)
-    .sort((a, b) => Math.max(b.lastMessageAt, b.lastOpenedAt) - Math.max(a.lastMessageAt, a.lastOpenedAt));
+    .sort((a, b) => spaceActivityAt(b) - spaceActivityAt(a));
 
   for (const row of byActivity) push(row.spaceId);
   return out;

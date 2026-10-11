@@ -29,7 +29,7 @@ npm run check
 npm run test
 ```
 
-E2e (Playwright, when configured): `npm run test:e2e`. CI: [docs/ops/ci-flow.md](docs/ops/ci-flow.md).
+E2e (Playwright, when configured): `npm run test:e2e`. Manual two-browser on `npm run dev`: [docs/ops/manual-local-two-browser.md](docs/ops/manual-local-two-browser.md). CI: [docs/ops/ci-flow.md](docs/ops/ci-flow.md).
 
 ## Start here by intent
 

@@ -1,6 +1,7 @@
 import { openPayload as openSealPayload, sealPayload } from '../crypto/seal';
 import type { LoomSealPayload } from '../crypto/seal';
 import { bytesToB64Url } from '../crypto/bytes';
+import { systemLineLabel } from './systemLine';
 import {
   LOOM_ENVELOPE_V,
   MAX_PLAINTEXT_BYTES,
@@ -56,6 +57,16 @@ export async function sealJoin(
   return sealWithPayload(spaceSecret, { kind: 'join' }, author, ts, id);
 }
 
+export async function sealSystemEvent(
+  spaceSecret: string,
+  kind: Exclude<LoomPayload['kind'], 'text'>,
+  author: string,
+  ts = Date.now(),
+  id = newMessageId(),
+): Promise<LoomEnvelope> {
+  return sealWithPayload(spaceSecret, { kind }, author, ts, id);
+}
+
 /** @deprecated Prefer sealTextMessage — kept for existing call sites/tests. */
 export async function sealEnvelope(
   spaceSecret: string,
@@ -74,7 +85,7 @@ export async function openPayload(
   return openSealPayload(spaceSecret, env.nonce, env.ciphertext);
 }
 
-/** Opens text payloads only (throws on join). */
+/** Opens text payloads only (throws on system events). */
 export async function openEnvelope(spaceSecret: string, env: LoomEnvelope): Promise<string> {
   const payload = await openPayload(spaceSecret, env);
   if (payload.kind !== 'text') throw new Error('Not a text payload');
@@ -82,7 +93,7 @@ export async function openEnvelope(spaceSecret: string, env: LoomEnvelope): Prom
 }
 
 export function previewFromPayload(author: string, payload: LoomPayload): string {
-  if (payload.kind === 'join') return `${author} joined`;
+  if (payload.kind !== 'text') return systemLineLabel(author, payload.kind);
   return payload.text;
 }
 

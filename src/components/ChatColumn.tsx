@@ -11,6 +11,8 @@ interface ChatColumnProps {
   onFold?: () => void;
   foldDisabled?: boolean;
   spaces: ReactNode;
+  /** Open-chat tab: people title, or This chat when alone. */
+  chatTitle?: string;
   /** Create a new chat space. Absent when create is unavailable. */
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
   children: ReactNode;
@@ -18,6 +20,7 @@ interface ChatColumnProps {
 
 /** Chat column: one tab visible — this chat, or all chats. */
 export function ChatColumn(props: ChatColumnProps) {
+  const chatTitle = props.chatTitle?.trim() || 'This chat';
   return (
     <section data-testid="space-chat" className={props.className}>
       <div
@@ -29,8 +32,9 @@ export function ChatColumn(props: ChatColumnProps) {
           testId="chat-pane-chat"
           selected={props.pane === 'chat'}
           onClick={() => props.onPane('chat')}
+          title={chatTitle}
         >
-          This chat
+          {chatTitle}
         </Tab>
         <Tab
           testId="chat-pane-spaces"
@@ -70,6 +74,7 @@ function Tab(props: {
   testId: string;
   selected: boolean;
   onClick: () => void;
+  title?: string;
   children: ReactNode;
 }) {
   return (
@@ -78,9 +83,10 @@ function Tab(props: {
       role="tab"
       data-testid={props.testId}
       aria-selected={props.selected}
+      title={props.title}
       onClick={props.onClick}
       className={[
-        'rounded-lg px-2.5 py-1 text-sm font-semibold',
+        'max-w-[12rem] truncate rounded-lg px-2.5 py-1 text-sm font-semibold',
         props.selected
           ? 'bg-[color:var(--color-panel-2)] text-[color:var(--color-ink)]'
           : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]',

@@ -81,5 +81,11 @@ export function createMemoryLoomStore(): LoomStore {
     async setDeviceKeyMeta(meta) {
       deviceKeyMeta = meta ? { ...meta } : null;
     },
+    async clearAll() {
+      spaces.clear();
+      messages.clear();
+      cold.clear();
+      deviceKeyMeta = null;
+    },
   };
 }

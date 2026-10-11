@@ -359,13 +359,164 @@
   color: var(--color-ink);
 }
 
-/** Install / vault Moments on home — interactive card, not decorative chrome. */
+/** Install / vault Moments — interactive card when a bordered Moment is needed. */
 .moment-card {
   margin-bottom: 1.5rem;
   border-radius: 0.75rem;
   border: 1px solid var(--color-line);
   background-color: color-mix(in srgb, var(--color-panel) 80%, transparent);
   padding: 0.75rem;
+}
+
+/** Quiet welcome nudge on home — one row: text + Settings link + dismiss. */
+.welcome-nudge {
+  margin-bottom: 0.5rem;
+  padding: 0.15rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+}
+
+.welcome-nudge__body {
+  margin: 0;
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-ink);
+}
+
+.welcome-nudge__link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.welcome-nudge__dismiss {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -0.15rem 0;
+  padding: 0.2rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.welcome-nudge__dismiss:hover {
+  color: var(--color-ink);
+  background-color: color-mix(in srgb, var(--color-panel-2) 70%, transparent);
+}
+
+/** Settings drawer rhythm. */
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.settings-section__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+
+.settings-section__hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-actions__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.settings-folds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/** Foldable blocks (setup, privacy, network) — one chevron pattern. */
+.settings-fold {
+  padding: 0;
+}
+
+.settings-fold__title {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-ink);
+}
+
+.settings-fold__title::-webkit-details-marker {
+  display: none;
+}
+
+.settings-fold__title::before {
+  content: '';
+  display: inline-block;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-right: 0.45rem;
+  border-right: 1.5px solid var(--color-muted);
+  border-bottom: 1.5px solid var(--color-muted);
+  transform: rotate(-45deg) translateY(-0.05rem);
+  vertical-align: middle;
+}
+
+.settings-fold[open] > .settings-fold__title::before {
+  transform: rotate(45deg) translateY(-0.1rem);
+}
+
+.settings-fold__body {
+  margin: 0.65rem 0 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/** @deprecated alias — prefer settings-fold */
+.settings-setup {
+  padding: 0;
 }
 
 /** Side sheets: Devices, room-only chat, Settings. */
@@ -386,10 +537,10 @@
 }
 
 .drawer-sheet--settings {
-  max-width: 24rem;
+  max-width: 22rem;
   background-color: var(--color-panel);
   backdrop-filter: none;
-  padding: 1.5rem 1.25rem;
+  padding: 1.25rem 1.15rem 1.75rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
 }
 

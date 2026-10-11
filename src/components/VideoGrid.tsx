@@ -1,4 +1,5 @@
 import type { PrivacyBackdropId } from '../domain/media/backgroundBlurBackdrop';
+import { resolveScreenSpotlight } from '../domain/media/screenShare';
 import type { RemotePeer } from '../domain/types';
 import { VideoBlurControls } from './VideoBlurControls';
 import { VideoTile } from './VideoTile';
@@ -56,8 +57,9 @@ export function VideoGrid({
 }: VideoGridProps) {
   const total = 1 + remotePeers.length;
   const pad = compact ? 'h-full gap-1.5 p-0' : 'h-full flex-1 gap-2 p-2 md:gap-3 md:p-3';
+  const spotlight = resolveScreenSpotlight({ localScreen, remotePeers });
 
-  const renderLocal = (key: string) => (
+  const renderLocal = (key: string, opts?: { pip?: boolean }) => (
     <VideoTile
       key={key}
       stream={localStream}
@@ -70,7 +72,7 @@ export function VideoGrid({
       micOff={localMicOff}
       showMicLevel
       overlay={
-        !localScreen && blurSupported && onToggleBlur ? (
+        !opts?.pip && !localScreen && blurSupported && onToggleBlur ? (
           <VideoBlurControls
             enabled={blurEnabled}
             backdropSelectable={backdropSelectable}
@@ -85,19 +87,86 @@ export function VideoGrid({
     />
   );
 
-  const remoteTiles = remotePeers.map((peer) => (
+  const renderRemote = (peer: RemotePeer, key?: string) => (
     <VideoTile
-      key={peer.peerId}
+      key={key ?? peer.peerId}
       stream={peer.stream}
       label={peer.displayName}
       selfName={localLabel}
       personId={personId}
       fit={peer.sharingScreen ? 'contain' : 'cover'}
+      micOff={peer.micOff}
       pinned={pinnedPeerIds.includes(peer.peerId)}
       onTogglePin={onTogglePin ? () => onTogglePin(peer.peerId) : undefined}
       applyAudioOutput={applyAudioOutput}
     />
-  ));
+  );
+
+  // Shared screen fills the video window; other people stay as PiP chips.
+  if (spotlight?.kind === 'local') {
+    return (
+      <div
+        data-testid="screen-spotlight"
+        className={`relative min-h-0 ${compact ? 'h-full' : 'h-full flex-1'}`}
+      >
+        <div className={`absolute inset-0 min-h-0 ${compact ? 'p-0' : 'p-2 md:p-3'}`}>
+          {renderLocal('screen-main')}
+        </div>
+        <div
+          data-testid="screen-spotlight-pips"
+          className="absolute bottom-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-row-reverse flex-wrap justify-start gap-1.5"
+        >
+          {remotePeers.map((peer) => (
+            <div
+              key={peer.peerId}
+              className="h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24"
+            >
+              {renderRemote(peer)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (spotlight?.kind === 'remote') {
+    const featuredPeer = remotePeers.find((p) => p.peerId === spotlight.peerId);
+    if (featuredPeer) {
+      return (
+        <div
+          data-testid="screen-spotlight"
+          className={`relative min-h-0 ${compact ? 'h-full' : 'h-full flex-1'}`}
+        >
+          <div className={`absolute inset-0 min-h-0 ${compact ? 'p-0' : 'p-2 md:p-3'}`}>
+            {renderRemote(featuredPeer, 'screen-main')}
+          </div>
+          <div
+            data-testid="screen-spotlight-pips"
+            className="absolute bottom-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-row-reverse flex-wrap justify-start gap-1.5"
+          >
+            <div
+              data-testid="local-pip"
+              className="h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24"
+            >
+              {renderLocal('local-pip', { pip: true })}
+            </div>
+            {remotePeers
+              .filter((p) => p.peerId !== featuredPeer.peerId)
+              .map((peer) => (
+                <div
+                  key={peer.peerId}
+                  className="h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24"
+                >
+                  {renderRemote(peer)}
+                </div>
+              ))}
+          </div>
+        </div>
+      );
+    }
+  }
+
+  const remoteTiles = remotePeers.map((peer) => renderRemote(peer));
 
   // With peers: remotes first. On narrow viewports local is PiP so others fill the pane.
   if (remotePeers.length > 0) {
@@ -114,7 +183,7 @@ export function VideoGrid({
           data-testid="local-pip"
           className="absolute bottom-2 right-2 z-10 h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24 md:hidden"
         >
-          {renderLocal('local-pip')}
+          {renderLocal('local-pip', { pip: true })}
         </div>
       </div>
     );

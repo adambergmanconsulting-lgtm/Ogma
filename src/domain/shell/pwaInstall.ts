@@ -3,12 +3,13 @@
  * UI shells wire beforeinstallprompt; this module owns when to offer and copy keys.
  */
 
+export const WELCOME_DISMISS_KEY = 'ogma.welcome.dismissed';
+/** @deprecated Prefer WELCOME_DISMISS_KEY; kept for older localStorage. */
 export const INSTALL_DISMISS_KEY = 'ogma.install.dismissed';
+/** @deprecated Prefer WELCOME_DISMISS_KEY; kept for older localStorage. */
 export const VAULT_NUDGE_DISMISS_KEY = 'ogma.vaultNudge.dismissed';
 
 export type InstallOfferMode = 'prompt' | 'ios' | 'firefox' | 'manual' | 'none';
-
-export type HomeAnchorKind = 'install' | 'vault' | null;
 
 export function isStandaloneDisplay(
   matchMedia?: (q: string) => { matches: boolean },
@@ -52,67 +53,34 @@ export function installOfferMode(opts: {
   return 'manual';
 }
 
-/** Expanded how-to for non-prompt modes (locked with ui-naming). */
+/** Expanded how-to for Settings (locked with ui-naming). */
 export function installHowForMode(mode: InstallOfferMode): string | null {
   switch (mode) {
     case 'ios':
-      return INSTALL_MOMENT.iosHow;
+      return SETTINGS_INSTALL.iosHow;
     case 'firefox':
-      return INSTALL_MOMENT.firefoxHow;
+      return SETTINGS_INSTALL.firefoxHow;
     case 'manual':
-      return INSTALL_MOMENT.manualHow;
+      return SETTINGS_INSTALL.manualHow;
     default:
       return null;
   }
 }
 
-/** After the user has local chats, offer install once (unless dismissed / already installed). */
-export function shouldOfferInstallMoment(opts: {
-  standalone: boolean;
+/**
+ * Quiet welcome nudge after first chat: one door into Settings (Home screen + vault).
+ * Hidden when dismissed, empty, installed with a vault key, or nothing left to offer.
+ */
+export function shouldOfferWelcome(opts: {
+  installMode: InstallOfferMode;
   dismissed: boolean;
   hasLocalChats: boolean;
-}): boolean {
-  return opts.hasLocalChats && !opts.standalone && !opts.dismissed;
-}
-
-/** After install is settled, quiet vault-key nudge when chats exist and no key. */
-export function shouldOfferVaultNudge(opts: {
-  hasLocalChats: boolean;
   hasVaultKey: boolean;
-  dismissed: boolean;
-  installMomentActive: boolean;
 }): boolean {
-  if (opts.installMomentActive) return false;
-  return opts.hasLocalChats && !opts.hasVaultKey && !opts.dismissed;
-}
-
-export function pickHomeAnchor(opts: {
-  standalone: boolean;
-  installDismissed: boolean;
-  vaultNudgeDismissed: boolean;
-  hasLocalChats: boolean;
-  hasVaultKey: boolean;
-}): HomeAnchorKind {
-  if (
-    shouldOfferInstallMoment({
-      standalone: opts.standalone,
-      dismissed: opts.installDismissed,
-      hasLocalChats: opts.hasLocalChats,
-    })
-  ) {
-    return 'install';
-  }
-  if (
-    shouldOfferVaultNudge({
-      hasLocalChats: opts.hasLocalChats,
-      hasVaultKey: opts.hasVaultKey,
-      dismissed: opts.vaultNudgeDismissed,
-      installMomentActive: false,
-    })
-  ) {
-    return 'vault';
-  }
-  return null;
+  if (!opts.hasLocalChats || opts.dismissed) return false;
+  const needsInstall = opts.installMode !== 'none';
+  const needsVault = !opts.hasVaultKey;
+  return needsInstall || needsVault;
 }
 
 export function readDismissed(key: string, storage: Storage | null = safeStorage()): boolean {
@@ -124,6 +92,15 @@ export function readDismissed(key: string, storage: Storage | null = safeStorage
   }
 }
 
+/** True if the welcome nudge was dismissed (new key or either legacy key). */
+export function readWelcomeDismissed(storage: Storage | null = safeStorage()): boolean {
+  return (
+    readDismissed(WELCOME_DISMISS_KEY, storage) ||
+    readDismissed(INSTALL_DISMISS_KEY, storage) ||
+    readDismissed(VAULT_NUDGE_DISMISS_KEY, storage)
+  );
+}
+
 export function writeDismissed(key: string, storage: Storage | null = safeStorage()): void {
   if (!storage) return;
   try {
@@ -131,6 +108,10 @@ export function writeDismissed(key: string, storage: Storage | null = safeStorag
   } catch {
     /* ignore quota */
   }
+}
+
+export function writeWelcomeDismissed(storage: Storage | null = safeStorage()): void {
+  writeDismissed(WELCOME_DISMISS_KEY, storage);
 }
 
 function safeStorage(): Storage | null {
@@ -142,27 +123,28 @@ function safeStorage(): Storage | null {
 }
 
 /** Locked microcopy — keep in sync with ui-naming.md. */
-export const INSTALL_MOMENT = {
-  title: 'Keep Ogma on your home screen',
-  body: 'Open Ogma from here next time. Your chats stay in this browser.',
-  primaryPrompt: 'Install',
-  primaryIos: 'How to add',
-  primaryFirefox: 'How to install',
-  primaryManual: 'How to install',
-  notNow: 'Not now',
-  iosHow: 'Share → Add to Home Screen',
-  /** Firefox has no Chromium-style install; point at Chrome’s address-bar install. */
-  firefoxHow:
-    'For a real home-screen app, open this same Ogma link in Chrome, then use the install icon in the address bar.',
-  manualHow: 'Use the install icon in the address bar (Chrome or Edge), or your browser’s Install control.',
+export const WELCOME_NUDGE = {
+  bodyBefore: 'Chats stay in this browser. Pin Ogma so you can open them again —',
+  openSettings: 'Settings',
+  bodyAfter: '.',
+  dismiss: 'Dismiss',
 } as const;
 
-export const VAULT_NUDGE = {
-  title: 'Open these chats elsewhere',
-  body: 'Add a vault key if you want to lock or move them to another device.',
-  primary: 'Add vault key',
-  notNow: 'Not now',
+/** Settings splash when home screen and/or vault key still need setup. */
+export const SETTINGS_SETUP = {
+  title: 'Keep your chats handy',
+  installWhy: 'Pin Ogma to your home screen so you can open it like an app next time.',
+  vaultWhy: 'Add a vault key to lock these chats or open them on another device.',
+  installAction: 'Install Ogma',
+  vaultAction: 'Add vault key',
 } as const;
+
+export function shouldShowSettingsSetup(opts: {
+  installMode: InstallOfferMode;
+  hasVaultKey: boolean;
+}): boolean {
+  return opts.installMode !== 'none' || !opts.hasVaultKey;
+}
 
 export const SETTINGS_INSTALL = {
   heading: 'Home screen',
@@ -173,5 +155,8 @@ export const SETTINGS_INSTALL = {
     'Firefox can’t install Ogma the way Chrome can. Open this link in Chrome, then use the install icon in the address bar.',
   bodyManual: 'Add Ogma with the install icon in the address bar (Chrome or Edge).',
   actionPrompt: 'Install Ogma',
-  actionHow: 'Show steps',
+  iosHow: 'Share → Add to Home Screen',
+  firefoxHow:
+    'For a real home-screen app, open this same Ogma link in Chrome, then use the install icon in the address bar.',
+  manualHow: 'Use the install icon in the address bar (Chrome or Edge), or your browser’s Install control.',
 } as const;

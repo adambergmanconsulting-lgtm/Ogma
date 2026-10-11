@@ -152,8 +152,18 @@ export function openThreadSession(
         schedulePublishes(peerId, publish, publishTimers);
       }
     },
+    holdStream(stream) {
+      localStream = stream;
+    },
     replaceTrack(oldTrack, newTrack) {
       mediaPlane.replaceTrack(oldTrack, newTrack);
+      if (!localStream) return;
+      const tracks = localStream.getTracks();
+      localStream = new MediaStream(
+        tracks.some((t) => t === oldTrack)
+          ? tracks.map((t) => (t === oldTrack ? newTrack : t))
+          : tracks.map((t) => (t.kind === newTrack.kind ? newTrack : t)),
+      );
     },
     setOutboundVideoEnabled(peerId, enabled, videoTrack) {
       const track =

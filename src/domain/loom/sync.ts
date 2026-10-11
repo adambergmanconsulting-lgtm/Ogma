@@ -8,6 +8,8 @@ import type { LoomEnvelope, PersonCardWire, SyncWire } from './types';
 
 const LOOM_APP_ID = 'ogma-loom-v1';
 const CHUNK_MAX_ENTRIES = 32;
+/** While in Call, re-broadcast the ring so a missed first announce still offers Accept. */
+const CALL_REANNOUNCE_MS = 8_000;
 
 export type LoomSyncHandlers = {
   onEntries: (entries: LoomEnvelope[]) => void | Promise<void>;
@@ -38,7 +40,8 @@ function isVisible(): boolean {
 
 /**
  * Peer have/need/entries sync for one space.
- * Seeding only while document is visible (loom-sync.md).
+ * Outbound seeding only while the document is visible (loom-sync.md).
+ * Inbound always applies so a briefly hidden tab does not drop catch-up forever.
  */
 export async function openLoomSync(
   spaceSecret: string,
@@ -100,12 +103,12 @@ export async function openLoomSync(
   };
 
   const sendNeeded = async (want: string[], peerId: string) => {
-    if (!isVisible() || want.length === 0) return;
+    // Reply to peer need/have even if this tab is hidden so catch-up is not one-way.
+    if (want.length === 0) return;
     await sync.send({ type: 'need', ids: want }, { target: peerId });
   };
 
   const replyEntries = async (ids: string[], peerId: string) => {
-    if (!isVisible()) return;
     const entries: LoomEnvelope[] = [];
     for (const id of ids) {
       const msg = await store.getMessage(id);
@@ -122,7 +125,7 @@ export async function openLoomSync(
   };
 
   sync.onMessage = (data, context) => {
-    if (!data || typeof data !== 'object' || !isVisible()) return;
+    if (!data || typeof data !== 'object') return;
     const peerId = context.peerId;
     void (async () => {
       if (data.type === 'have' && Array.isArray(data.ids)) {
@@ -163,12 +166,35 @@ export async function openLoomSync(
   };
   room.onPeerLeave = () => handlers.onPeerCount?.(peerCount());
 
+  const onVisibility = () => {
+    if (!isVisible()) return;
+    void sendHave();
+    void sendCard();
+    const calling = handlers.getCallAnnounce?.();
+    if (calling) void sendCallAnnounce(calling);
+  };
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibility);
+  }
+
   void sendHave();
   void sendCard();
+
+  const callPulse =
+    typeof window !== 'undefined'
+      ? window.setInterval(() => {
+          const calling = handlers.getCallAnnounce?.();
+          if (calling) void sendCallAnnounce(calling);
+        }, CALL_REANNOUNCE_MS)
+      : 0;
 
   return {
     spaceId,
     leave: () => {
+      if (callPulse) window.clearInterval(callPulse);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
       sync.onMessage = null;
       room.onPeerJoin = null;
       room.onPeerLeave = null;

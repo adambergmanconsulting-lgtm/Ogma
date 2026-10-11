@@ -15,6 +15,8 @@ export interface UseWebRTCOptions {
   enabled: boolean;
   cameraEnabled?: boolean;
   screenSharing?: boolean;
+  /** Local mic is live (false → announce micOff to peers). */
+  micEnabled?: boolean;
   roomMode?: RoomMode;
   onTrackReplaceNeeded?: (replace: (track: MediaStreamTrack) => void) => void;
   onSendQualityChange?: (state: SendQualityChange) => void;
@@ -28,6 +30,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
     enabled,
     cameraEnabled = true,
     screenSharing = false,
+    micEnabled = true,
     roomMode = DEFAULT_ROOM_MODE,
   } = options;
   const [peerId, setPeerId] = useState('');
@@ -43,8 +46,11 @@ export function useWebRTC(options: UseWebRTCOptions) {
   const namesRef = useRef(new Map<string, string>());
   const streamsRef = useRef(new Map<string, MediaStream>());
   const screenSharesRef = useRef(new Map<string, boolean>());
+  const micOffsRef = useRef(new Map<string, boolean>());
   const sharingScreenRef = useRef(screenSharing);
   sharingScreenRef.current = screenSharing;
+  const micOffRef = useRef(!micEnabled);
+  micOffRef.current = !micEnabled;
   const speakingRef = useRef(new Map<string, SpeakingSample>());
   const subscribeFromPeersRef = useRef(
     new Map<string, Extract<ControlWire, { type: 'subscribe' }>>(),
@@ -57,7 +63,12 @@ export function useWebRTC(options: UseWebRTCOptions) {
 
   const publishPeers = useCallback(() => {
     setRemotePeers(
-      listRemotePeers(streamsRef.current, namesRef.current, screenSharesRef.current),
+      listRemotePeers(
+        streamsRef.current,
+        namesRef.current,
+        screenSharesRef.current,
+        micOffsRef.current,
+      ),
     );
   }, []);
 
@@ -81,6 +92,7 @@ export function useWebRTC(options: UseWebRTCOptions) {
     namesRef.current.clear();
     streamsRef.current.clear();
     screenSharesRef.current.clear();
+    micOffsRef.current.clear();
     speakingRef.current.clear();
     subscribeFromPeersRef.current.clear();
     setRemotePeers([]);
@@ -104,7 +116,9 @@ export function useWebRTC(options: UseWebRTCOptions) {
     namesRef,
     streamsRef,
     screenSharesRef,
+    micOffsRef,
     sharingScreenRef,
+    micOffRef,
     speakingRef,
     subscribeFromPeersRef,
     displayNameRef,
@@ -160,8 +174,9 @@ export function useWebRTC(options: UseWebRTCOptions) {
     void sessionRef.current.sendMeta({
       displayName: displayName.trim() || 'Guest',
       sharingScreen: screenSharing,
+      micOff: !micEnabled,
     });
-  }, [displayName, enabled, screenSharing]);
+  }, [displayName, enabled, micEnabled, screenSharing]);
 
   return {
     peerId,

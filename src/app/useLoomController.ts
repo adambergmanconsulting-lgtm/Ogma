@@ -17,6 +17,7 @@ import {
   openPayload,
   previewFromPayload,
   sealJoin,
+  sealSystemEvent,
   sealTextMessage,
 } from '../domain/loom/envelope';
 import {
@@ -27,13 +28,17 @@ import {
 import { localSizeLevel } from '../domain/loom/size';
 import {
   backfillSpaceAuthors,
+  bumpLastCall,
   bumpLastMessage,
+  bumpUnread,
+  chatTabLabel,
   clearUnread,
   ensureSpaceRow,
   noteSpaceAuthors,
   sortSpacesRecentFirst,
   spacePeopleNames,
 } from '../domain/loom/spaceIndex';
+import { eraseLocalVaultData } from '../domain/loom/eraseLocalVault';
 import { rememberPersonCard } from '../domain/loom/peopleDirectory';
 import { attachPersonId } from '../domain/loom/personKey';
 import { getLoomStore } from '../domain/loom/store';
@@ -63,12 +68,13 @@ import { pickWarmSpaceIds } from '../domain/loom/warm';
 import {
   clearCapabilityFromUrl,
   createSpaceSecret,
-  parseSpaceSecretFromLocation,
   replaceUrlWithSpace,
   spaceShareUrl,
 } from '../domain/signaling/room';
 import { extractSpaceSecret, shareRoomLink } from '../domain/signaling/share';
 import type { SpaceMessageView } from '../components/SpaceView';
+import type { LoomSystemKind } from '../domain/loom/systemLine';
+import { useLoomUrlOpen } from './useLoomUrlOpen';
 
 /** Ephemeral Call ring handlers bound from the app shell (warm Loom sync). */
 export type LoomCallRingHandlers = {
@@ -120,8 +126,6 @@ export function useLoomController() {
   const storeRef = useRef<LoomStore | null>(null);
   const focusedSpaceIdRef = useRef<string | null>(null);
   const messagesRef = useRef<SpaceMessageView[]>([]);
-  /** One resume/URL open per unlock cycle — do not re-open after soft-nav idle. */
-  const bootstrapDoneRef = useRef(false);
   const displayName = vault?.displayName ?? '';
   const unlocked = Boolean(wrapKey) || Boolean(vault && !vault.hasDeviceKey);
 
@@ -162,9 +166,9 @@ export function useLoomController() {
             self: row.author === displayName,
           };
           views.push(
-            payload.kind === 'join'
-              ? { ...base, kind: 'join' }
-              : { ...base, kind: 'text', text: payload.text },
+            payload.kind === 'text'
+              ? { ...base, kind: 'text', text: payload.text }
+              : { ...base, kind: payload.kind },
           );
         } catch {
           // skip
@@ -227,12 +231,6 @@ export function useLoomController() {
       const added = await store.putMessages(spaceId, entries);
       if (added === 0) return;
       await trimSpaceMessages(store, spaceId);
-      let maxTs = 0;
-      let tip: LoomEnvelope | null = null;
-      for (const e of entries) {
-        if (!tip || compareEnvelopes(e, tip) > 0) tip = e;
-        maxTs = Math.max(maxTs, e.ts);
-      }
       await noteSpaceAuthors(
         store,
         spaceId,
@@ -240,15 +238,29 @@ export function useLoomController() {
       );
       const viewing = focusedSpaceIdRef.current === spaceId;
       const secret = secretsRef.current.get(spaceId);
-      let preview: string | undefined;
-      if (secret && tip) {
-        try {
-          preview = previewFromPayload(tip.author, await openPayload(secret, tip));
-        } catch {
-          // leave prior preview
+      const unreadDelta = fromPeer && !viewing ? added : 0;
+      // All-list activity: text only (joins update authors/unread, not lastMessageAt).
+      let textTip: LoomEnvelope | null = null;
+      let textPreview: string | undefined;
+      if (secret) {
+        for (const e of entries) {
+          try {
+            const payload = await openPayload(secret, e);
+            if (payload.kind !== 'text') continue;
+            if (!textTip || compareEnvelopes(e, textTip) > 0) {
+              textTip = e;
+              textPreview = previewFromPayload(e.author, payload);
+            }
+          } catch {
+            // skip undecryptable
+          }
         }
       }
-      await bumpLastMessage(store, spaceId, maxTs, fromPeer && !viewing ? added : 0, preview);
+      if (textTip) {
+        await bumpLastMessage(store, spaceId, textTip.ts, unreadDelta, textPreview);
+      } else if (unreadDelta > 0) {
+        await bumpUnread(store, spaceId, unreadDelta);
+      }
       if (viewing) {
         await clearUnread(store, spaceId);
         if (secret) await loadMessages(spaceId, secret);
@@ -380,24 +392,19 @@ export function useLoomController() {
     return openSpaceWithSecret(secret);
   }, [openSpaceWithSecret, wrapKey]);
 
-  useEffect(() => {
-    if (!vault || !unlocked) {
-      bootstrapDoneRef.current = false;
-      return;
-    }
-    if (bootstrapDoneRef.current) return;
-    bootstrapDoneRef.current = true;
-    void (async () => {
-      storeRef.current = await getLoomStore();
-      await refreshSpaces();
-      const fromUrl = parseSpaceSecretFromLocation();
-      if (fromUrl) {
-        await openSpaceWithSecret(fromUrl);
-        return;
-      }
-      await resumeLastSpace();
-    })();
-  }, [vault, unlocked, refreshSpaces, openSpaceWithSecret, resumeLastSpace]);
+  const readyStore = useCallback(async () => {
+    storeRef.current = await getLoomStore();
+  }, []);
+
+  useLoomUrlOpen({
+    vault,
+    unlocked,
+    focusedSecret,
+    refreshSpaces,
+    openSpaceWithSecret,
+    resumeLastSpace,
+    readyStore,
+  });
 
   useEffect(() => {
     return () => {
@@ -439,30 +446,7 @@ export function useLoomController() {
     })();
   }, [vault, wrapKey, applyVaultKey]);
 
-  /** Name only — use the app without a vault key. */
-  const onContinueWithoutVault = useCallback(
-    async (name: string) => {
-      setBusy(true);
-      setError(null);
-      try {
-        storeRef.current = await getLoomStore();
-        const rec = createVaultRecord(name, false);
-        writeVault(rec);
-        localStorage.setItem('ogma.displayName', name.trim());
-        setVault(rec);
-        setWrapKey(null);
-        setScreen('home');
-        await refreshSpaces();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not continue');
-      } finally {
-        setBusy(false);
-      }
-    },
-    [refreshSpaces],
-  );
-
-  /** Create vault: name + new vault key (shown once). */
+  /** Create vault: name + new vault key (shown once). Erases any prior vault on this browser. */
   const onCreateVault = useCallback(
     async (name: string) => {
       setBusy(true);
@@ -470,6 +454,14 @@ export function useLoomController() {
       try {
         const store = await getLoomStore();
         storeRef.current = store;
+        await eraseLocalVaultData(store);
+        secretsRef.current.clear();
+        // Drop leftover ?room= / #space= so bootstrap does not skip the key reveal.
+        clearCapabilityFromUrl();
+        focusedSpaceIdRef.current = null;
+        setFocusedSecret(null);
+        setFocusedSpaceId(null);
+        setMessages([]);
         const vaultKey = generateVaultKey();
         const meta = await createDeviceKeyMeta(vaultKey);
         await store.setDeviceKeyMeta(meta);
@@ -535,37 +527,6 @@ export function useLoomController() {
     }
   }, [vault, refreshSpaces]);
 
-  /** Whether this browser already has a vault key (for Open vault). */
-  const onProbeVault = useCallback(async () => {
-    const store = storeRef.current ?? (await getLoomStore());
-    storeRef.current = store;
-    return Boolean(await store.getDeviceKeyMeta());
-  }, []);
-
-  /** Open vault already stored on this browser. */
-  const onOpenVault = useCallback(async () => {
-    setError(null);
-    const store = storeRef.current ?? (await getLoomStore());
-    storeRef.current = store;
-    const meta = await store.getDeviceKeyMeta();
-    if (!meta) {
-      setError('No vault on this browser yet. Create one with a name, or close and Continue.');
-      return;
-    }
-    const existing = readVault();
-    if (!existing) {
-      const name = localStorage.getItem('ogma.displayName')?.trim() || 'Vault';
-      const rec = createVaultRecord(name, true);
-      writeVault(rec);
-      setVault(rec);
-    } else if (!existing.hasDeviceKey) {
-      const rec = { ...existing, hasDeviceKey: true };
-      writeVault(rec);
-      setVault(rec);
-    }
-    setScreen('unlock');
-  }, []);
-
   const onUnlockVault = useCallback(
     async (vaultKey: string) => {
       setBusy(true);
@@ -596,11 +557,17 @@ export function useLoomController() {
     setScreen('unlock');
   }, [stopSync]);
 
+  /**
+   * Leave this vault and return to cold create.
+   * Chats/device key are erased when Continue creates the new vault (not here),
+   * so a fast Create cannot race a background wipe.
+   */
   const onSwitchVault = useCallback(() => {
     for (const id of [...syncRef.current.keys()]) stopSync(id);
     secretsRef.current.clear();
     clearVaultSession();
     clearLocalVaultRecord();
+    clearCapabilityFromUrl();
     setVault(null);
     setWrapKey(null);
     setPersonId(null);
@@ -624,20 +591,27 @@ export function useLoomController() {
   }, []);
 
   const onExport = useCallback(async () => {
-    await exportVaultFile(storeRef.current);
-  }, []);
+    await exportVaultFile(storeRef.current, wrapKey);
+  }, [wrapKey]);
 
   const onImportFile = useCallback(
     async (file: File) => {
       setError(null);
       try {
-        await importVaultFile(storeRef.current, file);
+        const store = storeRef.current ?? (await getLoomStore());
+        storeRef.current = store;
+        await importVaultFile(store, file);
+        const rows = await store.listSpaces();
+        hydrateLocalSecrets(rows, secretsRef.current);
+        if (wrapKey) {
+          await wrapStoredSpaceSecrets(wrapKey, store, rows, secretsRef.current);
+        }
         await refreshSpaces();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Import failed');
       }
     },
-    [refreshSpaces],
+    [refreshSpaces, wrapKey],
   );
 
   const onRevealContinue = useCallback(() => {
@@ -666,14 +640,27 @@ export function useLoomController() {
     focusedSecret,
     focusedSpaceId,
     spaceSecret: (spaceId: string) => secretsRef.current.get(spaceId),
+    spaceIdForSecret: (secret: string) => {
+      for (const [id, sec] of secretsRef.current) {
+        if (sec === secret) return id;
+      }
+      return null;
+    },
     setCallRingHandlers,
     announceCall: (spaceId: string, author: string) => {
       void syncRef.current.get(spaceId)?.announceCall(author);
+      void (async () => {
+        const store = storeRef.current ?? (await getLoomStore());
+        await bumpLastCall(store, spaceId);
+        await refreshSpaces();
+      })();
     },
     announceCallEnd: (spaceId: string) => {
       void syncRef.current.get(spaceId)?.announceCallEnd();
     },
     people: spacePeopleNames(focusedRow?.authors, displayName),
+    /** Open-chat tab / list title for the focused space. */
+    chatTitle: chatTabLabel(focusedRow, displayName),
     messages,
     hasMoreOlder,
     loadingOlder,
@@ -704,10 +691,7 @@ export function useLoomController() {
         setLoadingOlder(false);
       }
     },
-    onContinueWithoutVault,
     onCreateVault,
-    onProbeVault,
-    onOpenVault,
     onEnableVault,
     onUnlockVault,
     onLogout,
@@ -773,6 +757,20 @@ export function useLoomController() {
       await ingestEntries(focusedSpaceId, [env], false);
       await syncRef.current.get(focusedSpaceId)?.sendEntries([env]);
       await loadMessages(focusedSpaceId, focusedSecret);
+    },
+    /** Sealed system line (Call / screen share) into the open space log. */
+    sealSystemLine: async (
+      kind: Exclude<LoomSystemKind, 'join'>,
+      spaceId?: string | null,
+      secret?: string | null,
+    ) => {
+      const id = spaceId ?? focusedSpaceIdRef.current;
+      const sec = secret ?? (id ? secretsRef.current.get(id) : undefined) ?? focusedSecret;
+      const name = displayName.trim();
+      if (!id || !sec || !name) return;
+      const env = await sealSystemEvent(sec, kind, name);
+      await ingestEntries(id, [env], false);
+      await syncRef.current.get(id)?.sendEntries([env]);
     },
     onCopyInvite: async () => {
       if (!focusedSecret) {

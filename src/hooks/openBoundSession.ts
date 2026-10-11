@@ -15,7 +15,9 @@ export type BoundSessionHooks = {
   names: Map<string, string>;
   streams: Map<string, MediaStream>;
   screenShares: Map<string, boolean>;
+  micOffs: Map<string, boolean>;
   sharingScreen: () => boolean;
+  micOff: () => boolean;
   speaking: Map<string, SpeakingSample>;
   subscribeFromPeers: Map<string, Extract<ControlWire, { type: 'subscribe' }>>;
   displayName: () => string;
@@ -43,8 +45,10 @@ export function openBoundSession(
       names: hooks.names,
       streams: hooks.streams,
       screenShares: hooks.screenShares,
+      micOffs: hooks.micOffs,
       displayName: hooks.displayName,
       sharingScreen: hooks.sharingScreen,
+      micOff: hooks.micOff,
       publishPeers: hooks.publishPeers,
       setConnectionState: hooks.setConnectionState,
       setError: hooks.setError,
@@ -68,6 +72,7 @@ export function openBoundSession(
   void session.sendMeta({
     displayName: hooks.displayName(),
     sharingScreen: hooks.sharingScreen(),
+    micOff: hooks.micOff(),
   });
   if (hooks.localStream) syncLocalStream(session, null, hooks.localStream);
   hooks.onSpeakingTick();

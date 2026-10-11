@@ -9,11 +9,15 @@ describe('seal/open', () => {
     expect(plain).toBe('golden threads');
   });
 
-  it('round-trips join payloads', async () => {
+  it('round-trips join and Call system payloads', async () => {
     const secret = 'join-space';
     const sealed = await sealPayload(secret, { kind: 'join' });
     await expect(openPayload(secret, sealed.nonce, sealed.ciphertext)).resolves.toEqual({
       kind: 'join',
+    });
+    const call = await sealPayload(secret, { kind: 'call-end' });
+    await expect(openPayload(secret, call.nonce, call.ciphertext)).resolves.toEqual({
+      kind: 'call-end',
     });
   });
 

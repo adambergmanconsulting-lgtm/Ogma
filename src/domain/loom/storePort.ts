@@ -27,4 +27,7 @@ export interface LoomStore {
 
   getDeviceKeyMeta(): Promise<DeviceKeyMeta | null>;
   setDeviceKeyMeta(meta: DeviceKeyMeta | null): Promise<void>;
+
+  /** Erase spaces, messages, and device-key meta (Create / Switch vault). */
+  clearAll(): Promise<void>;
 }

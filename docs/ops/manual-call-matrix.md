@@ -2,6 +2,8 @@
 
 **Purpose:** Prove 1:1 “just works” before treating Thread as done. Owner procedure for [connectivity.md](../engineering/protocols/connectivity.md).
 
+**Local smoke first:** same machine, two profiles on `npm run dev` — [manual-local-two-browser.md](manual-local-two-browser.md). Use this matrix for real networks / phones.
+
 ## Fast path
 
 - Run after Trystero Thread changes that touch join/media.

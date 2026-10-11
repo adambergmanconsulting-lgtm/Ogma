@@ -60,6 +60,13 @@ export function displaySpaceLabel(row: SpaceIndexRow, selfName = ''): string {
   return DEFAULT_SPACE_LABEL;
 }
 
+/** Open-chat tab: people title, or This chat when alone / no space. */
+export function chatTabLabel(row: SpaceIndexRow | null | undefined, selfName = ''): string {
+  if (!row) return 'This chat';
+  const title = displaySpaceLabel(row, selfName);
+  return title === DEFAULT_SPACE_LABEL ? 'This chat' : title;
+}
+
 /** People known in this space for the open-chat row (includes self). */
 export function spacePeopleNames(authors: string[] | undefined, selfName: string): string[] {
   return mergeAuthors(authors, selfName.trim() ? [selfName.trim()] : []);
@@ -137,8 +144,14 @@ export async function noteSpaceAuthors(
   return next;
 }
 
-export function spaceActivityAt(row: Pick<SpaceIndexRow, 'lastMessageAt' | 'lastOpenedAt'>): number {
-  return Math.max(row.lastMessageAt || 0, row.lastOpenedAt || 0);
+/**
+ * All-list sort key: text messages and Calls only.
+ * Joins and mere opens do not count.
+ */
+export function spaceActivityAt(
+  row: Pick<SpaceIndexRow, 'lastMessageAt' | 'lastCallAt'>,
+): number {
+  return Math.max(row.lastMessageAt || 0, row.lastCallAt || 0);
 }
 
 export function sortSpacesRecentFirst(rows: SpaceIndexRow[]): SpaceIndexRow[] {
@@ -202,7 +215,7 @@ export async function ensureSpaceRow(
     spaceId,
     status: 'recent',
     lastOpenedAt: now,
-    lastMessageAt: now,
+    lastMessageAt: 0,
     unreadCount: 0,
   };
   await store.putSpace(row);
@@ -221,6 +234,7 @@ export async function setSpaceStatus(
   return next;
 }
 
+/** Text activity (+ optional unread). Joins must not call this for the tip. */
 export async function bumpLastMessage(
   store: LoomStore,
   spaceId: string,
@@ -231,13 +245,41 @@ export async function bumpLastMessage(
   const row = await store.getSpace(spaceId);
   if (!row) return;
   const preview = lastPreview?.trim();
-  // Only replace list preview when this tip is at least as new as known activity.
   const tipIsNewest = Boolean(preview) && ts >= (row.lastMessageAt || 0);
   await store.putSpace({
     ...row,
-    lastMessageAt: Math.max(row.lastMessageAt, ts),
+    lastMessageAt: Math.max(row.lastMessageAt || 0, ts),
     unreadCount: Math.max(0, row.unreadCount + unreadDelta),
     ...(tipIsNewest && preview ? { lastPreview: clipSpacePreview(preview) } : {}),
+  });
+}
+
+/** Call (A/V) activity for All-list sort. */
+export async function bumpLastCall(
+  store: LoomStore,
+  spaceId: string,
+  ts = Date.now(),
+): Promise<void> {
+  const row = await store.getSpace(spaceId);
+  if (!row) return;
+  await store.putSpace({
+    ...row,
+    lastCallAt: Math.max(row.lastCallAt || 0, ts),
+  });
+}
+
+/** Unread only (e.g. peer join while not viewing). */
+export async function bumpUnread(
+  store: LoomStore,
+  spaceId: string,
+  unreadDelta: number,
+): Promise<void> {
+  if (unreadDelta === 0) return;
+  const row = await store.getSpace(spaceId);
+  if (!row) return;
+  await store.putSpace({
+    ...row,
+    unreadCount: Math.max(0, row.unreadCount + unreadDelta),
   });
 }
 

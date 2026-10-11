@@ -29,6 +29,20 @@ export function shouldSendLocalVideo(cameraEnabled: boolean, sharingScreen: bool
   return cameraEnabled || sharingScreen;
 }
 
+/** Who fills the main video pane while a screen is shared (local wins if both). */
+export type ScreenSpotlight =
+  | { kind: 'local' }
+  | { kind: 'remote'; peerId: string };
+
+export function resolveScreenSpotlight(opts: {
+  localScreen: boolean;
+  remotePeers: ReadonlyArray<{ peerId: string; sharingScreen?: boolean }>;
+}): ScreenSpotlight | null {
+  if (opts.localScreen) return { kind: 'local' };
+  const peer = opts.remotePeers.find((p) => p.sharingScreen);
+  return peer ? { kind: 'remote', peerId: peer.peerId } : null;
+}
+
 export async function captureScreenTrack(): Promise<MediaStreamTrack> {
   const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
   const track =

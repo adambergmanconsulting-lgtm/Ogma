@@ -34,6 +34,8 @@ export interface UseUserMediaOptions {
   qualityTier?: SendQualityTier;
   congested?: boolean;
   onTrackReplaced?: (track: MediaStreamTrack) => void;
+  /** Fires when screen share starts or stops (not when the call tears down). */
+  onScreenShareChange?: (sharing: boolean) => void;
 }
 
 export function useUserMedia(options: UseUserMediaOptions = {}) {
@@ -42,6 +44,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     qualityTier = 'high',
     congested = false,
     onTrackReplaced,
+    onScreenShareChange,
   } = options;
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [devices, setDevices] = useState<MediaDeviceOption[]>([]);
@@ -67,15 +70,22 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const screenBusyRef = useRef(false);
   const onTrackReplacedRef = useRef(onTrackReplaced);
   onTrackReplacedRef.current = onTrackReplaced;
+  const onScreenShareChangeRef = useRef(onScreenShareChange);
+  onScreenShareChangeRef.current = onScreenShareChange;
 
   const blurRef = useRef(
     createBackgroundBlurController({
       getCameraStream: () => cameraStreamRef.current,
       onPublishStream: (next) => {
+        // Screen share owns the published picture — blur must not restore camera.
+        if (screenTrackRef.current) return;
         streamRef.current = next;
         setStream(next);
       },
-      onTrackReplaced: (track) => onTrackReplacedRef.current?.(track),
+      onTrackReplaced: (track) => {
+        if (screenTrackRef.current) return;
+        onTrackReplacedRef.current?.(track);
+      },
     }),
   );
 
@@ -93,19 +103,25 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     screenTrackRef.current = null;
     setScreenSharing(false);
     restoreCameraPublish();
+    onScreenShareChangeRef.current?.(false);
   };
   const onScreenEnded = useCallback(() => {
     onScreenEndedRef.current();
   }, []);
 
-  const releaseScreenTrack = useCallback(() => {
-    const track = screenTrackRef.current;
-    if (!track) return;
-    screenTrackRef.current = null;
-    track.removeEventListener('ended', onScreenEnded);
-    track.stop();
-    setScreenSharing(false);
-  }, [onScreenEnded]);
+  /** @param notify — false when tearing down the whole call (no “stopped sharing” line). */
+  const releaseScreenTrack = useCallback(
+    (notify = true) => {
+      const track = screenTrackRef.current;
+      if (!track) return;
+      screenTrackRef.current = null;
+      track.removeEventListener('ended', onScreenEnded);
+      track.stop();
+      setScreenSharing(false);
+      if (notify) onScreenShareChangeRef.current?.(false);
+    },
+    [onScreenEnded],
+  );
 
   const refreshDevices = useCallback(async () => {
     const list = await listMediaDevices();
@@ -189,7 +205,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     blurRef.current.stop();
     setBackgroundBlur(false);
     setBackgroundBlurMode('off');
-    releaseScreenTrack();
+    releaseScreenTrack(false);
     cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     cameraStreamRef.current = null;
     streamRef.current = null;
@@ -292,6 +308,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       screenTrackRef.current = track;
       track.addEventListener('ended', onScreenEnded);
       setScreenSharing(true);
+      onScreenShareChangeRef.current?.(true);
       const next = buildPublishStream(camera, track);
       streamRef.current = next;
       setStream(next);
@@ -349,7 +366,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     return () => {
       navigator.mediaDevices?.removeEventListener?.('devicechange', onChange);
       blurRef.current.stop();
-      releaseScreenTrack();
+      releaseScreenTrack(false);
       cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, [refreshDevices, releaseScreenTrack]);

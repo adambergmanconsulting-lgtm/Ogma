@@ -12,14 +12,15 @@ import { SpaceView } from '../components/SpaceView';
 import { VaultSetup } from '../components/VaultSetup';
 import { VaultUnlock } from '../components/VaultUnlock';
 import { WorkspaceIdle } from '../components/WorkspaceIdle';
+import { shouldEndLocalCallOnWire, shouldOfferStartCall } from '../domain/loom/callRing';
+import { systemLineLabel } from '../domain/loom/systemLine';
 import { isFreshSoloChat } from '../domain/loom/spaceIndex';
 import { parseRoomIdFromLocation } from '../domain/signaling/room';
 import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
 import {
-  pickHomeAnchor,
-  readDismissed,
-  VAULT_NUDGE_DISMISS_KEY,
-  writeDismissed,
+  readWelcomeDismissed,
+  shouldOfferWelcome,
+  writeWelcomeDismissed,
 } from '../domain/shell/pwaInstall';
 import { resolveCallSurface } from '../domain/thread/callSurface';
 import type { ChatMessage } from '../domain/types';
@@ -58,18 +59,20 @@ export default function App() {
   };
   const pwa = usePwaInstall();
   const preferSpaces = useRef(false);
+  /** Space secret All was opened against; a different focused space clears All preference. */
+  const preferSpacesSecret = useRef<string | null>(null);
   const [chatPane, setChatPane] = useState<ChatPane>('spaces');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [vaultNudgeDismissed, setVaultNudgeDismissed] = useState(() =>
-    readDismissed(VAULT_NUDGE_DISMISS_KEY),
-  );
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => readWelcomeDismissed());
   /** Room-only CallShell visible (false after soft-nav home). */
   const [roomShellOpen, setRoomShellOpen] = useState(true);
+  const [acceptBusy, setAcceptBusy] = useState(false);
+  const onScreenShareChangeRef = useRef<(sharing: boolean) => void>(() => undefined);
   const call = useCallController({
     displayName: loom.displayName,
-    enabled:
-      loom.unlocked &&
-      (loom.screen === 'thread' || Boolean(loom.vault && parseRoomIdFromLocation())),
+    /** URL room sync and Call entry once the vault is open (not only on Thread screen). */
+    enabled: loom.unlocked,
+    onScreenShareChange: (sharing) => onScreenShareChangeRef.current(sharing),
   });
   const callRing = useSpaceCallRing({
     displayName: loom.displayName,
@@ -78,11 +81,46 @@ export default function App() {
   });
   usePwaUpdate({ inCall: call.inCall });
 
+  onScreenShareChangeRef.current = (sharing) => {
+    const secret = call.boundSpaceSecret ?? loom.focusedSecret;
+    const spaceId =
+      (secret ? loom.spaceIdForSecret(secret) : null) ?? loom.focusedSpaceId;
+    void loom.sealSystemLine(
+      sharing ? 'screen-share' : 'screen-share-end',
+      spaceId,
+      secret,
+    );
+  };
+
+  /** Hang up when a peer sends call-end for this space’s Call (refs avoid stale handlers). */
+  const onRemoteCallEndRef = useRef<(spaceId: string) => void>(() => undefined);
+  onRemoteCallEndRef.current = (spaceId: string) => {
+    const boundId = call.boundSpaceSecret
+      ? loom.spaceIdForSecret(call.boundSpaceSecret)
+      : null;
+    if (
+      !shouldEndLocalCallOnWire({
+        endedSpaceId: spaceId,
+        inCall: call.inCall,
+        callingSpaceId: callRing.callingSpaceId,
+        boundSpaceId: boundId,
+      })
+    ) {
+      return;
+    }
+    callRing.clearCalling(spaceId);
+    call.onLeave();
+    setRoomShellOpen(false);
+  };
+
   useEffect(() => {
     loom.setCallRingHandlers({
       getCallAnnounce: callRing.getCallAnnounce,
       onCall: callRing.onCallWire,
-      onCallEnd: callRing.onCallEndWire,
+      onCallEnd: (spaceId) => {
+        callRing.onCallEndWire(spaceId);
+        onRemoteCallEndRef.current(spaceId);
+      },
     });
     return () => loom.setCallRingHandlers(null);
   }, [
@@ -93,10 +131,9 @@ export default function App() {
   ]);
 
   const hasLocalChats = loom.chats.length > 0;
-  const homeAnchor = pickHomeAnchor({
-    standalone: pwa.standalone,
-    installDismissed: pwa.installDismissed,
-    vaultNudgeDismissed,
+  const welcome = shouldOfferWelcome({
+    installMode: pwa.mode,
+    dismissed: welcomeDismissed,
     hasLocalChats,
     hasVaultKey: loom.hasVaultKey,
   });
@@ -140,10 +177,17 @@ export default function App() {
     call.restoreShareUrl();
   }, [call.inCall, call.restoreShareUrl, loom.focusedSecret, loom.screen]);
 
-  // Resume opens the chat unless the user asked for the All tab.
+  // Opening a different space always shows chat. Prefer All only while the same space stays focused.
   useEffect(() => {
-    if (preferSpaces.current) return;
-    if (loom.focusedSecret) setChatPane('chat');
+    const secret = loom.focusedSecret;
+    if (!secret) {
+      preferSpacesSecret.current = null;
+      return;
+    }
+    if (preferSpaces.current && preferSpacesSecret.current === secret) return;
+    preferSpaces.current = false;
+    preferSpacesSecret.current = secret;
+    setChatPane('chat');
   }, [loom.focusedSecret]);
 
   if (loom.screen === 'reveal' && loom.reveal) {
@@ -163,10 +207,7 @@ export default function App() {
       <VaultSetup
         busy={loom.busy}
         error={loom.error}
-        onContinue={(name) => void loom.onContinueWithoutVault(name)}
         onCreateVault={(name) => void loom.onCreateVault(name)}
-        onOpenVault={() => void loom.onOpenVault()}
-        onProbeVault={() => loom.onProbeVault()}
       />
     );
   }
@@ -177,7 +218,7 @@ export default function App() {
         busy={loom.busy}
         error={loom.error}
         onUnlock={(key) => void loom.onUnlockVault(key)}
-        onBack={() => loom.setScreen('vault')}
+        onCreateNew={() => loom.onSwitchVault()}
       />
     );
   }
@@ -196,6 +237,7 @@ export default function App() {
 
   const showSpaces = () => {
     preferSpaces.current = true;
+    preferSpacesSecret.current = loom.focusedSecret;
     setChatPane('spaces');
   };
 
@@ -214,13 +256,22 @@ export default function App() {
 
   const startCallWithSecret = async (secret: string, spaceId?: string | null) => {
     const roomId = await threadSecretFromSpace(secret);
-    const id = spaceId ?? loom.focusedSpaceId;
-    if (id) callRing.markCalling(id);
+    const id = spaceId ?? loom.focusedSpaceId ?? loom.spaceIdForSecret(secret);
+    const author = loom.displayName.trim() || 'Guest';
+    if (id) {
+      callRing.markCalling(id);
+      // Ring before getUserMedia — permission UI can take many seconds.
+      loom.announceCall(id, author);
+    }
     try {
       await call.startCall(roomId, secret);
-      if (id) loom.announceCall(id, loom.displayName.trim() || 'Guest');
+      if (id) loom.announceCall(id, author);
+      void loom.sealSystemLine('call-start', id, secret);
     } catch {
-      if (id) callRing.clearCalling(id);
+      if (id) {
+        loom.announceCallEnd(id);
+        callRing.clearCalling(id);
+      }
     }
   };
 
@@ -247,9 +298,45 @@ export default function App() {
     void loom.onCreateSpace();
   };
 
-  /** Upgrade open space to Call (video pane). */
+  const acceptIncomingCall = () => {
+    const incoming = callRing.incomingCall;
+    if (!incoming || call.inCall || acceptBusy) return;
+    setAcceptBusy(true);
+    callRing.setAcceptError(null);
+    void (async () => {
+      try {
+        // Start A/V under the Accept click (user activation). Do not await Loom
+        // open first — that burns the gesture and private windows then block media.
+        callRing.markCalling(incoming.spaceId);
+        const roomId =
+          incoming.roomId || (await threadSecretFromSpace(incoming.spaceSecret));
+        await call.startCall(roomId, incoming.spaceSecret);
+        loom.announceCall(incoming.spaceId, loom.displayName.trim() || 'Guest');
+        callRing.dismissIncomingCall();
+        if (loom.focusedSecret !== incoming.spaceSecret) {
+          await loom.onOpenSpaceSecret(incoming.spaceSecret);
+        }
+      } catch (e) {
+        callRing.clearCalling(incoming.spaceId);
+        callRing.setAcceptError(
+          (e instanceof Error && e.message) ||
+            call.media.error ||
+            'Could not join the call. Allow camera and microphone, then Accept again.',
+        );
+      } finally {
+        setAcceptBusy(false);
+      }
+    })();
+  };
+
+  /** Upgrade open space to Call — or Accept if a ring is already up for this chat. */
   const goCall = () => {
     if (call.inCall || loom.busy || !loom.focusedSecret) return;
+    const incoming = callRing.incomingCall;
+    if (incoming && incoming.spaceSecret === loom.focusedSecret) {
+      acceptIncomingCall();
+      return;
+    }
     void startCallWithSecret(loom.focusedSecret);
   };
 
@@ -265,6 +352,11 @@ export default function App() {
       return;
     }
     if (loom.busy) return;
+    const incoming = callRing.incomingCall;
+    if (incoming?.spaceId === spaceId) {
+      acceptIncomingCall();
+      return;
+    }
     void (async () => {
       const secret = await loom.onOpenSpace(spaceId);
       if (!secret) return;
@@ -276,6 +368,10 @@ export default function App() {
     setSettingsOpen((open) => !open);
   };
 
+  const openSettingsFromWelcome = () => {
+    setSettingsOpen(true);
+  };
+
   const loomChat =
     Boolean(call.boundSpaceSecret) && loom.focusedSecret === call.boundSpaceSecret;
   const callMessages: ChatMessage[] = loomChat
@@ -283,30 +379,30 @@ export default function App() {
         id: m.id,
         peerId: m.self ? '__self__' : m.author,
         displayName: m.author,
-        text: m.kind === 'join' ? `${m.author} joined` : m.text,
+        text: m.kind === 'text' ? m.text : systemLineLabel(m.author, m.kind),
         sentAt: m.ts,
       }))
     : call.webrtc.messages;
 
   const leaveCall = () => {
-    const callingId = callRing.callingSpaceId;
-    if (callingId) {
-      loom.announceCallEnd(callingId);
-      callRing.clearCalling(callingId);
+    const endId =
+      callRing.callingSpaceId ??
+      (call.boundSpaceSecret ? loom.spaceIdForSecret(call.boundSpaceSecret) : null) ??
+      loom.focusedSpaceId;
+    const endSecret = call.boundSpaceSecret ?? loom.focusedSecret;
+    if (endId) {
+      void loom.sealSystemLine('call-end', endId, endSecret);
+      loom.announceCallEnd(endId);
+      callRing.clearCalling(endId);
     }
     call.onLeave();
     setRoomShellOpen(false);
   };
 
-  const acceptIncomingCall = () => {
-    const incoming = callRing.incomingCall;
-    if (!incoming || call.inCall) return;
-    callRing.dismissIncomingCall();
-    void (async () => {
-      await loom.onOpenSpaceSecret(incoming.spaceSecret);
-      await startCallWithSecret(incoming.spaceSecret, incoming.spaceId);
-    })();
-  };
+  const offerStartCall = shouldOfferStartCall({
+    inCall: call.inCall,
+    hasIncomingCall: Boolean(callRing.incomingCall),
+  });
 
   const incomingBanner =
     callRing.incomingCall && !call.inCall ? (
@@ -314,6 +410,8 @@ export default function App() {
         author={callRing.incomingCall.author}
         selfName={loom.displayName}
         personId={loom.personId}
+        busy={acceptBusy}
+        error={callRing.acceptError || call.media.error}
         onAccept={acceptIncomingCall}
         onDismiss={callRing.dismissIncomingCall}
       />
@@ -345,6 +443,7 @@ export default function App() {
       else showChat();
     },
     spacesPane,
+    chatTitle: loom.chatTitle,
     startNew: {
       busy: loom.busy || call.busy,
       disabled: freshSoloChat,
@@ -389,8 +488,8 @@ export default function App() {
         onLoadOlder={() => void loom.onLoadOlder()}
         onSend={(text) => void loom.onSend(text)}
         onCopyInvite={loom.onCopyInvite}
-        onStartCall={call.inCall ? undefined : goCall}
-        callBusy={loom.busy || call.busy}
+        onStartCall={offerStartCall ? goCall : undefined}
+        callBusy={loom.busy || call.busy || acceptBusy}
         incomingCall={incomingBanner}
         {...paneProps}
       />
@@ -470,28 +569,22 @@ export default function App() {
         busy={call.busy}
         canJoin={Boolean(call.roomInput.trim())}
         onJoin={() => {
-          setRoomShellOpen(true);
-          call.onJoin();
+          void (async () => {
+            const space = await call.onJoin();
+            if (space) await loom.onOpenSpaceSecret(space);
+            else setRoomShellOpen(true);
+          })();
         }}
       />
     );
   } else {
     body = (
       <AppWorkShell
-        homeAnchor={homeAnchor}
-        installMode={pwa.mode}
-        installHowOpen={pwa.howOpen}
-        onInstall={() => void pwa.runInstall()}
-        onDismissInstall={pwa.dismissInstall}
-        onVaultNudge={() => {
-          writeDismissed(VAULT_NUDGE_DISMISS_KEY);
-          setVaultNudgeDismissed(true);
-          setSettingsOpen(false);
-          void loom.onEnableVault();
-        }}
-        onDismissVaultNudge={() => {
-          writeDismissed(VAULT_NUDGE_DISMISS_KEY);
-          setVaultNudgeDismissed(true);
+        welcome={welcome}
+        onOpenSettings={openSettingsFromWelcome}
+        onDismissWelcome={() => {
+          writeWelcomeDismissed();
+          setWelcomeDismissed(true);
         }}
         workspace={workspace}
       />

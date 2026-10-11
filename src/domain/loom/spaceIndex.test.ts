@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryLoomStore } from './memoryStore';
 import {
+  chatTabLabel,
   clipSpacePreview,
   displaySpaceLabel,
   formatSpaceActivity,
@@ -8,6 +9,7 @@ import {
   noteSpaceAuthors,
   isFreshSoloChat,
   shortDisplayName,
+  sortSpacesRecentFirst,
   spaceActivityAt,
   spaceMatchesQuery,
   spacePeopleNames,
@@ -47,6 +49,9 @@ describe('space labels from participants', () => {
     expect(
       displaySpaceLabel({ ...row, authors: ['Ada'], lastPreview: undefined }, 'Ada'),
     ).toBe('Chat');
+    expect(chatTabLabel(row, 'Ada')).toBe('Bo,Cam');
+    expect(chatTabLabel({ ...row, authors: ['Ada'] }, 'Ada')).toBe('This chat');
+    expect(chatTabLabel(null, 'Ada')).toBe('This chat');
   });
 
   it('clips long previews', () => {
@@ -98,8 +103,45 @@ describe('formatSpaceActivity', () => {
   const locale = 'en-US';
   const now = new Date(2026, 9, 10, 15, 30, 0).getTime(); // 10 Oct 2026 15:30
 
-  it('uses max of message and opened', () => {
-    expect(spaceActivityAt({ lastMessageAt: 5, lastOpenedAt: 9 })).toBe(9);
+  it('uses max of text and Call times (not opens or joins)', () => {
+    expect(spaceActivityAt({ lastMessageAt: 5, lastCallAt: 9 })).toBe(9);
+    expect(spaceActivityAt({ lastMessageAt: 5, lastCallAt: 2 })).toBe(5);
+    expect(spaceActivityAt({ lastMessageAt: 0, lastCallAt: 0 })).toBe(0);
+  });
+
+  it('sorts All by text/Call activity ahead of join-only rows', () => {
+    const joinOnly: SpaceIndexRow = {
+      spaceId: 'join',
+      authors: ['Ada', 'Bo'],
+      lastPreview: 'Bo joined',
+      status: 'recent',
+      lastOpenedAt: 100,
+      lastMessageAt: 0,
+      unreadCount: 0,
+    };
+    const withText: SpaceIndexRow = {
+      spaceId: 'text',
+      authors: ['Ada'],
+      lastPreview: 'hi',
+      status: 'recent',
+      lastOpenedAt: 1,
+      lastMessageAt: 50,
+      unreadCount: 0,
+    };
+    const withCall: SpaceIndexRow = {
+      spaceId: 'call',
+      authors: ['Ada'],
+      status: 'recent',
+      lastOpenedAt: 1,
+      lastMessageAt: 0,
+      lastCallAt: 80,
+      unreadCount: 0,
+    };
+    expect(sortSpacesRecentFirst([joinOnly, withText, withCall]).map((r) => r.spaceId)).toEqual([
+      'call',
+      'text',
+      'join',
+    ]);
   });
 
   it('shows time for today', () => {

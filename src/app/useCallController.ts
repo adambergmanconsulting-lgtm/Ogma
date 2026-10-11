@@ -20,6 +20,8 @@ type CallControllerOpts = {
   displayName: string;
   /** When false, ignore URL auto-join until user opens Call from Chats. */
   enabled?: boolean;
+  /** Loom log: screen share started / stopped. */
+  onScreenShareChange?: (sharing: boolean) => void;
 };
 
 /** Lobby + in-call state wiring for App shell. */
@@ -48,6 +50,7 @@ export function useCallController(opts: CallControllerOpts) {
     qualityTier,
     congested,
     onTrackReplaced: (track) => replaceTrackRef.current(track),
+    onScreenShareChange: opts.onScreenShareChange,
   });
 
   const webrtc = useWebRTC({
@@ -57,6 +60,7 @@ export function useCallController(opts: CallControllerOpts) {
     enabled: inCall && Boolean(activeRoom && media.stream),
     cameraEnabled: media.cameraEnabled,
     screenSharing: media.screenSharing,
+    micEnabled: media.micEnabled,
     onTrackReplaceNeeded: (replace) => {
       replaceTrackRef.current = replace;
     },
@@ -113,11 +117,12 @@ export function useCallController(opts: CallControllerOpts) {
     void enterRoom(createRoomSecret());
   }, [enterRoom]);
 
-  const onJoin = useCallback(() => {
+  const onJoin = useCallback(async (): Promise<string | null> => {
     const id = extractRoomSecret(roomInput);
-    if (!id) return;
+    if (!id) return null;
     const space = parseSpaceSecretFromLocation();
-    void enterRoom(id, space);
+    await enterRoom(id, space);
+    return space;
   }, [enterRoom, roomInput]);
 
   const onLeave = useCallback(() => {

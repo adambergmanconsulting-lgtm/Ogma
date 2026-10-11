@@ -183,6 +183,14 @@ export async function openIdbLoomStore(): Promise<LoomStore> {
       }
       await txDone(tx);
     },
+    async clearAll() {
+      const tx = db.transaction([SPACES, MESSAGES, COLD, META], 'readwrite');
+      tx.objectStore(SPACES).clear();
+      tx.objectStore(MESSAGES).clear();
+      tx.objectStore(COLD).clear();
+      tx.objectStore(META).clear();
+      await txDone(tx);
+    },
   };
   return store;
 }

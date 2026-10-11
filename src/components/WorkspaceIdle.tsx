@@ -6,6 +6,7 @@ interface WorkspaceIdleProps {
   chatPane: ChatPane;
   onChatPane: (pane: ChatPane) => void;
   spacesPane: ReactNode;
+  chatTitle?: string;
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
 }
 
@@ -38,6 +39,7 @@ export function WorkspaceIdle(props: WorkspaceIdleProps) {
           onPane={props.onChatPane}
           className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col bg-[color:var(--color-panel)]/25 md:w-[min(22rem,38%)] md:max-w-sm md:flex-none"
           spaces={props.spacesPane}
+          chatTitle={props.chatTitle}
           startNew={props.startNew}
         >
           <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">

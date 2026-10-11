@@ -4,9 +4,10 @@ import { PersonIdMark } from './PersonIdMark';
 import { AppearActive } from './PersonReach';
 import {
   SETTINGS_INSTALL,
-  installHowForMode,
+  shouldShowSettingsSetup,
   type InstallOfferMode,
 } from '../domain/shell/pwaInstall';
+import { SettingsSetupSplash } from './SettingsSetupSplash';
 import {
   LOOM_HONEST_COPY,
   PRIVACY_SETTINGS,
@@ -32,7 +33,7 @@ function settingsInstallBody(mode: InstallOfferMode): string {
 interface VaultSettingsProps {
   open: boolean;
   displayName: string;
-  /** True when a vault key was opted in (Log out / retrieve). */
+  /** True when a vault key exists (Log out / retrieve). */
   hasVaultKey: boolean;
   /** Public person id for this vault. Absent until a vault key exists. */
   personId?: string | null;
@@ -40,7 +41,6 @@ interface VaultSettingsProps {
   tabVisible?: boolean;
   onToggleAppearActive?: () => void;
   installMode: InstallOfferMode;
-  installHowOpen: boolean;
   turnUri: string;
   turnError: string | null;
   busy: boolean;
@@ -56,7 +56,7 @@ interface VaultSettingsProps {
   onSwitchVault: () => void;
 }
 
-/** Profile + optional vault key. */
+/** Settings drawer: You → Vault → Home screen → folded Privacy / Network. */
 export function VaultSettings(props: VaultSettingsProps) {
   const [name, setName] = useState(props.displayName);
   const [turnDraft, setTurnDraft] = useState(props.turnUri);
@@ -71,6 +71,13 @@ export function VaultSettings(props: VaultSettingsProps) {
   if (!props.open) return null;
 
   const turnConfigured = Boolean(props.turnUri.trim());
+  const setupOpen = shouldShowSettingsSetup({
+    installMode: props.installMode,
+    hasVaultKey: props.hasVaultKey,
+  });
+  const setupCoversInstall = setupOpen && props.installMode !== 'none';
+  const setupCoversVault = setupOpen && !props.hasVaultKey;
+  const nameDirty = Boolean(name.trim()) && name.trim() !== props.displayName;
 
   return (
     <div className="absolute inset-0 z-50 flex justify-end bg-black/40" role="presentation">
@@ -84,7 +91,7 @@ export function VaultSettings(props: VaultSettingsProps) {
         data-testid="vault-settings"
         className="drawer-sheet drawer-sheet--settings relative z-10 flex h-full flex-col overflow-y-auto"
       >
-        <div className="mb-5 flex items-center justify-between gap-2">
+        <div className="settings-head">
           <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
           <button
             type="button"
@@ -97,13 +104,18 @@ export function VaultSettings(props: VaultSettingsProps) {
           </button>
         </div>
 
-        <section className="mb-8 space-y-2" data-testid="settings-you">
-          <h3 className="text-sm font-semibold">You</h3>
-          <p className="text-xs leading-relaxed text-[color:var(--color-muted)]">
-            {props.hasVaultKey
-              ? 'This vault stays in this browser. You stay signed in until Log out.'
-              : 'Chats stay in this browser. A vault key is optional — only if you want to lock or move them.'}
-          </p>
+        {setupOpen ? (
+          <SettingsSetupSplash
+            installMode={props.installMode}
+            hasVaultKey={props.hasVaultKey}
+            busy={props.busy}
+            onInstall={props.onInstall}
+            onEnableVault={props.onEnableVault}
+          />
+        ) : null}
+
+        <section className="settings-section" data-testid="settings-you">
+          <h3 className="settings-section__title">You</h3>
           <div className="space-y-1.5">
             <label className="field-label" htmlFor="vault-display-name">
               Your name
@@ -123,203 +135,199 @@ export function VaultSettings(props: VaultSettingsProps) {
               {props.personId ? <PersonIdMark id={props.personId} /> : null}
             </div>
           </div>
+          <button
+            type="button"
+            data-testid="vault-rename-save"
+            disabled={props.busy || !nameDirty}
+            onClick={() => props.onRename(name.trim())}
+            className="btn-secondary btn-secondary--sm mt-2 w-full"
+          >
+            Save name
+          </button>
           {props.personId && props.onToggleAppearActive ? (
-            <p className="flex items-center justify-between gap-2 text-xs text-[color:var(--color-muted)]">
-              <span>While Ogma is open, people who know you can invite you.</span>
+            <div className="settings-row mt-3">
+              <p className="settings-section__hint mb-0 min-w-0 flex-1">
+                While Ogma is open, people who know you can invite you.
+              </p>
               <AppearActive
                 active={Boolean(props.appearActive && props.tabVisible)}
                 onToggle={props.onToggleAppearActive}
                 testId="settings-appear-active"
               />
+            </div>
+          ) : null}
+        </section>
+
+        <section className="settings-section" data-testid="settings-vault">
+          <h3 className="settings-section__title">Vault</h3>
+          <p className="settings-section__hint">
+            {props.hasVaultKey
+              ? 'Chats for this vault stay in this browser. You stay signed in until Log out.'
+              : 'Chats stay in this browser. Add a vault key to lock them or move them with Export / Import.'}
+          </p>
+          {props.error ? (
+            <p className="text-danger mb-3 text-xs" data-testid="settings-error">
+              {props.error}
             </p>
           ) : null}
-          <button
-            type="button"
-            data-testid="vault-rename-save"
-            disabled={props.busy || !name.trim() || name.trim() === props.displayName}
-            onClick={() => props.onRename(name.trim())}
-            className="btn-secondary btn-secondary--sm w-full"
-          >
-            Save name
-          </button>
-        </section>
-
-        {props.error ? (
-          <p className="text-danger mb-4" data-testid="settings-error">
-            {props.error}
-          </p>
-        ) : null}
-
-        <section className="mb-8 space-y-3 text-sm" data-testid="settings-vault">
-          {!props.hasVaultKey ? (
+          <div className="settings-actions">
+            {!props.hasVaultKey && !setupCoversVault ? (
+              <button
+                type="button"
+                data-testid="enable-vault"
+                disabled={props.busy}
+                onClick={props.onEnableVault}
+                className="btn-primary btn-primary--sm w-full text-left"
+              >
+                Add vault key
+              </button>
+            ) : null}
+            <div className="settings-actions__pair">
+              <button
+                type="button"
+                data-testid="export-vault"
+                onClick={props.onExport}
+                className="btn-secondary btn-secondary--sm w-full"
+              >
+                Export
+              </button>
+              <label className="btn-secondary btn-secondary--sm block w-full cursor-pointer text-center">
+                Import
+                <input
+                  data-testid="import-vault"
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) props.onImportFile(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+            {props.hasVaultKey ? (
+              <button
+                type="button"
+                data-testid="vault-logout"
+                onClick={props.onLogout}
+                className="btn-secondary btn-secondary--sm w-full text-left"
+              >
+                Log out
+              </button>
+            ) : null}
             <button
               type="button"
-              data-testid="enable-vault"
-              disabled={props.busy}
-              onClick={props.onEnableVault}
-              className="btn-primary w-full text-left"
+              data-testid="switch-vault"
+              onClick={props.onSwitchVault}
+              className="btn-quiet w-full text-left"
             >
-              Add vault key
+              {props.hasVaultKey ? 'Switch vault' : 'Start over'}
             </button>
-          ) : null}
-          <button
-            type="button"
-            data-testid="export-vault"
-            onClick={props.onExport}
-            className="btn-secondary w-full text-left"
-          >
-            Export
-          </button>
-          <label className="btn-secondary block w-full cursor-pointer text-left">
-            Import
-            <input
-              data-testid="import-vault"
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) props.onImportFile(file);
-                e.target.value = '';
-              }}
-            />
-          </label>
-          {props.hasVaultKey ? (
-            <button
-              type="button"
-              data-testid="vault-logout"
-              onClick={props.onLogout}
-              className="btn-secondary w-full text-left"
-            >
-              Log out
-            </button>
-          ) : null}
-          <button
-            type="button"
-            data-testid="switch-vault"
-            onClick={props.onSwitchVault}
-            className="btn-quiet w-full text-left"
-          >
-            {props.hasVaultKey ? 'Switch vault' : 'Start over'}
-          </button>
+            {props.hasVaultKey ? (
+              <p className="settings-section__hint mb-0">
+                Switch vault erases chats saved in this browser after you Continue.
+              </p>
+            ) : null}
+          </div>
         </section>
 
-        <section className="mb-8 space-y-2" data-testid="settings-install">
-          <h3 className="text-sm font-semibold">{SETTINGS_INSTALL.heading}</h3>
-          <p className="text-xs leading-relaxed text-[color:var(--color-muted)]">
-            {settingsInstallBody(props.installMode)}
-          </p>
-          {props.installMode !== 'none' ? (
-            <>
-              {props.installHowOpen && props.installMode !== 'prompt' ? (
-                <p
-                  role="status"
-                  className="text-xs text-[color:var(--color-ink)]"
-                  data-testid="settings-install-how"
-                >
-                  {installHowForMode(props.installMode)}
-                </p>
-              ) : null}
+        {!setupCoversInstall ? (
+          <section className="settings-section" data-testid="settings-install">
+            <h3 className="settings-section__title">{SETTINGS_INSTALL.heading}</h3>
+            <p className="settings-section__hint mb-0">{settingsInstallBody(props.installMode)}</p>
+            {props.installMode === 'prompt' ? (
               <button
                 type="button"
                 data-testid="settings-install-action"
                 onClick={props.onInstall}
-                className="btn-secondary btn-secondary--sm w-full text-left"
+                className="btn-secondary btn-secondary--sm mt-2 w-full text-left"
               >
-                {props.installMode === 'prompt'
-                  ? SETTINGS_INSTALL.actionPrompt
-                  : SETTINGS_INSTALL.actionHow}
+                {SETTINGS_INSTALL.actionPrompt}
               </button>
-            </>
-          ) : null}
-        </section>
-
-        <details className="mb-6" data-testid="settings-privacy">
-          <summary className="cursor-pointer select-none text-sm font-semibold text-[color:var(--color-ink)]">
-            {PRIVACY_SETTINGS.summary}
-          </summary>
-          <div className="mt-3 space-y-3">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-[color:var(--color-ink)]">
-                {PRIVACY_SETTINGS.threadLabel}
-              </p>
-              <p
-                data-testid="settings-privacy-thread"
-                className="text-xs leading-relaxed text-[color:var(--color-muted)]"
-              >
-                {THREAD_FREE_HONEST_COPY}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-[color:var(--color-ink)]">
-                {PRIVACY_SETTINGS.loomLabel}
-              </p>
-              <p
-                data-testid="settings-privacy-loom"
-                className="text-xs leading-relaxed text-[color:var(--color-muted)]"
-              >
-                {LOOM_HONEST_COPY}
-              </p>
-            </div>
-          </div>
-        </details>
-
-        <details
-          className="mb-2"
-          data-testid="settings-turn"
-          open={turnConfigured || Boolean(props.turnError)}
-        >
-          <summary className="cursor-pointer select-none text-sm font-semibold text-[color:var(--color-ink)]">
-            {TURN_SETTINGS.summary}
-          </summary>
-          <div className="mt-3 space-y-2">
-            <p className="text-xs leading-relaxed text-[color:var(--color-muted)]">
-              {TURN_SETTINGS.body}
-            </p>
-            <label className="block space-y-1.5">
-              <span className="field-label">{TURN_SETTINGS.label}</span>
-              <input
-                data-testid="settings-turn-uri"
-                type="text"
-                name="turnUri"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder={TURN_SETTINGS.placeholder}
-                value={turnDraft}
-                onChange={(e) => setTurnDraft(e.target.value)}
-                className="field field--inset"
-              />
-            </label>
-            {props.turnError ? (
-              <p className="text-danger text-xs" data-testid="settings-turn-error">
-                {props.turnError}
-              </p>
             ) : null}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                data-testid="settings-turn-save"
-                onClick={() => props.onSaveTurnUri(turnDraft)}
-                className="btn-secondary btn-secondary--sm"
-              >
-                {TURN_SETTINGS.save}
-              </button>
-              {turnDraft.trim() || props.turnUri ? (
+          </section>
+        ) : null}
+
+        <div className="settings-folds">
+          <details className="settings-fold" data-testid="settings-privacy">
+            <summary className="settings-fold__title">{PRIVACY_SETTINGS.summary}</summary>
+            <div className="settings-fold__body">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-[color:var(--color-ink)]">
+                  {PRIVACY_SETTINGS.threadLabel}
+                </p>
+                <p
+                  data-testid="settings-privacy-thread"
+                  className="settings-section__hint mb-0"
+                >
+                  {THREAD_FREE_HONEST_COPY}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-[color:var(--color-ink)]">
+                  {PRIVACY_SETTINGS.loomLabel}
+                </p>
+                <p data-testid="settings-privacy-loom" className="settings-section__hint mb-0">
+                  {LOOM_HONEST_COPY}
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details
+            className="settings-fold"
+            data-testid="settings-turn"
+            open={turnConfigured || Boolean(props.turnError)}
+          >
+            <summary className="settings-fold__title">{TURN_SETTINGS.summary}</summary>
+            <div className="settings-fold__body">
+              <p className="settings-section__hint mb-0">{TURN_SETTINGS.body}</p>
+              <label className="block space-y-1.5">
+                <span className="field-label">{TURN_SETTINGS.label}</span>
+                <input
+                  data-testid="settings-turn-uri"
+                  type="text"
+                  name="turnUri"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder={TURN_SETTINGS.placeholder}
+                  value={turnDraft}
+                  onChange={(e) => setTurnDraft(e.target.value)}
+                  className="field field--inset"
+                />
+              </label>
+              {props.turnError ? (
+                <p className="text-danger text-xs" data-testid="settings-turn-error">
+                  {props.turnError}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  data-testid="settings-turn-clear"
-                  onClick={() => {
-                    setTurnDraft('');
-                    props.onSaveTurnUri('');
-                  }}
-                  className="btn-quiet"
+                  data-testid="settings-turn-save"
+                  onClick={() => props.onSaveTurnUri(turnDraft)}
+                  className="btn-secondary btn-secondary--sm"
                 >
-                  {TURN_SETTINGS.clear}
+                  {TURN_SETTINGS.save}
                 </button>
-              ) : null}
+                {turnDraft.trim() || props.turnUri ? (
+                  <button
+                    type="button"
+                    data-testid="settings-turn-clear"
+                    onClick={() => {
+                      setTurnDraft('');
+                      props.onSaveTurnUri('');
+                    }}
+                    className="btn-quiet"
+                  >
+                    {TURN_SETTINGS.clear}
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </details>
+          </details>
+        </div>
       </aside>
     </div>
   );

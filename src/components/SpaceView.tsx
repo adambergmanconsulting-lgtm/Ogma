@@ -12,6 +12,8 @@ import type { SpaceCallBand } from './spaceCallBand';
 import { PersonName } from './PersonName';
 import type { PersonReach } from './PersonReach';
 import { SpacePeople } from './SpacePeople';
+import type { LoomSystemKind } from '../domain/loom/systemLine';
+import { systemLineVerb } from '../domain/loom/systemLine';
 import { VideoGrid } from './VideoGrid';
 import { VideoIdle } from './VideoIdle';
 
@@ -22,7 +24,7 @@ export type SpaceMessageView = {
   author: string;
   ts: number;
   self: boolean;
-} & ({ kind: 'text'; text: string } | { kind: 'join' });
+} & ({ kind: 'text'; text: string } | { kind: LoomSystemKind });
 
 interface SpaceViewProps {
   selfName: string;
@@ -44,6 +46,8 @@ interface SpaceViewProps {
   chatPane: ChatPane;
   onChatPane: (pane: ChatPane) => void;
   spacesPane: ReactNode;
+  /** Open-chat tab label (people title or This chat). */
+  chatTitle?: string;
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
   /** Peer started Call — Accept / Not now. */
   incomingCall?: ReactNode;
@@ -272,6 +276,7 @@ export function SpaceView(props: SpaceViewProps) {
             onFold={foldChat}
             foldDisabled={!canFoldChat}
             spaces={props.spacesPane}
+            chatTitle={props.chatTitle}
             startNew={props.startNew}
           >
             {props.inviteUrl || props.error ? (
@@ -302,10 +307,10 @@ export function SpaceView(props: SpaceViewProps) {
                 </div>
               ) : null}
               {props.messages.map((m) =>
-                m.kind === 'join' ? (
+                m.kind !== 'text' ? (
                   <p
                     key={m.id}
-                    data-testid="space-join"
+                    data-testid={`space-${m.kind}`}
                     className="py-0.5 text-center text-[11px] text-[color:var(--color-muted)]"
                   >
                     <PersonName
@@ -313,7 +318,7 @@ export function SpaceView(props: SpaceViewProps) {
                       selfName={props.selfName}
                       personId={props.personId}
                     />{' '}
-                    joined
+                    {systemLineVerb(m.kind)}
                   </p>
                 ) : (
                   <div
@@ -370,7 +375,7 @@ export function SpaceView(props: SpaceViewProps) {
           <CollapsedRail
             testId="space-chat-collapsed"
             expandTestId="space-expand-chat"
-            label="Chat"
+            label={props.chatTitle?.trim() || 'Chat'}
             onExpand={() => setChatOpen(true)}
             edge="end"
           />

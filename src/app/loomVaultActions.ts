@@ -3,8 +3,11 @@ import type { LoomStore } from '../domain/loom/storePort';
 import { getLoomStore } from '../domain/loom/store';
 import { clearVault, renameVault, type VaultRecord } from '../domain/loom/vault';
 
-export async function exportVaultFile(store: LoomStore | null): Promise<void> {
-  await downloadBackup(store ?? (await getLoomStore()));
+export async function exportVaultFile(
+  store: LoomStore | null,
+  wrapKey?: CryptoKey | null,
+): Promise<void> {
+  await downloadBackup(store ?? (await getLoomStore()), wrapKey);
 }
 
 export async function importVaultFile(store: LoomStore | null, file: File): Promise<void> {

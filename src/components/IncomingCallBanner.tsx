@@ -5,6 +5,8 @@ interface IncomingCallBannerProps {
   author: string;
   selfName: string;
   personId?: string | null;
+  busy?: boolean;
+  error?: string | null;
   onAccept: () => void;
   onDismiss: () => void;
 }
@@ -31,6 +33,7 @@ export function IncomingCallBanner(props: IncomingCallBannerProps) {
           <button
             type="button"
             data-testid="incoming-call-dismiss"
+            disabled={props.busy}
             onClick={props.onDismiss}
             className="btn-quiet"
           >
@@ -39,14 +42,23 @@ export function IncomingCallBanner(props: IncomingCallBannerProps) {
           <button
             type="button"
             data-testid="incoming-call-accept"
+            disabled={props.busy}
             onClick={props.onAccept}
             className="btn-primary btn-primary--sm inline-flex items-center gap-1"
           >
             <Phone className="h-3.5 w-3.5" aria-hidden />
-            Accept
+            {props.busy ? 'Joining…' : 'Accept'}
           </button>
         </div>
       </div>
+      {props.error ? (
+        <p
+          data-testid="incoming-call-error"
+          className="mt-2 text-sm text-[color:var(--color-danger)]"
+        >
+          {props.error}
+        </p>
+      ) : null}
     </div>
   );
 }

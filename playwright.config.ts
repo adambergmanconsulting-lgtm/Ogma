@@ -32,6 +32,8 @@ export default defineConfig({
           args: [
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
+            // Auto-accept getDisplayMedia (Share screen) without an OS picker.
+            '--auto-select-desktop-capture-source=Entire screen',
           ],
         },
       },

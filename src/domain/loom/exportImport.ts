@@ -1,8 +1,28 @@
+import { unwrapSpaceSecret } from './deviceKey';
 import type { LoomStore } from './storePort';
 import type { LoomBackupV1, SpaceIndexRow, StoredMessage } from './types';
 
-export async function buildBackup(store: LoomStore): Promise<LoomBackupV1> {
+/**
+ * Build a portable backup. When `wrapKey` is set, each space’s invite is written as
+ * `localSecret` so Import on another vault can reopen chats (then re-wrap).
+ */
+export async function buildBackup(
+  store: LoomStore,
+  wrapKey?: CryptoKey | null,
+): Promise<LoomBackupV1> {
   const spaces = await store.listSpaces();
+  const exportedSpaces: SpaceIndexRow[] = [];
+  for (const space of spaces) {
+    const row: SpaceIndexRow = { ...space };
+    if (wrapKey && row.wrappedSecret && !row.localSecret) {
+      try {
+        row.localSecret = await unwrapSpaceSecret(wrapKey, row.wrappedSecret);
+      } catch {
+        /* leave wrapped-only; destination may not open this chat */
+      }
+    }
+    exportedSpaces.push(row);
+  }
   const messages: StoredMessage[] = [];
   for (const space of spaces) {
     messages.push(...(await store.listMessages(space.spaceId)));
@@ -12,7 +32,7 @@ export async function buildBackup(store: LoomStore): Promise<LoomBackupV1> {
   const backup: LoomBackupV1 = {
     v: 1,
     exportedAt: Date.now(),
-    spaces,
+    spaces: exportedSpaces,
     messages,
   };
   if (deviceKeyMeta) backup.deviceKeyMeta = deviceKeyMeta;
@@ -23,8 +43,11 @@ export function backupToBlob(backup: LoomBackupV1): Blob {
   return new Blob([JSON.stringify(backup)], { type: 'application/json' });
 }
 
-export async function downloadBackup(store: LoomStore): Promise<void> {
-  const blob = backupToBlob(await buildBackup(store));
+export async function downloadBackup(
+  store: LoomStore,
+  wrapKey?: CryptoKey | null,
+): Promise<void> {
+  const blob = backupToBlob(await buildBackup(store, wrapKey));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -92,9 +115,11 @@ function normalizeSpace(row: SpaceIndexRow): SpaceIndexRow {
     status: row.status === 'archived' ? 'archived' : 'recent',
     lastOpenedAt: row.lastOpenedAt || 0,
     lastMessageAt: row.lastMessageAt || 0,
+    lastCallAt: row.lastCallAt || undefined,
     unreadCount: row.unreadCount || 0,
     muted: row.muted,
     wrappedSecret: row.wrappedSecret,
+    localSecret: row.localSecret,
   };
 }
 
@@ -119,8 +144,10 @@ function mergeSpace(existing: SpaceIndexRow, incoming: SpaceIndexRow): SpaceInde
     status: existing.status === 'archived' && incoming.status === 'archived' ? 'archived' : 'recent',
     lastOpenedAt: Math.max(existing.lastOpenedAt, incoming.lastOpenedAt || 0),
     lastMessageAt: Math.max(existing.lastMessageAt, incoming.lastMessageAt || 0),
+    lastCallAt: Math.max(existing.lastCallAt || 0, incoming.lastCallAt || 0) || undefined,
     unreadCount: Math.max(existing.unreadCount, incoming.unreadCount || 0),
     wrappedSecret: existing.wrappedSecret || incoming.wrappedSecret,
+    localSecret: existing.localSecret || incoming.localSecret,
     muted: existing.muted ?? incoming.muted,
   };
 }

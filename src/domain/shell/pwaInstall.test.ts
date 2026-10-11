@@ -5,9 +5,8 @@ import {
   isFirefoxLike,
   isIosLike,
   isStandaloneDisplay,
-  pickHomeAnchor,
-  shouldOfferInstallMoment,
-  shouldOfferVaultNudge,
+  shouldOfferWelcome,
+  shouldShowSettingsSetup,
 } from './pwaInstall';
 
 describe('isStandaloneDisplay', () => {
@@ -87,80 +86,70 @@ describe('installOfferMode', () => {
   });
 });
 
-describe('home anchor moments', () => {
-  it('offers install when chats exist and not dismissed', () => {
+describe('welcome nudge', () => {
+  it('offers when chats exist and install or vault remains', () => {
     expect(
-      shouldOfferInstallMoment({
-        standalone: false,
+      shouldOfferWelcome({
+        installMode: 'prompt',
         dismissed: false,
         hasLocalChats: true,
+        hasVaultKey: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldOfferWelcome({
+        installMode: 'manual',
+        dismissed: false,
+        hasLocalChats: true,
+        hasVaultKey: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldOfferWelcome({
+        installMode: 'none',
+        dismissed: false,
+        hasLocalChats: true,
+        hasVaultKey: false,
       }),
     ).toBe(true);
   });
 
-  it('skips install when standalone or empty', () => {
+  it('hidden when dismissed, empty, or nothing left', () => {
     expect(
-      shouldOfferInstallMoment({
-        standalone: true,
-        dismissed: false,
+      shouldOfferWelcome({
+        installMode: 'prompt',
+        dismissed: true,
         hasLocalChats: true,
+        hasVaultKey: false,
       }),
     ).toBe(false);
     expect(
-      shouldOfferInstallMoment({
-        standalone: false,
+      shouldOfferWelcome({
+        installMode: 'prompt',
         dismissed: false,
         hasLocalChats: false,
-      }),
-    ).toBe(false);
-  });
-
-  it('vault nudge waits until install moment is gone', () => {
-    expect(
-      shouldOfferVaultNudge({
-        hasLocalChats: true,
         hasVaultKey: false,
-        dismissed: false,
-        installMomentActive: true,
       }),
     ).toBe(false);
     expect(
-      shouldOfferVaultNudge({
-        hasLocalChats: true,
-        hasVaultKey: false,
+      shouldOfferWelcome({
+        installMode: 'none',
         dismissed: false,
-        installMomentActive: false,
+        hasLocalChats: true,
+        hasVaultKey: true,
       }),
-    ).toBe(true);
+    ).toBe(false);
+  });
+});
+
+describe('settings setup splash', () => {
+  it('shows while install or vault remains', () => {
+    expect(shouldShowSettingsSetup({ installMode: 'manual', hasVaultKey: false })).toBe(true);
+    expect(shouldShowSettingsSetup({ installMode: 'none', hasVaultKey: false })).toBe(true);
+    expect(shouldShowSettingsSetup({ installMode: 'prompt', hasVaultKey: true })).toBe(true);
   });
 
-  it('pickHomeAnchor prefers install over vault', () => {
-    expect(
-      pickHomeAnchor({
-        standalone: false,
-        installDismissed: false,
-        vaultNudgeDismissed: false,
-        hasLocalChats: true,
-        hasVaultKey: false,
-      }),
-    ).toBe('install');
-    expect(
-      pickHomeAnchor({
-        standalone: true,
-        installDismissed: false,
-        vaultNudgeDismissed: false,
-        hasLocalChats: true,
-        hasVaultKey: false,
-      }),
-    ).toBe('vault');
-    expect(
-      pickHomeAnchor({
-        standalone: true,
-        installDismissed: true,
-        vaultNudgeDismissed: true,
-        hasLocalChats: true,
-        hasVaultKey: false,
-      }),
-    ).toBe(null);
+  it('hides when installed with a vault key', () => {
+    expect(shouldShowSettingsSetup({ installMode: 'none', hasVaultKey: true })).toBe(false);
   });
 });

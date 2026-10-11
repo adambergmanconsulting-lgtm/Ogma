@@ -71,10 +71,15 @@ export function parseSpaceSecretFromLocation(
   return parsed?.kind === 'space' ? parsed.secret : null;
 }
 
-/** Share URL for a Loom space (`#space=` — capability in fragment). */
+/**
+ * Share URL for a Loom space.
+ * Prefer `?space=` — many messengers strip `#…` and stranded guests on `/` with no secret.
+ * `#space=` kept for older pasted links.
+ */
 export function spaceShareUrl(spaceSecret: string): string {
   const url = appBaseUrl();
   url.search = '';
+  url.searchParams.set('space', spaceSecret);
   url.hash = `space=${encodeURIComponent(spaceSecret)}`;
   return url.href;
 }
@@ -82,6 +87,7 @@ export function spaceShareUrl(spaceSecret: string): string {
 export function replaceUrlWithSpace(spaceSecret: string): void {
   const url = appBaseUrl();
   url.search = '';
+  url.searchParams.set('space', spaceSecret);
   url.hash = `space=${encodeURIComponent(spaceSecret)}`;
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
@@ -104,20 +110,31 @@ export type RoomShareOpts = {
 
 /**
  * Canonical invite — `?room=<secret>` (survives messengers that strip `#…`).
- * Space-bound calls add `#space=` so guests share the same chat history.
+ * Space-bound calls add `?space=` (+ `#space=` for older clients).
  */
 export function roomShareUrl(roomId: string, opts?: RoomShareOpts): string {
   const url = appBaseUrl();
   url.searchParams.set('room', roomId);
-  url.hash = opts?.spaceSecret ? `space=${encodeURIComponent(opts.spaceSecret)}` : '';
+  if (opts?.spaceSecret) {
+    url.searchParams.set('space', opts.spaceSecret);
+    url.hash = `space=${encodeURIComponent(opts.spaceSecret)}`;
+  } else {
+    url.hash = '';
+  }
   return url.href;
 }
 
-/** Keep path + set `?room=` (optional `#space=` for Call-from-chat). */
+/** Keep path + set `?room=` (optional space for Call-from-chat). */
 export function replaceUrlWithRoom(roomId: string, opts?: RoomShareOpts): void {
   const url = appBaseUrl();
   url.searchParams.set('room', roomId);
-  url.hash = opts?.spaceSecret ? `space=${encodeURIComponent(opts.spaceSecret)}` : '';
+  if (opts?.spaceSecret) {
+    url.searchParams.set('space', opts.spaceSecret);
+    url.hash = `space=${encodeURIComponent(opts.spaceSecret)}`;
+  } else {
+    url.searchParams.delete('space');
+    url.hash = '';
+  }
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
@@ -125,7 +142,13 @@ export function clearRoomFromUrl(): void {
   const space = parseSpaceSecretFromLocation();
   const url = appBaseUrl();
   url.searchParams.delete('room');
-  url.hash = space ? `space=${encodeURIComponent(space)}` : '';
+  if (space) {
+    url.searchParams.set('space', space);
+    url.hash = `space=${encodeURIComponent(space)}`;
+  } else {
+    url.searchParams.delete('space');
+    url.hash = '';
+  }
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 

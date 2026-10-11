@@ -141,6 +141,7 @@ export function VideoTile({
         autoPlay
         playsInline
         muted={muted || needsUnlock}
+        data-fit={fit}
         className={[
           'h-full w-full rounded-xl',
           fit === 'contain' ? 'object-contain' : 'object-cover',
