@@ -162,6 +162,7 @@ test.describe('Home welcome', () => {
     await expect(page.getByTestId('settings-privacy-thread')).toContainText(/stay between peers/i);
     await expect(page.getByTestId('settings-privacy-loom')).toContainText(/no central copy/i);
     await expect(page.getByTestId('settings-turn')).toBeVisible();
+    await expect(page.getByTestId('settings-build-stamp')).toContainText(/Last updated ·/);
     await page.getByTestId('vault-settings-close').click();
     await page.getByTestId('home-welcome-dismiss').click();
     await expect(page.getByTestId('home-welcome')).toHaveCount(0);

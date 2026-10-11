@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { PersonIdMark } from './PersonIdMark';
 import { AppearActive } from './PersonReach';
+import { settingsBuildStampLabel } from '../domain/shell/buildStamp';
 import {
   SETTINGS_INSTALL,
   shouldShowSettingsSetup,
@@ -58,6 +59,7 @@ interface VaultSettingsProps {
 
 /** Settings drawer: You → Vault → Home screen → folded Privacy / Network. */
 export function VaultSettings(props: VaultSettingsProps) {
+  const buildStamp = settingsBuildStampLabel();
   const [name, setName] = useState(props.displayName);
   const [turnDraft, setTurnDraft] = useState(props.turnUri);
 
@@ -328,6 +330,15 @@ export function VaultSettings(props: VaultSettingsProps) {
             </div>
           </details>
         </div>
+
+        {buildStamp ? (
+          <p
+            data-testid="settings-build-stamp"
+            className="mt-auto pt-6 text-[11px] leading-snug text-[color:var(--color-muted)]"
+          >
+            {buildStamp}
+          </p>
+        ) : null}
       </aside>
     </div>
   );

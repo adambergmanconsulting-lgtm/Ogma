@@ -41,6 +41,8 @@ export default defineConfig({
   ],
   define: {
     global: 'globalThis',
+    /** Deploy / build clock for Settings "Last updated" (not a semver). */
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   resolve: {
     alias: {
