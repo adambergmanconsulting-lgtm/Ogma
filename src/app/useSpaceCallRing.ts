@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  callRingSuppressUntil,
   shouldOfferIncomingCall,
   type IncomingCall,
 } from '../domain/loom/callRing';
@@ -20,6 +21,8 @@ export function useSpaceCallRing(opts: {
   const [callingSpaceId, setCallingSpaceId] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const callingIdsRef = useRef(new Set<string>());
+  /** Per-space wall clock: ignore late peer re-announce after Leave / call-end. */
+  const suppressUntilRef = useRef(new Map<string, number>());
   const displayNameRef = useRef(opts.displayName);
   displayNameRef.current = opts.displayName;
   const inCallRef = useRef(opts.inCall);
@@ -56,6 +59,28 @@ export function useSpaceCallRing(opts: {
     setCallingSpaceId((cur) => (cur === spaceId ? null : cur));
   }, []);
 
+  /**
+   * Leave or remote call-end: stop ringtone for this space, clear Accept, and
+   * suppress late re-announces so hang-up cannot leave Safari ringing forever.
+   */
+  const endRingForSpace = useCallback(
+    (spaceId: string) => {
+      suppressUntilRef.current.set(spaceId, callRingSuppressUntil());
+      const wasCalling = callingIdsRef.current.has(spaceId);
+      callingIdsRef.current.delete(spaceId);
+      setCallingSpaceId((cur) => (cur === spaceId ? null : cur));
+      setIncomingCall((cur) => {
+        if (cur?.spaceId !== spaceId) return cur;
+        clearIncomingAlerts();
+        return null;
+      });
+      // After Accept, incoming is already null — still silence leftover Web Audio.
+      if (wasCalling) clearIncomingAlerts();
+      setAcceptError(null);
+    },
+    [clearIncomingAlerts],
+  );
+
   const getCallAnnounce = useCallback((spaceId: string): string | null => {
     if (!callingIdsRef.current.has(spaceId)) return null;
     return displayNameRef.current.trim() || 'Guest';
@@ -70,6 +95,7 @@ export function useSpaceCallRing(opts: {
         ts,
         selfName: displayNameRef.current,
         alreadyInCall: inCallRef.current,
+        suppressUntil: suppressUntilRef.current.get(spaceId),
       })
     ) {
       return;
@@ -84,6 +110,17 @@ export function useSpaceCallRing(opts: {
         // Accept can derive the room under the click if this fails
       }
       if (callingIdsRef.current.has(spaceId) || inCallRef.current) return;
+      if (
+        !shouldOfferIncomingCall({
+          author,
+          ts,
+          selfName: displayNameRef.current,
+          alreadyInCall: false,
+          suppressUntil: suppressUntilRef.current.get(spaceId),
+        })
+      ) {
+        return;
+      }
       setIncomingCall((cur) => {
         const next: IncomingCall = {
           spaceId,
@@ -105,13 +142,9 @@ export function useSpaceCallRing(opts: {
 
   const onCallEndWire = useCallback(
     (spaceId: string) => {
-      setIncomingCall((cur) => {
-        if (cur?.spaceId === spaceId) clearIncomingAlerts();
-        return cur?.spaceId === spaceId ? null : cur;
-      });
-      setAcceptError(null);
+      endRingForSpace(spaceId);
     },
-    [clearIncomingAlerts],
+    [endRingForSpace],
   );
 
   useEffect(() => () => clearIncomingAlerts(), [clearIncomingAlerts]);
@@ -124,6 +157,7 @@ export function useSpaceCallRing(opts: {
     dismissIncomingCall,
     markCalling,
     clearCalling,
+    endRingForSpace,
     getCallAnnounce,
     onCallWire,
     onCallEndWire,

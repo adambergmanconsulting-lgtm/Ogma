@@ -1,5 +1,11 @@
+import type { ReactNode } from 'react';
 import type { PrivacyBackdropId } from '../domain/media/backgroundBlurBackdrop';
 import { resolveScreenSpotlight } from '../domain/media/screenShare';
+import {
+  cameraTileAspect,
+  cameraTileFrameClass,
+  type CameraTileAspect,
+} from '../domain/media/videoTileAspect';
 import type { RemotePeer } from '../domain/types';
 import { VideoBlurControls } from './VideoBlurControls';
 import { VideoTile } from './VideoTile';
@@ -28,11 +34,31 @@ interface VideoGridProps {
   compact?: boolean;
 }
 
+const PIP_CHIP =
+  'video-tile-pip overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)]';
+
 function gridClass(count: number): string {
   if (count <= 1) return 'grid-cols-1';
   if (count === 2) return 'grid-cols-1 md:grid-cols-2';
   if (count <= 4) return 'grid-cols-2';
   return 'grid-cols-2 lg:grid-cols-3';
+}
+
+function CameraFrame(props: {
+  aspect: CameraTileAspect;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <div className="video-tile-cell">
+      <div
+        data-testid="camera-tile-frame"
+        data-aspect={props.aspect}
+        className={cameraTileFrameClass(props.aspect)}
+      >
+        {props.children}
+      </div>
+    </div>
+  );
 }
 
 export function VideoGrid({
@@ -56,6 +82,7 @@ export function VideoGrid({
   compact,
 }: VideoGridProps) {
   const total = 1 + remotePeers.length;
+  const aspect = cameraTileAspect(total);
   const pad = compact ? 'h-full gap-1.5 p-0' : 'h-full flex-1 gap-2 p-2 md:gap-3 md:p-3';
   const spotlight = resolveScreenSpotlight({ localScreen, remotePeers });
 
@@ -117,10 +144,7 @@ export function VideoGrid({
           className="absolute bottom-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-row-reverse flex-wrap justify-start gap-1.5"
         >
           {remotePeers.map((peer) => (
-            <div
-              key={peer.peerId}
-              className="h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24"
-            >
+            <div key={peer.peerId} className={PIP_CHIP}>
               {renderRemote(peer)}
             </div>
           ))}
@@ -144,19 +168,13 @@ export function VideoGrid({
             data-testid="screen-spotlight-pips"
             className="absolute bottom-2 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-row-reverse flex-wrap justify-start gap-1.5"
           >
-            <div
-              data-testid="local-pip"
-              className="h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24"
-            >
+            <div data-testid="local-pip" className={PIP_CHIP}>
               {renderLocal('local-pip', { pip: true })}
             </div>
             {remotePeers
               .filter((p) => p.peerId !== featuredPeer.peerId)
               .map((peer) => (
-                <div
-                  key={peer.peerId}
-                  className="h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24"
-                >
+                <div key={peer.peerId} className={PIP_CHIP}>
                   {renderRemote(peer)}
                 </div>
               ))}
@@ -166,28 +184,34 @@ export function VideoGrid({
     }
   }
 
-  const remoteTiles = remotePeers.map((peer) => renderRemote(peer));
+  const frameRemotes = () =>
+    remotePeers.map((peer) => (
+      <CameraFrame key={peer.peerId} aspect={aspect}>
+        {renderRemote(peer)}
+      </CameraFrame>
+    ));
 
   // With peers: remotes first. On narrow viewports local is PiP so others fill the pane.
   if (remotePeers.length > 0) {
     return (
       <div className={`relative min-h-0 ${compact ? 'h-full' : 'h-full flex-1'}`}>
         <div className={`grid min-h-0 md:hidden ${pad} ${gridClass(remotePeers.length)}`}>
-          {remoteTiles}
+          {frameRemotes()}
         </div>
         <div className={`hidden min-h-0 md:grid ${pad} ${gridClass(total)}`}>
-          {remoteTiles}
-          {renderLocal('local-desk')}
+          {frameRemotes()}
+          <CameraFrame aspect={aspect}>{renderLocal('local-desk')}</CameraFrame>
         </div>
-        <div
-          data-testid="local-pip"
-          className="absolute bottom-2 right-2 z-10 h-28 w-20 overflow-hidden rounded-lg shadow-lg ring-1 ring-[color:var(--color-line)] sm:h-32 sm:w-24 md:hidden"
-        >
+        <div data-testid="local-pip" className={`absolute bottom-2 right-2 z-10 md:hidden ${PIP_CHIP}`}>
           {renderLocal('local-pip', { pip: true })}
         </div>
       </div>
     );
   }
 
-  return <div className={`grid min-h-0 ${pad} ${gridClass(total)}`}>{renderLocal('local')}</div>;
+  return (
+    <div className={`grid min-h-0 ${pad} ${gridClass(total)}`}>
+      <CameraFrame aspect={aspect}>{renderLocal('local')}</CameraFrame>
+    </div>
+  );
 }

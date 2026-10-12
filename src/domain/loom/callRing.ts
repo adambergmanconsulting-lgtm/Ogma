@@ -2,6 +2,12 @@
 
 export const CALL_RING_STALE_MS = 90_000;
 
+/**
+ * After Leave / call-end, ignore fresh `call` pulses from peers who have not
+ * cleared their re-announce yet (sync pulse is 8s). Must stay above that.
+ */
+export const CALL_RING_HANGUP_SUPPRESS_MS = 12_000;
+
 export type IncomingCall = {
   spaceId: string;
   spaceSecret: string;
@@ -13,6 +19,11 @@ export type IncomingCall = {
 
 export function isCallRingFresh(ts: number, now = Date.now()): boolean {
   return now - ts <= CALL_RING_STALE_MS;
+}
+
+/** Wall-clock until which late re-announces for a space must not restart Accept. */
+export function callRingSuppressUntil(now = Date.now()): number {
+  return now + CALL_RING_HANGUP_SUPPRESS_MS;
 }
 
 /**
@@ -27,9 +38,13 @@ export function shouldOfferIncomingCall(opts: {
   selfName: string;
   alreadyInCall: boolean;
   now?: number;
+  /** From Leave / call-end — blocks late peer re-announce from restarting the ring. */
+  suppressUntil?: number;
 }): boolean {
+  const now = opts.now ?? Date.now();
+  if (opts.suppressUntil != null && now < opts.suppressUntil) return false;
   if (opts.alreadyInCall) return false;
-  if (!isCallRingFresh(opts.ts, opts.now)) return false;
+  if (!isCallRingFresh(opts.ts, now)) return false;
   return Boolean(opts.author.trim());
 }
 

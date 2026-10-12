@@ -135,7 +135,7 @@ export function VideoTile({
   };
 
   return (
-    <div className="relative min-h-0 overflow-hidden rounded-xl bg-[color:var(--color-panel)] ring-1 ring-[color:var(--color-line)]">
+    <div className="relative h-full min-h-0 w-full overflow-hidden rounded-xl bg-[color:var(--color-panel)] ring-1 ring-[color:var(--color-line)]">
       <video
         ref={videoRef}
         autoPlay

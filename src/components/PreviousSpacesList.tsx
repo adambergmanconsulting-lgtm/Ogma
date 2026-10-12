@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Phone } from 'lucide-react';
 import {
   displaySpaceLabel,
@@ -19,14 +19,17 @@ export interface PreviousSpacesListProps {
   spaceInput: string;
   onSpaceInput: (value: string) => void;
   onJoinSpace: () => void;
+  /** Bumps when chat-head Join should focus the paste field. */
+  joinFocusNonce?: number;
   onOpenChat: (spaceId: string) => void;
   onOpenCall: (spaceId: string) => void;
   reach?: PersonReach | null;
 }
 
-/** All tab: search, open a chat, Call as the secondary act, quiet invite. */
+/** All tab: invite paste, search, open a chat, Call as the secondary act. */
 export function PreviousSpacesList(props: PreviousSpacesListProps) {
   const [query, setQuery] = useState('');
+  const joinInputRef = useRef<HTMLInputElement>(null);
   const joining = Boolean(props.spaceInput.trim());
   const q = query.trim().toLowerCase();
   const chats = props.chats.filter((row) =>
@@ -36,9 +39,46 @@ export function PreviousSpacesList(props: PreviousSpacesListProps) {
     (person) => !q || person.name.toLowerCase().includes(q),
   );
 
+  useEffect(() => {
+    if (!props.joinFocusNonce) return;
+    joinInputRef.current?.focus();
+  }, [props.joinFocusNonce]);
+
+  const submitJoin = () => {
+    if (props.busy || !joining) return;
+    props.onJoinSpace();
+  };
+
   return (
     <div data-testid="previous-spaces" className="space-pane-pad py-2">
       {props.error ? <p className="text-danger mb-2 text-sm">{props.error}</p> : null}
+
+      <div data-testid="home-join" className="mb-3 flex gap-2">
+        <input
+          ref={joinInputRef}
+          data-testid="space-input"
+          value={props.spaceInput}
+          onChange={(e) => props.onSpaceInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submitJoin();
+            }
+          }}
+          aria-label="Invite link"
+          placeholder="Invite link"
+          className="field field--compact"
+        />
+        <button
+          type="button"
+          data-testid="join-space"
+          disabled={props.busy || !joining}
+          onClick={submitJoin}
+          className="btn-secondary btn-secondary--sm"
+        >
+          Join
+        </button>
+      </div>
 
       {props.chats.length > 0 || (props.reach?.people.length ?? 0) > 0 ? (
         <input
@@ -155,30 +195,6 @@ export function PreviousSpacesList(props: PreviousSpacesListProps) {
           )}
         </section>
       ) : null}
-
-      <details className="mt-3" data-testid="home-join">
-        <summary className="cursor-pointer select-none text-xs text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]">
-          Have an invite?
-        </summary>
-        <div className="mt-2 flex gap-2">
-          <input
-            data-testid="space-input"
-            value={props.spaceInput}
-            onChange={(e) => props.onSpaceInput(e.target.value)}
-            aria-label="Invite link"
-            className="field field--compact"
-          />
-          <button
-            type="button"
-            data-testid="join-space"
-            disabled={props.busy || !joining}
-            onClick={props.onJoinSpace}
-            className="btn-secondary btn-secondary--sm"
-          >
-            Join
-          </button>
-        </div>
-      </details>
     </div>
   );
 }

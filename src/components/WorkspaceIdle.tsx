@@ -10,6 +10,7 @@ interface WorkspaceIdleProps {
   spacesPane: ReactNode;
   chatTitle?: string;
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
+  startJoin?: { busy?: boolean; onJoin: () => void };
 }
 
 /** Empty Video | Chat when no space is open. */
@@ -46,6 +47,7 @@ export function WorkspaceIdle(props: WorkspaceIdleProps) {
           spaces={props.spacesPane}
           chatTitle={props.chatTitle}
           startNew={props.startNew}
+          startJoin={props.startJoin}
         >
           <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-2">
             <h1 className="truncate text-base font-semibold tracking-tight text-[color:var(--color-muted)]">
@@ -54,7 +56,7 @@ export function WorkspaceIdle(props: WorkspaceIdleProps) {
           </header>
           <div className="space-pane-pad min-h-0 flex-1 py-2">
             <p className="pt-3 text-center text-xs leading-relaxed text-[color:var(--color-muted)]">
-              New above, or open a chat from All.
+              New or Join above, or open a chat from All.
             </p>
           </div>
         </ChatColumn>

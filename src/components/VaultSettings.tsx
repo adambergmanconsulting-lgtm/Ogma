@@ -94,10 +94,10 @@ export function VaultSettings(props: VaultSettingsProps) {
       />
       <aside
         data-testid="vault-settings"
-        className="drawer-sheet drawer-sheet--settings relative z-10 flex h-full flex-col overflow-y-auto"
+        className="drawer-sheet drawer-sheet--settings relative z-10 flex h-full min-h-0 flex-col"
       >
         <div className="settings-head">
-          <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
+          <h2 className="font-semibold tracking-tight">Settings</h2>
           <button
             type="button"
             data-testid="vault-settings-close"
@@ -109,6 +109,7 @@ export function VaultSettings(props: VaultSettingsProps) {
           </button>
         </div>
 
+        <div className="drawer-sheet__scroll">
         {setupOpen ? (
           <SettingsSetupSplash
             installMode={props.installMode}
@@ -145,12 +146,12 @@ export function VaultSettings(props: VaultSettingsProps) {
             data-testid="vault-rename-save"
             disabled={props.busy || !nameDirty}
             onClick={() => props.onRename(name.trim())}
-            className="btn-secondary btn-secondary--sm mt-2 w-full"
+            className="btn-secondary btn-secondary--sm mt-1.5 w-full"
           >
             Save name
           </button>
           {props.personId && props.onToggleAppearActive ? (
-            <div className="settings-row mt-3">
+            <div className="settings-row mt-2">
               <p className="settings-section__hint mb-0 min-w-0 flex-1">
                 While Ogma is open, people who know you can invite you.
               </p>
@@ -171,7 +172,7 @@ export function VaultSettings(props: VaultSettingsProps) {
               : 'Chats stay in this browser. Add a vault key to lock them or move them with Export / Import.'}
           </p>
           {props.error ? (
-            <p className="text-danger mb-3 text-xs" data-testid="settings-error">
+            <p className="text-danger mb-1.5 text-xs" data-testid="settings-error">
               {props.error}
             </p>
           ) : null}
@@ -361,11 +362,12 @@ export function VaultSettings(props: VaultSettingsProps) {
         {buildStamp ? (
           <p
             data-testid="settings-build-stamp"
-            className="mt-auto pt-6 text-[11px] leading-snug text-[color:var(--color-muted)]"
+            className="pt-3 text-[11px] leading-snug text-[color:var(--color-muted)]"
           >
             {buildStamp}
           </p>
         ) : null}
+        </div>
       </aside>
     </div>
   );

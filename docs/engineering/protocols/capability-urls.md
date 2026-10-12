@@ -31,7 +31,7 @@
 ## UI copy
 
 - Share controls use **InviteLinkBar** (**Copy** → **Copied**; share sheet on phone) in-call and under This chat **Copy link** — copy ≠ join.
-- Home **Have an invite?** paste accepts the full share URL: space → open chat; room → Call lobby; room+space → lobby (Join opens the same Loom chat). Needed when the installed app has no address bar.
+- Chat-head **Join** / All invite paste accepts the full share URL: space → open chat; room → Call lobby; room+space → lobby (Join opens the same Loom chat). Needed when the installed app has no address bar.
 - Space-bound Call invites: `?room=<thread>#space=<space>` so guests get A/V and the same Loom log.
 - Show a short room code in-call so both people can confirm they match.
 - Labels: [ui-naming.md](../../product/heuristics/ui-naming.md).

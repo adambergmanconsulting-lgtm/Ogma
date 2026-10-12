@@ -52,6 +52,7 @@ interface SpaceViewProps {
   /** Open-chat tab label (people title or This chat). */
   chatTitle?: string;
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
+  startJoin?: { busy?: boolean; onJoin: () => void };
   /** Peer started Call — Accept / Not now. */
   incomingCall?: ReactNode;
 }
@@ -319,6 +320,7 @@ export function SpaceView(props: SpaceViewProps) {
             spaces={props.spacesPane}
             chatTitle={props.chatTitle}
             startNew={props.startNew}
+            startJoin={props.startJoin}
           >
             {props.inviteUrl || props.error ? (
               <header className="space-pane-pad shrink-0 border-b border-[color:var(--color-line)]/50 py-1.5">

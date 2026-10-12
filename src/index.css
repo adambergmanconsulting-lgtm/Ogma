@@ -120,6 +120,51 @@
   padding-right: 0.75rem;
 }
 
+/**
+ * Camera tiles: largest 3:4 (solo/dyad) or 4:3 (3+) rectangle in each grid cell.
+ * Screen share stays full-bleed; PiP chips use the same portrait ratio.
+ */
+.video-tile-cell {
+  container-type: size;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-tile-frame {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.video-tile-frame--portrait {
+  aspect-ratio: 3 / 4;
+  width: min(100cqw, calc(100cqh * 3 / 4));
+  height: min(100cqh, calc(100cqw * 4 / 3));
+}
+
+.video-tile-frame--landscape {
+  aspect-ratio: 4 / 3;
+  width: min(100cqw, calc(100cqh * 4 / 3));
+  height: min(100cqh, calc(100cqw * 3 / 4));
+}
+
+.video-tile-pip {
+  aspect-ratio: 3 / 4;
+  height: 7rem;
+  width: auto;
+}
+
+@media (min-width: 640px) {
+  .video-tile-pip {
+    height: 8rem;
+  }
+}
+
 /** Quiet wash behind the whole work canvas. Not a camera preview. */
 .video-idle {
   position: relative;
@@ -417,33 +462,36 @@
   background-color: color-mix(in srgb, var(--color-panel-2) 70%, transparent);
 }
 
-/** Settings drawer rhythm. */
+/**
+ * Settings drawer rhythm — config surface densifies (ui-principles density lean).
+ * Keep section borders; cut vertical air so phone fits You → folds without scroll chore.
+ */
 .settings-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .settings-section {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--color-line);
 }
 
 .settings-section__title {
-  margin: 0 0 0.5rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.3;
   color: var(--color-ink);
 }
 
 .settings-section__hint {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   font-size: 0.75rem;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--color-muted);
 }
 
@@ -451,39 +499,40 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .settings-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .settings-actions__pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .settings-folds {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  padding-top: 0.15rem;
 }
 
 /** Foldable blocks (setup, privacy, network) — one chevron pattern. */
 .settings-fold {
-  padding: 0;
+  padding: 0.15rem 0;
 }
 
 .settings-fold__title {
   cursor: pointer;
   user-select: none;
   list-style: none;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--color-ink);
 }
 
@@ -496,7 +545,7 @@
   display: inline-block;
   width: 0.35rem;
   height: 0.35rem;
-  margin-right: 0.45rem;
+  margin-right: 0.4rem;
   border-right: 1.5px solid var(--color-muted);
   border-bottom: 1.5px solid var(--color-muted);
   transform: rotate(-45deg) translateY(-0.05rem);
@@ -508,10 +557,10 @@
 }
 
 .settings-fold__body {
-  margin: 0.65rem 0 0.35rem;
+  margin: 0.45rem 0 0.2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.55rem;
 }
 
 /** @deprecated alias — prefer settings-fold */
@@ -524,6 +573,8 @@
   display: flex;
   width: 100%;
   max-width: 28rem;
+  max-height: 100%;
+  min-height: 0;
   flex-direction: column;
   border-left: 1px solid var(--color-line);
   background-color: color-mix(in srgb, var(--color-panel) 95%, transparent);
@@ -540,8 +591,30 @@
   max-width: 22rem;
   background-color: var(--color-panel);
   backdrop-filter: none;
-  padding: 1.25rem 1.15rem 1.75rem;
+  padding: 0;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+/** Head stays put; body scrolls on short viewports (phone / opened folds). */
+.drawer-sheet--settings .settings-head {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  padding: 0.75rem 0.9rem 0.4rem;
+}
+
+.drawer-sheet--settings .settings-head h2 {
+  font-size: 1.125rem;
+  line-height: 1.25;
+}
+
+.drawer-sheet__scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0.9rem calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 .link-action {

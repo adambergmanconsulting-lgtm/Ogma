@@ -10,12 +10,12 @@ type Stopper = () => void;
 let activeStop: Stopper | null = null;
 
 /** Two short tones (classic ring burst), then silence until the next loop. */
-function scheduleBurst(ctx: AudioContext, at: number): void {
+function scheduleBurst(ctx: AudioContext, dest: AudioNode, at: number): void {
   const master = ctx.createGain();
   master.gain.setValueAtTime(0.0001, at);
   master.gain.exponentialRampToValueAtTime(0.12, at + 0.02);
   master.gain.exponentialRampToValueAtTime(0.0001, at + 0.95);
-  master.connect(ctx.destination);
+  master.connect(dest);
 
   const tone = (freq: number, start: number, dur: number) => {
     const osc = ctx.createOscillator();
@@ -42,12 +42,17 @@ export function startIncomingCallSound(): void {
   try {
     void ctx.resume();
 
+    // Session gain so stop can mute immediately (Safari keeps scheduled oscs otherwise).
+    const session = ctx.createGain();
+    session.gain.setValueAtTime(1, ctx.currentTime);
+    session.connect(ctx.destination);
+
     const periodSec = 2.8;
     let cancelled = false;
 
     const tick = () => {
       if (cancelled || ctx.state === 'closed') return;
-      scheduleBurst(ctx, ctx.currentTime + 0.02);
+      scheduleBurst(ctx, session, ctx.currentTime + 0.02);
     };
 
     tick();
@@ -56,6 +61,14 @@ export function startIncomingCallSound(): void {
     activeStop = () => {
       cancelled = true;
       globalThis.clearInterval(id);
+      try {
+        const t = ctx.currentTime;
+        session.gain.cancelScheduledValues(t);
+        session.gain.setValueAtTime(0, t);
+        session.disconnect();
+      } catch {
+        // already closed / disconnected
+      }
       activeStop = null;
     };
   } catch {

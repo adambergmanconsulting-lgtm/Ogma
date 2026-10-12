@@ -65,6 +65,7 @@ export default function App() {
   /** Space secret All was opened against; a different focused space clears All preference. */
   const preferSpacesSecret = useRef<string | null>(null);
   const [chatPane, setChatPane] = useState<ChatPane>('spaces');
+  const [joinFocusNonce, setJoinFocusNonce] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => readWelcomeDismissed());
   /** Room-only CallShell visible (false after soft-nav home). */
@@ -122,7 +123,7 @@ export default function App() {
     ) {
       return;
     }
-    callRing.clearCalling(spaceId);
+    callRing.endRingForSpace(spaceId);
     call.onLeave();
     setRoomShellOpen(false);
   };
@@ -284,7 +285,7 @@ export default function App() {
     } catch {
       if (id) {
         loom.announceCallEnd(id);
-        callRing.clearCalling(id);
+        callRing.endRingForSpace(id);
       }
     }
   };
@@ -310,6 +311,11 @@ export default function App() {
     showChat();
     if (freshSoloChat) return;
     void loom.onCreateSpace();
+  };
+
+  const goJoin = () => {
+    showSpaces();
+    setJoinFocusNonce((n) => n + 1);
   };
 
   const acceptIncomingCall = () => {
@@ -407,7 +413,7 @@ export default function App() {
     if (endId) {
       void loom.sealSystemLine('call-end', endId, endSecret);
       loom.announceCallEnd(endId);
-      callRing.clearCalling(endId);
+      callRing.endRingForSpace(endId);
     }
     call.onLeave();
     setRoomShellOpen(false);
@@ -443,6 +449,7 @@ export default function App() {
       error={loom.error}
       spaceInput={loom.spaceInput}
       onSpaceInput={loom.setSpaceInput}
+      joinFocusNonce={joinFocusNonce}
       onJoinSpace={() => {
         const invite = loom.onJoinSpace();
         if (!invite) return;
@@ -471,6 +478,10 @@ export default function App() {
       busy: loom.busy || call.busy,
       disabled: freshSoloChat,
       onNewChat: goNewChat,
+    },
+    startJoin: {
+      busy: loom.busy || call.busy,
+      onJoin: goJoin,
     },
   };
 

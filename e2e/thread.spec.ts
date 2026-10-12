@@ -28,15 +28,23 @@ test.describe('Name + home', () => {
     await expect(page.getByTestId('space-chat').getByTestId('home-new-chat')).toBeVisible();
     await expect(page.getByTestId('home-new-chat')).toContainText('New');
     await expect(page.getByTestId('home-new-chat')).toHaveAttribute('aria-label', 'New chat');
+    await expect(page.getByTestId('space-chat').getByTestId('home-join-open')).toBeVisible();
+    await expect(page.getByTestId('home-join-open')).toContainText('Join');
+    await expect(page.getByTestId('home-join-open')).toHaveAttribute(
+      'aria-label',
+      'Join with invite',
+    );
     await expect(page.getByTestId('chat-pane-chat')).toHaveText(/This chat/);
     await expect(page.getByTestId('chat-pane-spaces')).toHaveText('All');
     await expect(page.getByTestId('app-nav').getByTestId('home-new-chat')).toHaveCount(0);
+    await expect(page.getByTestId('app-nav').getByTestId('home-join-open')).toHaveCount(0);
     await expect(page.getByTestId('space-view')).toBeVisible();
     // Wash waits 5s after mount before fading in.
     await expect(page.getByTestId('space-presence-idle')).toBeVisible({ timeout: 8_000 });
     await expect(page.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('nav-home').getByText('Ogma')).toBeVisible();
     await expect(page.getByTestId('home-join')).toBeVisible();
+    await expect(page.getByTestId('space-input')).toBeVisible();
     await expect(page.getByTestId('nav-home')).toBeVisible();
     await expect(page.getByTestId('nav-call')).toHaveCount(0);
     await expect(page.getByTestId('nav-settings')).toBeVisible();
@@ -871,10 +879,9 @@ test.describe('Home Join paste', () => {
     expect(hash).toMatch(/^#space=/);
 
     await ensureVault(guest, 'Guest');
-    await guest.getByTestId('chat-pane-spaces').click();
-    await expect(guest.getByTestId('home-join')).toBeVisible();
-    await guest.getByTestId('home-join').locator('summary').click();
-    await expect(guest.getByTestId('space-input')).toBeVisible();
+    await guest.getByTestId('home-join-open').click();
+    await expect(guest.getByTestId('chat-pane-spaces')).toHaveAttribute('aria-selected', 'true');
+    await expect(guest.getByTestId('space-input')).toBeFocused();
     // Paste the invite fragment (same as a copied link's #space= part).
     await guest.getByTestId('space-input').fill(spaceUrl);
     await expect(guest.getByTestId('join-space')).toBeEnabled();
@@ -914,9 +921,8 @@ test.describe('Home Join paste', () => {
     expect(roomUrl).toMatch(/[?&]room=/);
 
     await ensureVault(guest, 'Guest');
-    await guest.getByTestId('chat-pane-spaces').click();
-    await expect(guest.getByTestId('home-join')).toBeVisible();
-    await guest.getByTestId('home-join').locator('summary').click();
+    await guest.getByTestId('home-join-open').click();
+    await expect(guest.getByTestId('space-input')).toBeFocused();
     await guest.getByTestId('space-input').fill(roomUrl);
     await expect(guest.getByTestId('join-space')).toBeEnabled();
     await guest.getByTestId('join-space').click();

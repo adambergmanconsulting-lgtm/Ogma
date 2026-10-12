@@ -85,7 +85,7 @@ export function CallShell(props: CallShellProps) {
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="relative flex h-full min-h-0 flex-col">
       <header className="app-gutter-x pt-3 pb-1">
         <div className="flex min-w-0 items-center gap-2 text-xs text-[color:var(--color-muted)]">
           <span data-testid="connection-label" className="min-w-0 truncate">
@@ -191,20 +191,30 @@ export function CallShell(props: CallShellProps) {
           onClose={props.onCloseDrawer}
           onSend={props.onSendChat}
         />
-        <SettingsDrawer
-          open={props.drawer === 'settings'}
-          videoDevices={props.videoDevices}
-          audioDevices={props.audioDevices}
-          outputDevices={props.outputDevices}
-          videoDeviceId={props.videoDeviceId}
-          audioDeviceId={props.audioDeviceId}
-          audioOutputId={props.audioOutputId}
-          onClose={props.onCloseDrawer}
-          onVideoChange={props.onVideoChange}
-          onAudioChange={props.onAudioChange}
-          onOutputChange={props.onOutputChange}
-        />
       </div>
+      {props.drawer === 'settings' ? (
+        <div className="absolute inset-y-0 right-0 z-20 flex max-w-full">
+          <button
+            type="button"
+            aria-label="Close devices"
+            className="min-w-0 flex-1 bg-black/20"
+            onClick={props.onCloseDrawer}
+          />
+          <SettingsDrawer
+            open
+            videoDevices={props.videoDevices}
+            audioDevices={props.audioDevices}
+            outputDevices={props.outputDevices}
+            videoDeviceId={props.videoDeviceId}
+            audioDeviceId={props.audioDeviceId}
+            audioOutputId={props.audioOutputId}
+            onClose={props.onCloseDrawer}
+            onVideoChange={props.onVideoChange}
+            onAudioChange={props.onAudioChange}
+            onOutputChange={props.onOutputChange}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

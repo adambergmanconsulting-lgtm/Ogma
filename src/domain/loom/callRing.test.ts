@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  callRingSuppressUntil,
   isCallRingFresh,
   shouldEndLocalCallOnWire,
   shouldOfferIncomingCall,
   shouldOfferStartCall,
+  CALL_RING_HANGUP_SUPPRESS_MS,
   CALL_RING_STALE_MS,
 } from './callRing';
 
@@ -57,6 +59,32 @@ describe('callRing', () => {
         now: 100,
       }),
     ).toBe(false);
+  });
+
+  it('suppresses late re-announce after hang-up', () => {
+    const now = 1_000_000;
+    const suppressUntil = callRingSuppressUntil(now);
+    expect(suppressUntil - now).toBe(CALL_RING_HANGUP_SUPPRESS_MS);
+    expect(
+      shouldOfferIncomingCall({
+        author: 'Ada',
+        ts: now + 1,
+        selfName: 'Bob',
+        alreadyInCall: false,
+        now: now + 1_000,
+        suppressUntil,
+      }),
+    ).toBe(false);
+    expect(
+      shouldOfferIncomingCall({
+        author: 'Ada',
+        ts: suppressUntil + 1,
+        selfName: 'Bob',
+        alreadyInCall: false,
+        now: suppressUntil + 1,
+        suppressUntil,
+      }),
+    ).toBe(true);
   });
 
   it('hides Start Call while Accept is offered', () => {

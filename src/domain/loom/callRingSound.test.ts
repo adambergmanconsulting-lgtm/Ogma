@@ -24,9 +24,11 @@ describe('callRingSound', () => {
   it('starts a loop and stop clears it', () => {
     const resume = vi.fn(async () => undefined);
     const connect = vi.fn();
+    const disconnect = vi.fn();
     const start = vi.fn();
     const stop = vi.fn();
     const setValueAtTime = vi.fn();
+    const cancelScheduledValues = vi.fn();
     const exponentialRampToValueAtTime = vi.fn();
 
     class FakeOscillator {
@@ -37,8 +39,9 @@ describe('callRingSound', () => {
       stop = stop;
     }
     class FakeGain {
-      gain = { setValueAtTime, exponentialRampToValueAtTime };
+      gain = { setValueAtTime, cancelScheduledValues, exponentialRampToValueAtTime };
       connect = connect;
+      disconnect = disconnect;
     }
     class FakeAudioContext {
       currentTime = 0;
@@ -58,5 +61,7 @@ describe('callRingSound', () => {
     expect(start).toHaveBeenCalled();
     stopIncomingCallSound();
     expect(isIncomingCallSoundActive()).toBe(false);
+    expect(cancelScheduledValues).toHaveBeenCalled();
+    expect(disconnect).toHaveBeenCalled();
   });
 });

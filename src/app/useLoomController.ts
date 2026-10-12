@@ -728,7 +728,7 @@ export function useLoomController() {
     onRevealContinue,
     /** Land in the space immediately — invite lives on the space (not a dead-end reveal). */
     onCreateSpace: () => openSpaceWithSecret(createSpaceSecret()),
-    /** Home **Have an invite?** — returns room/space for App to open Call lobby and/or chat. */
+    /** Home **Join** paste — returns room/space for App to open Call lobby and/or chat. */
     onJoinSpace: (): InviteSecrets | null => {
       const invite = extractInviteSecrets(spaceInput);
       if (!invite.room && !invite.space) {

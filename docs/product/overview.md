@@ -38,9 +38,9 @@
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
 | In call | Mute, camera, **Share screen** (replaces the camera until **Stop sharing**), background blur, leave; **Leave** ends that chat’s Call for everyone still on it; soft-nav keeps Thread live until Leave or page close; device hot-swap; truthful connection state — soft-nav chrome: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Move device | Export file (includes space invites) → Import on the other vault (re-wraps with that vault’s key) |
-| Work shell | Top bar brand · Active · Settings; Video \| Chat; chat column **This chat** \| **All** · **New**; All **Search**; resume last space or idle (no auto-create); **Ogma** opens the All tab (soft-nav in Call); **Invite** on the open chat; install Moment after first chat; Settings **Home screen** anytime |
+| Work shell | Top bar brand · Active · Settings; Video \| Chat; chat column **This chat** \| **All** · **New** · **Join**; All invite paste + **Search**; resume last space or idle (no auto-create); **Ogma** opens the All tab (soft-nav in Call); **Invite** on the open chat; install Moment after first chat; Settings **Home screen** anytime |
 
-**First visit:** Name → Continue → save vault key → Chat-column **New**, or the All tab (search, list, or quiet invite Join). After the first chat, offer install. One work shell — [in-page-layout.md](heuristics/in-page-layout.md).
+**First visit:** Name → Continue → save vault key → Chat-column **New** or **Join** (paste on All), or open a chat from All. After the first chat, offer install. One work shell — [in-page-layout.md](heuristics/in-page-layout.md).
 
 ## Honest copy (ship in UI)
 

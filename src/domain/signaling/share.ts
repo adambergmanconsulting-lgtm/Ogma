@@ -51,7 +51,7 @@ export type InviteSecrets = {
 };
 
 /**
- * Home **Have an invite?** paste: full share URL or fragment.
+ * Home **Join** paste: full share URL or fragment.
  * Room and space may both be present (Call-from-chat). Bare opaque id → space
  * (same as historical home Join).
  */

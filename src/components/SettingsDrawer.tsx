@@ -67,8 +67,8 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
   };
 
   return (
-    <aside className="drawer-sheet">
-      <div className="flex items-center justify-between px-3 py-2">
+    <aside className="drawer-sheet h-full min-h-0 overflow-y-auto overscroll-contain">
+      <div className="flex shrink-0 items-center justify-between px-3 py-2">
         <h2 className="text-sm font-semibold">Devices</h2>
         <button
           type="button"
@@ -80,7 +80,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
         </button>
       </div>
 
-      <div className="space-y-4 px-3 py-3">
+      <div className="space-y-4 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
         <DeviceSelect
           label="Camera"
           value={props.videoDeviceId}

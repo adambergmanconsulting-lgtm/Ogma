@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { FoldButton, PaneMark } from './SpacePaneChrome';
+import { StartJoin } from './StartJoin';
 import { StartNew } from './StartNew';
 
 export type ChatPane = 'chat' | 'spaces';
@@ -15,6 +16,8 @@ interface ChatColumnProps {
   chatTitle?: string;
   /** Create a new chat space. Absent when create is unavailable. */
   startNew?: { busy?: boolean; disabled?: boolean; onNewChat: () => void };
+  /** Open All and focus invite paste. */
+  startJoin?: { busy?: boolean; onJoin: () => void };
   children: ReactNode;
 }
 
@@ -51,6 +54,9 @@ export function ChatColumn(props: ChatColumnProps) {
             disabled={props.startNew.disabled}
             onNewChat={props.startNew.onNewChat}
           />
+        ) : null}
+        {props.startJoin ? (
+          <StartJoin busy={props.startJoin.busy} onJoin={props.startJoin.onJoin} />
         ) : null}
         {props.onFold && !props.foldDisabled ? (
           <FoldButton
