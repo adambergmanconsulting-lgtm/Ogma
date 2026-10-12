@@ -3,6 +3,7 @@ import { Phone } from 'lucide-react';
 import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
 import type { ShareResult } from '../domain/signaling/share';
 import { ControlBar } from './ControlBar';
+import { formatMessageTime } from '../domain/formatMessageTime';
 import { ChatMessageMeta } from './ChatMessageMeta';
 import { ChatMessageText } from './ChatMessageText';
 import { ChatColumn, type ChatPane } from './ChatColumn';
@@ -57,6 +58,19 @@ interface SpaceViewProps {
 
 function isNarrowStack(): boolean {
   return Boolean(globalThis.matchMedia?.('(max-width: 767px)').matches);
+}
+
+function SystemLineTime({ at }: { at: number }) {
+  const label = formatMessageTime(at);
+  if (!label) return null;
+  return (
+    <>
+      {' · '}
+      <time dateTime={new Date(at).toISOString()} className="tabular-nums">
+        {label}
+      </time>
+    </>
+  );
 }
 
 export function SpaceView(props: SpaceViewProps) {
@@ -337,6 +351,7 @@ export function SpaceView(props: SpaceViewProps) {
                       personId={props.personId}
                     />{' '}
                     {systemLineVerb(m.kind)}
+                    <SystemLineTime at={m.ts} />
                   </p>
                 ) : (
                   <div
