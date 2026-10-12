@@ -8,8 +8,15 @@ describe('connectionLabel', () => {
     expect(connectionLabel('reconnecting', 0, 0)).toBe('Reconnecting…');
     expect(connectionLabel('left', 0, 0)).toBe('Left');
     expect(connectionLabel('error', 0, 0)).toBe("Couldn't connect");
-    expect(connectionLabel('error', 0, 0, "Couldn't reach peers — network may block P2P.")).toBe(
-      "Couldn't reach peers — network may block P2P.",
+    expect(
+      connectionLabel(
+        'error',
+        0,
+        0,
+        "Couldn't reach peers — this network may block direct connections. Try Settings → Network help.",
+      ),
+    ).toBe(
+      "Couldn't reach peers — this network may block direct connections. Try Settings → Network help.",
     );
   });
 

@@ -6,6 +6,7 @@ import {
   type TextChatPayload,
 } from './chatEnvelope';
 import { buildIceServers } from './iceConfig';
+import { joinErrorMessage } from './joinErrorMessage';
 import { createMeshMediaPlane } from './mediaPlane';
 import {
   clearScheduledPublishes,
@@ -51,11 +52,7 @@ export function openThreadSession(
     roomSecret,
     {
       onJoinError: (err) => {
-        const message =
-          typeof err === 'object' && err && 'message' in err
-            ? String((err as { message: unknown }).message)
-            : String(err);
-        handlers.onJoinError(message || "Couldn't reach peers — network may block P2P.");
+        handlers.onJoinError(joinErrorMessage(err));
       },
     },
   );

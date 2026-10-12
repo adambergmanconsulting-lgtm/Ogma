@@ -29,7 +29,7 @@
 | Call status (setup) | **Connecting…** | "Connecting to trackers…" |
 | Call status (joining) | **Joining…** | Raw enum `joining` |
 | Call status (reconnecting) | **Reconnecting…** | Raw enum `reconnecting` |
-| Call status (error) | Join/room error message, else **Couldn't connect** | Raw enum `error` |
+| Call status (error) | Join/room error message (`JOIN_PEERS_UNREACHABLE` / decrypt / handshake), else **Couldn't connect** | Raw enum `error`; `[object Object]`; “Couldn't reach Loom peers” |
 | Settings privacy | Collapsed summary **How privacy works**; Thread free + Loom honest paragraphs inside | Standing full honest essays above You / vault actions; "no servers" / "fully anonymous" / unaudited "E2EE" |
 | Settings TURN | Collapsed summary **Network help (optional)**; open when a TURN URI is saved; honesty that relay may see IP / timing | Standing TURN form above common settings; bundled public TURN on by default |
 | Settings order | **You** (name) → **Vault** (export / import / log out) → **Home screen** when needed → folded Privacy / Network → quiet **Last updated · {D Mon YYYY}** (build day, UTC; no semver) | Vault buttons with no heading; Privacy standing open; install duplicated under setup and Home screen; a version number when only the deploy day is known |

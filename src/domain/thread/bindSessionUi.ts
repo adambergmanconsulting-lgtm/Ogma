@@ -1,6 +1,7 @@
 import { MAX_PEERS, type ChatMessage } from '../types';
 import { roomFullLabel } from './capacityCopy';
 import type { TextChatPayload } from './chatEnvelope';
+import { JOIN_PEERS_UNREACHABLE } from './joinErrorMessage';
 import type { ControlWire, MetaWire, ThreadSessionHandlers } from './sessionTypes';
 
 export interface SessionUiBindings {
@@ -92,7 +93,7 @@ export function bindSessionUi(ui: SessionUiBindings): ThreadSessionHandlers {
     },
     onJoinError: (message) => {
       if (ui.cancelled()) return;
-      ui.setError(message || "Couldn't reach peers — network may block P2P.");
+      ui.setError(message || JOIN_PEERS_UNREACHABLE);
       ui.setConnectionState('error');
     },
     onRoomFull: () => {

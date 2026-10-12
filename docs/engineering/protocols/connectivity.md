@@ -30,12 +30,12 @@ Record pass/fail for A/V + text within ~30s of join:
 |--------|--------|
 | Matrix mostly pass | Stay STUN-only; document known failure class |
 | Repeated fail on cellular / symmetric NAT | Design **optional** TURN: user-provided `turn:` URI or privacy-reviewed public TURN; off by default if possible |
-| Fail even on same-LAN desktop | Bug in app signaling — fix before TURN |
+| Fail even on same-LAN desktop | First: app signaling bug (wrong room / error path). Also common: Wi‑Fi **client/AP isolation** — peers meet on trackers but ICE never forms; TURN or a non-isolated network then helps |
 
 ## UI
 
 - Status labels: `connectionLabel` — **Joining…** / **Reconnecting…** / error message (else **Couldn't connect**) / when `connected`: **Connected** / **Waiting…** / **Connecting…** ([ui-naming.md](../../product/heuristics/ui-naming.md)).
-- Join failure copy: “Couldn't reach peers — network may block P2P.”
+- Join failure copy: “Couldn't reach peers — this network may block direct connections. Try Settings → Network help.” (`JOIN_PEERS_UNREACHABLE` in `joinErrorMessage.ts`). Trystero `{ error }` is humanized there — never show `[object Object]` or raw SDP essays.
 - Never show connected with zero tracks and no explanation.
 
 ## Related

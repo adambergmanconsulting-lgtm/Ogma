@@ -1,6 +1,7 @@
 import { joinRoom } from '@trystero-p2p/torrent';
 import { publicSpaceId } from '../crypto/seal';
 import { buildIceServers } from '../thread/iceConfig';
+import { joinErrorMessage } from '../thread/joinErrorMessage';
 import { THREAD_TRACKER_URLS } from '../thread/relayHealth';
 import { isLoomEnvelope } from './envelope';
 import type { LoomStore } from './storePort';
@@ -60,14 +61,7 @@ export async function openLoomSync(
     roomKey,
     {
       onJoinError: (err) => {
-        const raw =
-          typeof err === 'object' && err && 'message' in err
-            ? (err as { message: unknown }).message
-            : err;
-        const message = typeof raw === 'string' ? raw.trim() : '';
-        handlers.onError?.(
-          message && message !== '[object Object]' ? message : "Couldn't reach Loom peers.",
-        );
+        handlers.onError?.(joinErrorMessage(err));
       },
     },
   );
