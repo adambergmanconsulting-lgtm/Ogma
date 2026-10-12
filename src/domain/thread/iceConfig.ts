@@ -7,9 +7,19 @@ export const TURN_SETTINGS = {
   /** Summary for collapsed disclosure — rare path. */
   summary: 'Network help (optional)',
   heading: 'Network help',
-  label: 'TURN URI (optional)',
-  body: 'Leave empty for STUN-only. A TURN relay can help on hard networks; the relay may see your IP and timing. Applies on the next join.',
-  placeholder: 'turn:host:3478',
+  lead: 'When peers meet but never connect, the LAN often blocks direct paths (guest Wi‑Fi / client isolation). Try a network change first; use a TURN relay only if that fails.',
+  tryHeading: 'Try a network change',
+  trySteps: [
+    'Move one device off guest Wi‑Fi, or turn off AP / client isolation on the router.',
+    'Put one peer on phone cellular (or a phone hotspot) and retry the invite.',
+    'Avoid VPNs on both sides for the call, then rejoin.',
+  ],
+  relayHeading: 'Or use a TURN relay',
+  label: 'TURN URI',
+  body: 'Paste a turn: or turns: URI from a provider you pay, or from a relay you run. Leave empty for STUN-only. The relay may see your IP and timing. Applies on the next join.',
+  paidNote:
+    'Ogma-hosted paid network help is planned — not for sale yet. Until then, buy or run TURN yourself and paste the URI here.',
+  placeholder: 'turn:user:pass@host:3478',
   clear: 'Clear TURN',
   save: 'Save TURN',
 } as const;

@@ -27,13 +27,11 @@ export async function dismissVaultRevealIfShown(page: Page) {
 }
 
 /**
- * Name → Continue → vault key reveal → home.
- * When already unlocked, lands on home. When locked, creates a new vault.
- * Returns the vault key when a new one was revealed; otherwise null.
+ * Name → Continue → home (no vault key yet).
+ * When locked, switches to cold create first.
  */
-export async function ensureVault(page: Page, name: string): Promise<string | null> {
+export async function ensureNamed(page: Page, name: string): Promise<void> {
   await page.goto('/');
-  let vaultKey: string | null = null;
 
   if (await page.getByTestId('vault-unlock-key').isVisible().catch(() => false)) {
     await page.getByTestId('switch-vault').click();
@@ -44,15 +42,43 @@ export async function ensureVault(page: Page, name: string): Promise<string | nu
   if (await vaultName.isVisible().catch(() => false)) {
     await vaultName.fill(name);
     await page.getByTestId('name-continue').click();
-    await expect(page.getByTestId('secret-value')).toBeVisible({ timeout: 15_000 });
-    vaultKey = (await page.getByTestId('secret-value').innerText()).trim();
-    await page.getByTestId('secret-continue').click();
   } else {
     await dismissVaultRevealIfShown(page);
   }
 
   await expect(page.getByTestId('app-home')).toBeVisible({ timeout: 15_000 });
-  return vaultKey;
+}
+
+/**
+ * Name → Continue → home, then ensure a vault key exists (New or Settings).
+ * Returns the vault key when one was revealed in this call; otherwise null.
+ */
+export async function ensureVault(page: Page, name: string): Promise<string | null> {
+  await ensureNamed(page, name);
+
+  await page.getByTestId('nav-settings').click();
+  const enable = page.getByTestId('enable-vault');
+  if (await enable.isVisible().catch(() => false)) {
+    await enable.click();
+    await expect(page.getByTestId('secret-value')).toBeVisible({ timeout: 15_000 });
+    const vaultKey = (await page.getByTestId('secret-value').innerText()).trim();
+    await page.getByTestId('secret-continue').click();
+    await expect(page.getByTestId('app-home')).toBeVisible({ timeout: 15_000 });
+    return vaultKey;
+  }
+  await page.getByTestId('nav-settings').click();
+  return null;
+}
+
+/** After New: dismiss vault-key reveal when New installs a key, then wait for space UI. */
+export async function afterNewChat(page: Page): Promise<string | null> {
+  const secret = page.getByTestId('secret-value');
+  if (await secret.isVisible().catch(() => false)) {
+    const vaultKey = (await secret.innerText()).trim();
+    await page.getByTestId('secret-continue').click();
+    return vaultKey;
+  }
+  return null;
 }
 
 /** Dismiss the welcome nudge when it covers the work shell. */
@@ -77,15 +103,16 @@ export async function openCallChat(page: Page) {
 
 /** New, then video-pane Call — Thread on the same chat shell. */
 export async function createRoom(page: Page, name: string) {
-  await ensureVault(page, name);
+  await ensureNamed(page, name);
   await page.getByTestId('home-new-chat').click();
+  await afterNewChat(page);
   await expect(page.getByTestId('space-call')).toBeVisible({ timeout: 15_000 });
   await page.getByTestId('space-call').click();
   await expect(page.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
 }
 
 export async function joinRoom(page: Page, name: string, roomUrl: string) {
-  await ensureVault(page, name);
+  await ensureNamed(page, name);
   await page.goto(roomUrl);
   await dismissVaultRevealIfShown(page);
   // Room+space links may show Join lobby, or open the space with Accept while host is calling.
@@ -104,15 +131,16 @@ export async function joinRoom(page: Page, name: string, roomUrl: string) {
 }
 
 export async function createSpace(page: Page, name: string): Promise<string> {
-  await ensureVault(page, name);
+  await ensureNamed(page, name);
   await page.getByTestId('home-new-chat').click();
+  await afterNewChat(page);
   await expect(page.getByTestId('space-compose')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('share-link')).toBeVisible();
   return page.url();
 }
 
 export async function joinSpace(page: Page, name: string, spaceUrl: string) {
-  await ensureVault(page, name);
+  await ensureNamed(page, name);
   await page.goto(spaceUrl);
   await dismissVaultRevealIfShown(page);
   await expect(page.getByTestId('space-compose')).toBeVisible({ timeout: 30_000 });

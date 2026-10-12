@@ -4,11 +4,11 @@ import { OghamMark } from './OghamMark';
 interface VaultSetupProps {
   busy: boolean;
   error: string | null;
-  /** Name + new vault key (shown next). */
+  /** Name only — vault key comes later on New or Settings → Add vault key. */
   onCreateVault: (displayName: string) => void;
 }
 
-/** Cold start: Continue creates a vault and reveals the key once. */
+/** Cold start: Continue enters the shell with a name; no vault key yet. */
 export function VaultSetup({ busy, error, onCreateVault }: VaultSetupProps) {
   const [name, setName] = useState(() => localStorage.getItem('ogma.displayName') || '');
   const ready = Boolean(name.trim()) && !busy;
@@ -38,8 +38,9 @@ export function VaultSetup({ busy, error, onCreateVault }: VaultSetupProps) {
       </div>
 
       <p className="text-muted mb-4 text-sm leading-relaxed">
-        Continue creates a vault key for this browser and erases any earlier vault saved here. You
-        will see the key once — save it to open this vault later. Ogma cannot recover the key.
+        Continue opens Ogma with this name. Join an invite without a vault key. Starting a new chat
+        creates a vault key once so chats can stay on this browser. Continue also erases any earlier
+        vault saved here.
       </p>
 
       {error ? <p className="text-danger mb-3">{error}</p> : null}

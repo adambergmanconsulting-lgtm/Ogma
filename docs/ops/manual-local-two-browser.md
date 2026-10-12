@@ -79,7 +79,7 @@ Allow camera/mic when asked (Call steps).
 |---------|--------|
 | Guest never opens the chat | Copied URL has `space=`; paste full string; same `localhost` vs `127.0.0.1` as host |
 | Join yes, text no | Both windows foreground; hard-refresh both; watch for join error pointing at **Network help** |
-| Same Wi‑Fi, two PCs, text/Call fail | Guest/AP client isolation or hard NAT; try phone hotspot, or Settings → **Network help** TURN ([connectivity.md](../engineering/protocols/connectivity.md)) |
+| Same Wi‑Fi, two PCs, text/Call fail | Guest/AP client isolation or hard NAT; Settings → **Network help** (network change first, then BYO TURN) ([connectivity.md](../engineering/protocols/connectivity.md)) |
 | Brave/Firefox work, Edge fails | On Edge: allow **Local network access** for the Ogma origin if prompted; not two InPrivate windows |
 | No Accept banner | Guest must already be on that space (warm); or use Call link Join (step 3) |
 | Call never Connected | Trackers/network; try Settings → **Network help** TURN only if LAN matrix also fails ([connectivity.md](../engineering/protocols/connectivity.md)) |

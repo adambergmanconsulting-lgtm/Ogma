@@ -5,6 +5,7 @@ Any LLM / agent tool may load this file. Full table: README.md (Start here by in
 Session: pick one intent. Name the task in one sentence. Open only that owner Fast path before first edit. Re-open the right doc when blocked or the work shifts.
 
 - product spine (Thread / Loom) -> docs/product/overview.md
+- niche / competition / paid connectivity -> docs/product/business-case.md
 - capability / room links -> docs/engineering/protocols/capability-urls.md
 - video topology / hub -> docs/engineering/protocols/thread-topology.md
 - connectivity / TURN -> docs/engineering/protocols/connectivity.md

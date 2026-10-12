@@ -21,6 +21,7 @@
 | Content | Location |
 |---------|----------|
 | Product / UX heuristics (host fill-in) | `docs/product/` |
+| Host product niche / competition / paid SKU rationale | `docs/product/` (e.g. [business-case.md](product/business-case.md)) — not Railkit consulting `project/` |
 | Architecture | `docs/engineering/architecture/` |
 | Ops guides + governing priority ranks | `docs/ops/` |
 | How we write docs | This file |

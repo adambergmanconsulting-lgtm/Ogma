@@ -4,6 +4,7 @@ import {
   buildIceServers,
   parseTurnUri,
   readStoredTurnUri,
+  TURN_SETTINGS,
   TURN_URI_STORAGE_KEY,
   writeStoredTurnUri,
 } from './iceConfig';
@@ -32,6 +33,12 @@ describe('iceConfig', () => {
       configurable: true,
       value: memoryStorage(),
     });
+  });
+
+  it('keeps Network help copy network-first and honest about unpaid Ogma TURN', () => {
+    expect(TURN_SETTINGS.trySteps.length).toBeGreaterThanOrEqual(2);
+    expect(TURN_SETTINGS.paidNote).toMatch(/not for sale yet/i);
+    expect(TURN_SETTINGS.body).toMatch(/provider you pay/i);
   });
 
   it('parses turn / turns URIs and rejects others', () => {

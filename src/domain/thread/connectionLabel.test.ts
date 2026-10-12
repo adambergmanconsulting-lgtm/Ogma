@@ -13,10 +13,10 @@ describe('connectionLabel', () => {
         'error',
         0,
         0,
-        "Couldn't reach peers — this network may block direct connections. Try Settings → Network help.",
+        "Couldn't reach peers — this network may block direct connections. Change network, or open Settings → Network help.",
       ),
     ).toBe(
-      "Couldn't reach peers — this network may block direct connections. Try Settings → Network help.",
+      "Couldn't reach peers — this network may block direct connections. Change network, or open Settings → Network help.",
     );
   });
 

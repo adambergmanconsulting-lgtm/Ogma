@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  createDeviceKeyMeta,
-  loadRememberedSecrets,
-  unlockDeviceKey,
-  unwrapSpaceSecret,
-} from '../domain/loom/deviceKey';
+import { unwrapSpaceSecret } from '../domain/loom/deviceKey';
 import {
   SPACE_SECRET_MISSING,
   hydrateLocalSecrets,
@@ -18,8 +13,13 @@ import {
   previewFromPayload,
   sealJoin,
   sealSystemEvent,
-  sealTextMessage,
 } from '../domain/loom/envelope';
+import { authorHasJoin } from '../domain/loom/authorHasJoin';
+import {
+  decryptAndFoldMessages,
+  foldedMessagesForView,
+} from '../domain/loom/decryptMessages';
+import { publishLoomText } from './loomChatSend';
 import {
   hasUnloadableCold,
   pickColdBatch,
@@ -38,9 +38,7 @@ import {
   sortSpacesRecentFirst,
   spacePeopleNames,
 } from '../domain/loom/spaceIndex';
-import { eraseLocalVaultData } from '../domain/loom/eraseLocalVault';
 import { rememberPersonCard } from '../domain/loom/peopleDirectory';
-import { attachPersonId } from '../domain/loom/personKey';
 import { getLoomStore } from '../domain/loom/store';
 import type { LoomStore } from '../domain/loom/storePort';
 import { openLoomSync, type LoomSyncSession } from '../domain/loom/sync';
@@ -52,16 +50,16 @@ import {
   importVaultFile,
 } from './loomVaultActions';
 import {
-  createVaultRecord,
-  readVault,
-  writeVault,
-  type VaultRecord,
-} from '../domain/loom/vault';
-import { generateVaultKey } from '../domain/loom/vaultKey';
+  bootstrapNameOnlyVault,
+  installVaultKey,
+  unlockExistingVaultKey,
+  VAULT_KEY_WHY_NEW,
+  VAULT_KEY_WHY_SETTINGS,
+} from './loomVaultBootstrap';
+import { readVault, type VaultRecord } from '../domain/loom/vault';
 import {
   clearVaultSession,
   readVaultSessionKey,
-  writeVaultSessionKey,
 } from '../domain/loom/vaultSession';
 import {
   readChatSoundEnabled,
@@ -157,52 +155,9 @@ export function useLoomController() {
   }, [wrapKey]);
 
   const decryptRows = useCallback(
-    async (secret: string, rows: StoredMessage[]): Promise<SpaceMessageView[]> => {
-      const views: SpaceMessageView[] = [];
-      for (const row of rows) {
-        try {
-          const payload = await openPayload(secret, row);
-          const base = {
-            id: row.id,
-            author: row.author,
-            ts: row.ts,
-            self: row.author === displayName,
-          };
-          views.push(
-            payload.kind === 'text'
-              ? { ...base, kind: 'text', text: payload.text }
-              : { ...base, kind: payload.kind },
-          );
-        } catch {
-          // skip
-        }
-      }
-      return views;
-    },
+    async (secret: string, rows: StoredMessage[]): Promise<SpaceMessageView[]> =>
+      foldedMessagesForView(await decryptAndFoldMessages(secret, rows), displayName),
     [displayName],
-  );
-
-  const authorHasJoin = useCallback(
-    async (spaceId: string, secret: string, author: string): Promise<boolean> => {
-      const store = storeRef.current ?? (await getLoomStore());
-      const self = author.trim().toLowerCase();
-      if (!self) return true;
-      const rows = [
-        ...(await store.listMessages(spaceId)),
-        ...(await store.listColdMessages(spaceId)),
-      ];
-      for (const row of rows) {
-        if (row.author.trim().toLowerCase() !== self) continue;
-        try {
-          const payload = await openPayload(secret, row);
-          if (payload.kind === 'join') return true;
-        } catch {
-          // skip
-        }
-      }
-      return false;
-    },
-    [],
   );
 
   const refreshHasMoreOlder = useCallback(async (spaceId: string, shown: SpaceMessageView[]) => {
@@ -292,12 +247,13 @@ export function useLoomController() {
     async (spaceId: string, secret: string) => {
       const name = displayName.trim();
       if (!name) return;
-      if (await authorHasJoin(spaceId, secret, name)) return;
+      const store = storeRef.current ?? (await getLoomStore());
+      if (await authorHasJoin(store, spaceId, secret, name)) return;
       const env = await sealJoin(secret, name);
       await ingestEntries(spaceId, [env], false);
       await syncRef.current.get(spaceId)?.sendEntries([env]);
     },
-    [authorHasJoin, displayName, ingestEntries],
+    [displayName, ingestEntries],
   );
 
   const stopSync = useCallback((spaceId: string) => {
@@ -436,16 +392,14 @@ export function useLoomController() {
     async (vaultKey: string, persistSession: boolean) => {
       const store = storeRef.current ?? (await getLoomStore());
       storeRef.current = store;
-      const meta = await store.getDeviceKeyMeta();
-      if (!meta) throw new Error('No vault key on this browser');
-      const key = await unlockDeviceKey(vaultKey, meta);
-      setWrapKey(key);
-      setPersonId(await attachPersonId(store, key, meta));
-      const rows = await store.listSpaces();
-      hydrateLocalSecrets(rows, secretsRef.current);
-      await loadRememberedSecrets(key, rows, secretsRef.current);
-      await wrapStoredSpaceSecrets(key, store, await store.listSpaces(), secretsRef.current);
-      if (persistSession) writeVaultSessionKey(vaultKey);
+      const unlockedVault = await unlockExistingVaultKey(
+        store,
+        vaultKey,
+        secretsRef.current,
+        persistSession,
+      );
+      setWrapKey(unlockedVault.wrapKey);
+      setPersonId(unlockedVault.personId);
       await refreshSpaces();
     },
     [refreshSpaces],
@@ -466,7 +420,13 @@ export function useLoomController() {
     })();
   }, [vault, wrapKey, applyVaultKey]);
 
-  /** Create vault: name + new vault key (shown once). Erases any prior vault on this browser. */
+  /** After vault-key reveal: optionally open a new space (New chat). */
+  const pendingAfterRevealRef = useRef<'create-space' | null>(null);
+
+  /**
+   * Cold Continue / Switch vault: name-only profile (no vault key yet).
+   * Erases any prior vault on this browser. Join links work; New installs a key.
+   */
   const onCreateVault = useCallback(
     async (name: string) => {
       setBusy(true);
@@ -474,34 +434,22 @@ export function useLoomController() {
       try {
         const store = await getLoomStore();
         storeRef.current = store;
-        await eraseLocalVaultData(store);
         secretsRef.current.clear();
-        // Drop leftover ?room= / #space= so bootstrap does not skip the key reveal.
-        clearCapabilityFromUrl();
         focusedSpaceIdRef.current = null;
         setFocusedSecret(null);
         setFocusedSpaceId(null);
         setMessages([]);
-        const vaultKey = generateVaultKey();
-        const meta = await createDeviceKeyMeta(vaultKey);
-        await store.setDeviceKeyMeta(meta);
-        const key = await unlockDeviceKey(vaultKey, meta);
-        setWrapKey(key);
-        setPersonId(await attachPersonId(store, key, meta));
-        writeVaultSessionKey(vaultKey);
-        const rec = createVaultRecord(name, true);
-        writeVault(rec);
-        localStorage.setItem('ogma.displayName', name.trim());
+        setWrapKey(null);
+        setPersonId(null);
+        clearVaultSession();
+        pendingAfterRevealRef.current = null;
+        const rec = await bootstrapNameOnlyVault(store, name);
         setVault(rec);
-        setReveal({
-          kind: 'vault',
-          secret: vaultKey,
-          why: 'Save this vault key to open this vault later (after Log out, or to confirm you have it). You stay signed in here until you log out. Ogma cannot recover the key.',
-        });
-        setScreen('reveal');
+        setReveal(null);
+        setScreen('home');
         await refreshSpaces();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not create vault');
+        setError(e instanceof Error ? e.message : 'Could not continue');
       } finally {
         setBusy(false);
       }
@@ -509,43 +457,44 @@ export function useLoomController() {
     [refreshSpaces],
   );
 
-  /** Opt-in vault key from Settings (profile already exists). */
-  const onEnableVault = useCallback(async () => {
-    if (!vault) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const store = storeRef.current ?? (await getLoomStore());
-      storeRef.current = store;
-      const vaultKey = generateVaultKey();
-      const meta = await createDeviceKeyMeta(vaultKey);
-      await store.setDeviceKeyMeta(meta);
-      const key = await unlockDeviceKey(vaultKey, meta);
-      setWrapKey(key);
-      setPersonId(await attachPersonId(store, key, meta));
-      writeVaultSessionKey(vaultKey);
-      const rec = { ...vault, hasDeviceKey: true };
-      writeVault(rec);
-      setVault(rec);
-      await wrapStoredSpaceSecrets(
-        key,
-        store,
-        await store.listSpaces(),
-        secretsRef.current,
-      );
-      setReveal({
-        kind: 'vault',
-        secret: vaultKey,
-        why: 'Save this vault key to retrieve your chats later (new browser, or after Log out). You stay signed in here until you log out. Ogma cannot recover the key.',
-      });
-      setScreen('reveal');
-      await refreshSpaces();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not create vault key');
-    } finally {
-      setBusy(false);
+  /** Install vault key and show once; optional pending New-chat space after Continue. */
+  const beginVaultKeyReveal = useCallback(
+    async (why: string, pending: 'create-space' | null) => {
+      if (!vault) return;
+      setBusy(true);
+      setError(null);
+      pendingAfterRevealRef.current = pending;
+      try {
+        const store = storeRef.current ?? (await getLoomStore());
+        storeRef.current = store;
+        const installed = await installVaultKey(store, vault, secretsRef.current, why);
+        setWrapKey(installed.wrapKey);
+        setPersonId(installed.personId);
+        setVault(installed.vault);
+        setReveal({ kind: 'vault', secret: installed.vaultKey, why: installed.why });
+        setScreen('reveal');
+        await refreshSpaces();
+      } catch (e) {
+        pendingAfterRevealRef.current = null;
+        setError(e instanceof Error ? e.message : 'Could not create vault key');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [vault, refreshSpaces],
+  );
+
+  const onEnableVault = useCallback(() => {
+    void beginVaultKeyReveal(VAULT_KEY_WHY_SETTINGS, null);
+  }, [beginVaultKeyReveal]);
+
+  const onCreateSpace = useCallback(async () => {
+    if (vault?.hasDeviceKey) {
+      await openSpaceWithSecret(createSpaceSecret());
+      return;
     }
-  }, [vault, refreshSpaces]);
+    await beginVaultKeyReveal(VAULT_KEY_WHY_NEW, 'create-space');
+  }, [vault, openSpaceWithSecret, beginVaultKeyReveal]);
 
   const onUnlockVault = useCallback(
     async (vaultKey: string) => {
@@ -578,9 +527,9 @@ export function useLoomController() {
   }, [stopSync]);
 
   /**
-   * Leave this vault and return to cold create.
-   * Chats/device key are erased when Continue creates the new vault (not here),
-   * so a fast Create cannot race a background wipe.
+   * Leave this vault and return to cold name.
+   * Chats are erased when Continue creates the new name profile (not here),
+   * so a fast Continue cannot race a background wipe.
    */
   const onSwitchVault = useCallback(() => {
     for (const id of [...syncRef.current.keys()]) stopSync(id);
@@ -637,7 +586,12 @@ export function useLoomController() {
   const onRevealContinue = useCallback(() => {
     setReveal(null);
     setScreen('home');
-  }, []);
+    const pending = pendingAfterRevealRef.current;
+    pendingAfterRevealRef.current = null;
+    if (pending === 'create-space') {
+      void openSpaceWithSecret(createSpaceSecret());
+    }
+  }, [openSpaceWithSecret]);
 
   /** All chats, newest activity first (no Hide / archive UI). */
   const chats = useMemo(() => sortSpacesRecentFirst(spaces), [spaces]);
@@ -726,8 +680,8 @@ export function useLoomController() {
     onExport,
     onImportFile,
     onRevealContinue,
-    /** Land in the space immediately — invite lives on the space (not a dead-end reveal). */
-    onCreateSpace: () => openSpaceWithSecret(createSpaceSecret()),
+    /** New chat: installs vault key once if needed, then opens a space. */
+    onCreateSpace: () => void onCreateSpace(),
     /** Home **Join** paste — returns room/space for App to open Call lobby and/or chat. */
     onJoinSpace: (): InviteSecrets | null => {
       const invite = extractInviteSecrets(spaceInput);
@@ -778,10 +732,34 @@ export function useLoomController() {
     resumeLastSpace,
     onSend: async (text: string) => {
       if (!focusedSecret || !focusedSpaceId) return;
-      const env = await sealTextMessage(focusedSecret, text, displayName);
-      await ingestEntries(focusedSpaceId, [env], false);
-      await syncRef.current.get(focusedSpaceId)?.sendEntries([env]);
-      await loadMessages(focusedSpaceId, focusedSecret);
+      const sid = focusedSpaceId;
+      const sec = focusedSecret;
+      await publishLoomText({
+        secret: sec,
+        spaceId: sid,
+        text,
+        author: displayName,
+        ingest: ingestEntries,
+        sendEntries: (e) => syncRef.current.get(sid)?.sendEntries(e),
+        reload: () => loadMessages(sid, sec),
+      });
+    },
+    onEdit: async (rootId: string, text: string) => {
+      if (!focusedSecret || !focusedSpaceId || !rootId) return;
+      const target = messagesRef.current.find((m) => m.id === rootId);
+      if (!target || target.kind !== 'text' || !target.self) return;
+      const sid = focusedSpaceId;
+      const sec = focusedSecret;
+      await publishLoomText({
+        secret: sec,
+        spaceId: sid,
+        text,
+        author: displayName,
+        replaces: rootId,
+        ingest: ingestEntries,
+        sendEntries: (e) => syncRef.current.get(sid)?.sendEntries(e),
+        reload: () => loadMessages(sid, sec),
+      });
     },
     /** Sealed system line (Call / screen share) into the open space log. */
     sealSystemLine: async (

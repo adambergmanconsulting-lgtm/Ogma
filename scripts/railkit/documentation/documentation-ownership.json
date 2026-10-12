@@ -14,7 +14,9 @@
     "docs/engineering/architecture/application-layering.md",
     "docs/product/heuristics/ui-principles.md",
     "docs/product/heuristics/customer-fit.md",
-    "docs/product/heuristics/customer-targets.md"
+    "docs/product/heuristics/customer-targets.md",
+    "docs/product/business-case.md",
+    "docs/product/overview.md"
   ],
   "fastPathMaxNonEmptyLines": 25,
   "canonicalTaskTable": "docs/CANONICAL-SOURCES.md"

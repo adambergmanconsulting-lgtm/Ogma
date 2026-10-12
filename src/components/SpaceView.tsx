@@ -27,7 +27,7 @@ export type SpaceMessageView = {
   author: string;
   ts: number;
   self: boolean;
-} & ({ kind: 'text'; text: string } | { kind: LoomSystemKind });
+} & ({ kind: 'text'; text: string; edited?: boolean } | { kind: LoomSystemKind });
 
 interface SpaceViewProps {
   selfName: string;
@@ -42,6 +42,8 @@ interface SpaceViewProps {
   loadingOlder?: boolean;
   onLoadOlder?: () => void;
   onSend: (text: string) => void;
+  /** Append-only edit of an own text root. */
+  onEdit?: (rootId: string, text: string) => void;
   onCopyInvite: () => Promise<ShareResult>;
   onStartCall?: () => void;
   callBusy?: boolean;
@@ -76,11 +78,26 @@ function SystemLineTime({ at }: { at: number }) {
 
 export function SpaceView(props: SpaceViewProps) {
   const [draft, setDraft] = useState('');
+  /** Own text root id while compose is in edit mode. */
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const composeRef = useRef<HTMLInputElement>(null);
   /** On phone, chat leads; Call stays on the collapsed video rail until opened. */
   const [videoOpen, setVideoOpen] = useState(() => !isNarrowStack());
   const [chatOpen, setChatOpen] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastMessageIdRef = useRef<string | null>(null);
+
+  const clearEdit = () => {
+    setEditingId(null);
+    setDraft('');
+  };
+
+  const beginEdit = (m: Extract<SpaceMessageView, { kind: 'text' }>) => {
+    if (!props.onEdit || !m.self) return;
+    setEditingId(m.id);
+    setDraft(m.text);
+    queueMicrotask(() => composeRef.current?.focus());
+  };
   const call = props.call ?? null;
   const waitingAlone = Boolean(call && call.remotePeers.length === 0);
   const canFoldVideo = videoOpen && chatOpen;
@@ -360,6 +377,7 @@ export function SpaceView(props: SpaceViewProps) {
                 ) : (
                   <div
                     key={m.id}
+                    data-testid={`space-msg-${m.id}`}
                     className={[
                       'max-w-[92%] text-[13px] leading-snug',
                       m.self ? 'ml-auto' : 'mr-auto',
@@ -371,8 +389,26 @@ export function SpaceView(props: SpaceViewProps) {
                       author={m.author}
                       selfName={props.selfName}
                       personId={props.personId}
+                      edited={m.edited}
                     />
                     <ChatMessageText text={m.text} align={m.self ? 'end' : 'start'} />
+                    {m.self && props.onEdit ? (
+                      <div
+                        className={[
+                          'mt-0.5 flex',
+                          m.self ? 'justify-end' : 'justify-start',
+                        ].join(' ')}
+                      >
+                        <button
+                          type="button"
+                          data-testid={`space-edit-${m.id}`}
+                          className="text-[11px] text-[color:var(--color-muted)] underline-offset-2 hover:underline"
+                          onClick={() => beginEdit(m)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ),
               )}
@@ -385,24 +421,46 @@ export function SpaceView(props: SpaceViewProps) {
                 e.preventDefault();
                 const text = draft.trim();
                 if (!text) return;
+                if (editingId && props.onEdit) {
+                  props.onEdit(editingId, text);
+                  clearEdit();
+                  return;
+                }
                 props.onSend(text);
                 setDraft('');
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && editingId) {
+                  e.preventDefault();
+                  clearEdit();
+                }
+              }}
             >
               <input
+                ref={composeRef}
                 data-testid="space-compose"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 className="field field--compact flex-1"
-                aria-label="Message"
+                aria-label={editingId ? 'Edit message' : 'Message'}
               />
+              {editingId ? (
+                <button
+                  type="button"
+                  data-testid="space-edit-cancel"
+                  className="btn-ghost px-2 py-1 text-sm"
+                  onClick={clearEdit}
+                >
+                  Cancel
+                </button>
+              ) : null}
               <button
                 type="submit"
-                data-testid="space-send"
+                data-testid={editingId ? 'space-edit-save' : 'space-send'}
                 disabled={!draft.trim()}
                 className="btn-primary btn-primary--sm"
               >
-                Send
+                {editingId ? 'Save' : 'Send'}
               </button>
             </form>
           </ChatColumn>

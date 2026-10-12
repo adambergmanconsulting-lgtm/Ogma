@@ -22,6 +22,7 @@
 | Need | Open |
 |------|------|
 | Who / Primary job | [customer-targets.md](customer-targets.md) |
+| Niche / competition / paid SKU rationale | [business-case.md](../business-case.md) |
 | UI chrome conflict | [ui-principles.md](ui-principles.md) |
 | Doc dual home (two docs deciding the same thing) | [DOCUMENTATION-PRINCIPLES.md](../../DOCUMENTATION-PRINCIPLES.md) |
 

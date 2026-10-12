@@ -38,6 +38,7 @@ Pick one row. Name the task; open only that owner’s Fast path before the first
 | Intent | Open |
 |--------|------|
 | Product spine (Thread / Loom) | [docs/product/overview.md](docs/product/overview.md) |
+| Niche / competition / paid connectivity | [docs/product/business-case.md](docs/product/business-case.md) |
 | Capability / room links | [docs/engineering/protocols/capability-urls.md](docs/engineering/protocols/capability-urls.md) |
 | Video topology / hub | [docs/engineering/protocols/thread-topology.md](docs/engineering/protocols/thread-topology.md) |
 | Connectivity / TURN | [docs/engineering/protocols/connectivity.md](docs/engineering/protocols/connectivity.md) |

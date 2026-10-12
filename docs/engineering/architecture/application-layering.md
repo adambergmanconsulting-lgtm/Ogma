@@ -42,7 +42,7 @@
 | **Domain: room mode** | `src/domain/thread/roomMode.ts` — `free` vs `team` (team unused until paid) |
 | **Domain: crypto / loom** | `src/domain/crypto/`, `src/domain/loom/` — seal/open, IndexedDB store, sync, vault, export |
 | **Shell chrome** | `AppNav` (brand · Active · Settings) + `ChatColumn` (This chat \| All · New · Join) + `SpaceView` — brand → All tab; **Call** on the video pane via `src/app/App.tsx` |
-| **Domain: shell / PWA** | `src/domain/shell/` — welcome-nudge / install offer rules + dismiss flags; update-apply when safe (never mid-call); UI wires `beforeinstallprompt` + `virtual:pwa-register` |
+| **Domain: shell / PWA** | `src/domain/shell/` — welcome-nudge / install offer rules + dismiss flags; waiting-SW probe (no-store) + **Reload for update** prompt; UI wires `beforeinstallprompt` + `virtual:pwa-register` |
 | **Domain: signaling URLs** | `src/domain/signaling/` — capability hash parse/format |
 | **Shared contracts** | `src/domain/types.ts` — peer/room/message shapes |
 | **Infra adapters** | Browser APIs + public trackers / STUN; later paid SFU/TURN behind media plane |

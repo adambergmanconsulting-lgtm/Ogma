@@ -5,7 +5,7 @@
 
 /** Shared when peers meet on trackers but ICE fails, or join fails without detail. */
 export const JOIN_PEERS_UNREACHABLE =
-  "Couldn't reach peers — this network may block direct connections. Try Settings → Network help.";
+  "Couldn't reach peers — this network may block direct connections. Change network, or open Settings → Network help.";
 
 export const JOIN_SIGNAL_DECRYPT_FAILED =
   'Could not decrypt peer signaling — reopen the invite link.';

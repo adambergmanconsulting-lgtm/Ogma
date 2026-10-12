@@ -44,8 +44,13 @@ export async function sealTextMessage(
   author: string,
   ts = Date.now(),
   id = newMessageId(),
+  opts?: { replaces?: string },
 ): Promise<LoomEnvelope> {
-  return sealWithPayload(spaceSecret, { kind: 'text', text }, author, ts, id);
+  const replaces = opts?.replaces?.trim() || undefined;
+  const payload: LoomPayload = replaces
+    ? { kind: 'text', text, replaces }
+    : { kind: 'text', text };
+  return sealWithPayload(spaceSecret, payload, author, ts, id);
 }
 
 export async function sealJoin(

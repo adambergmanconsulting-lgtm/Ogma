@@ -34,7 +34,7 @@ Mock browser APIs at the domain boundary for unit proof. Prefer `data-testid` ov
 |-------------|---------------------|
 | Name | Splash + name Continue |
 | Vault | Enable key + person id; logout → unlock; export/import; rename save |
-| Chat (Loom) | Chat-only 2P; compose; All search; home Join paste; Active Invite 2P |
+| Chat (Loom) | Chat-only 2P; compose; edit own text; All search; home Join paste; Active Invite 2P |
 | Host Call | New → Call; list Call; space Call |
 | Accept Call | Accept / Not now; Leave clears ring |
 | Join Call | Room URL Join; space URL; home paste Join |

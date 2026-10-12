@@ -6,7 +6,7 @@
 
 **All kit intents:** [README.md](../README.md#start-here-by-intent).
 
-**Business docs (not installed into hosts):** [../../project/README.md](../../project/README.md).
+**Ogma niche / competition:** [product/business-case.md](product/business-case.md). Railkit consulting offer docs stay in the sibling monorepo `project/` (not this product).
 
 | Path | Role | When to open |
 |------|------|----------------|
@@ -18,6 +18,7 @@
 | [`00-QUICK-START.md`](00-QUICK-START.md) | Install into a repo | First merge |
 | [`ADOPTION.md`](ADOPTION.md) | Bring a messy repo onto Railkit | Bootstrap / adopt |
 | [`DOCUMENTATION-PRINCIPLES.md`](DOCUMENTATION-PRINCIPLES.md) | How we write docs (structure + plain language) | Editing docs / doc-review |
+| [`product/business-case.md`](product/business-case.md) | Niche, competition, paid connectivity | Positioning / SKU rationale |
 | [`product/heuristics/`](product/heuristics/ui-principles.md) | UI + fit templates | UI / fit review |
 | [`engineering/architecture/`](engineering/architecture/application-layering.md) | Where code belongs | API / domain placement |
 | [`ops/`](ops/ci-flow.md) | CI, priorities, quality, tests | Merge / ops / tests |

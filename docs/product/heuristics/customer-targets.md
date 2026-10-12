@@ -17,6 +17,8 @@
 | Privacy-minded group | Stay on P2P data channels; no central chat DB | Teams needing compliance archives |
 | Team / company (paid, later) | Reliable A/V at N≥6 + images in side chat via opt-in infra | Must-have compliance archive / SSO until those are explicit SKUs |
 
+Niche vs Meet-class products and paid connectivity rationale: [business-case.md](../business-case.md).
+
 ## App core (index)
 
 Point each row at one deciding owner. Do not restate matrices here.

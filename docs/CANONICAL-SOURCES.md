@@ -32,6 +32,7 @@
 | Doc structure and plain language | [DOCUMENTATION-PRINCIPLES.md](DOCUMENTATION-PRINCIPLES.md) |
 | Integrations / hosting contracts | [integrations-as-code.md](ops/integrations-as-code.md) + [`infra/contracts/`](../infra/contracts/) |
 | Host domain spine | [overview.md](product/overview.md) |
+| Niche / competition / paid connectivity economics | [business-case.md](product/business-case.md) |
 | Capability / invite URLs | [capability-urls.md](engineering/protocols/capability-urls.md) |
 | Thread topology / hub | [thread-topology.md](engineering/protocols/thread-topology.md) |
 | STUN / TURN decision | [connectivity.md](engineering/protocols/connectivity.md) |
@@ -58,5 +59,6 @@
 | Shell / layout / regions | [in-page-layout.md](product/heuristics/in-page-layout.md) |
 | Locked chrome strings | [ui-naming.md](product/heuristics/ui-naming.md) |
 | Should we build this (fit) | [customer-fit.md](product/heuristics/customer-fit.md) |
+| Niche vs Meet / paid TURN or SFU rationale | [business-case.md](product/business-case.md) |
 | Portal / deploy / DNS only in wiki | [CODE-FIRST.md](CODE-FIRST.md) |
 | Bootstrap host into Railkit | [ADOPTION.md](ADOPTION.md) |

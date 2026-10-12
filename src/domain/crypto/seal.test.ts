@@ -30,6 +30,20 @@ describe('seal/open', () => {
     });
   });
 
+  it('round-trips text with replaces', async () => {
+    const secret = 'edit-space';
+    const sealed = await sealPayload(secret, {
+      kind: 'text',
+      text: 'revised',
+      replaces: 'root-id',
+    });
+    await expect(openPayload(secret, sealed.nonce, sealed.ciphertext)).resolves.toEqual({
+      kind: 'text',
+      text: 'revised',
+      replaces: 'root-id',
+    });
+  });
+
   it('fails with wrong secret', async () => {
     const sealed = await sealText('a', 'hi');
     await expect(openText('b', sealed.nonce, sealed.ciphertext)).rejects.toThrow();

@@ -8,6 +8,8 @@ interface ChatMessageMetaProps {
   author: string;
   selfName?: string;
   personId?: string | null;
+  /** Quiet marker when the body was folded from an edit. */
+  edited?: boolean;
 }
 
 /** Muted author + time row above a chat line. */
@@ -17,9 +19,10 @@ export function ChatMessageMeta({
   author,
   selfName,
   personId,
+  edited,
 }: ChatMessageMetaProps) {
   const label = formatMessageTime(at);
-  if (!label && !author) return null;
+  if (!label && !author && !edited) return null;
 
   return (
     <div
@@ -35,6 +38,11 @@ export function ChatMessageMeta({
         <time dateTime={new Date(at).toISOString()} className="tabular-nums">
           {label}
         </time>
+      ) : null}
+      {edited ? (
+        <span data-testid="message-edited" className="italic">
+          edited
+        </span>
       ) : null}
     </div>
   );

@@ -25,4 +25,16 @@ describe('loom envelope payloads', () => {
     expect(previewFromPayload('Ada', { kind: 'call-start' })).toBe('Ada started a call');
     expect(previewFromPayload('Ada', { kind: 'text', text: 'hey' })).toBe('hey');
   });
+
+  it('round-trips text edits with replaces', async () => {
+    const secret = 'edit-env';
+    const env = await sealTextMessage(secret, 'fixed', 'Ada', 100, 'edit-1', {
+      replaces: 'root-1',
+    });
+    await expect(openPayload(secret, env)).resolves.toEqual({
+      kind: 'text',
+      text: 'fixed',
+      replaces: 'root-1',
+    });
+  });
 });

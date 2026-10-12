@@ -311,49 +311,66 @@ export function VaultSettings(props: VaultSettingsProps) {
             open={turnConfigured || Boolean(props.turnError)}
           >
             <summary className="settings-fold__title">{TURN_SETTINGS.summary}</summary>
-            <div className="settings-fold__body">
-              <p className="settings-section__hint mb-0">{TURN_SETTINGS.body}</p>
-              <label className="block space-y-1.5">
-                <span className="field-label">{TURN_SETTINGS.label}</span>
-                <input
-                  data-testid="settings-turn-uri"
-                  type="text"
-                  name="turnUri"
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder={TURN_SETTINGS.placeholder}
-                  value={turnDraft}
-                  onChange={(e) => setTurnDraft(e.target.value)}
-                  className="field field--inset"
-                />
-              </label>
-              {props.turnError ? (
-                <p className="text-danger text-xs" data-testid="settings-turn-error">
-                  {props.turnError}
-                </p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  data-testid="settings-turn-save"
-                  onClick={() => props.onSaveTurnUri(turnDraft)}
-                  className="btn-secondary btn-secondary--sm"
-                >
-                  {TURN_SETTINGS.save}
-                </button>
-                {turnDraft.trim() || props.turnUri ? (
+            <div className="settings-fold__body space-y-3">
+              <p className="settings-section__hint mb-0" data-testid="settings-turn-lead">
+                {TURN_SETTINGS.lead}
+              </p>
+              <div data-testid="settings-turn-try">
+                <p className="field-label mb-1.5">{TURN_SETTINGS.tryHeading}</p>
+                <ol className="settings-section__hint mb-0 list-decimal space-y-1 pl-4">
+                  {TURN_SETTINGS.trySteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+              <div className="space-y-2">
+                <p className="field-label mb-0">{TURN_SETTINGS.relayHeading}</p>
+                <p className="settings-section__hint mb-0">{TURN_SETTINGS.body}</p>
+                <label className="block space-y-1.5">
+                  <span className="field-label">{TURN_SETTINGS.label}</span>
+                  <input
+                    data-testid="settings-turn-uri"
+                    type="text"
+                    name="turnUri"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={TURN_SETTINGS.placeholder}
+                    value={turnDraft}
+                    onChange={(e) => setTurnDraft(e.target.value)}
+                    className="field field--inset"
+                  />
+                </label>
+                {props.turnError ? (
+                  <p className="text-danger text-xs" data-testid="settings-turn-error">
+                    {props.turnError}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    data-testid="settings-turn-clear"
-                    onClick={() => {
-                      setTurnDraft('');
-                      props.onSaveTurnUri('');
-                    }}
-                    className="btn-quiet"
+                    data-testid="settings-turn-save"
+                    onClick={() => props.onSaveTurnUri(turnDraft)}
+                    className="btn-secondary btn-secondary--sm"
                   >
-                    {TURN_SETTINGS.clear}
+                    {TURN_SETTINGS.save}
                   </button>
-                ) : null}
+                  {turnDraft.trim() || props.turnUri ? (
+                    <button
+                      type="button"
+                      data-testid="settings-turn-clear"
+                      onClick={() => {
+                        setTurnDraft('');
+                        props.onSaveTurnUri('');
+                      }}
+                      className="btn-quiet"
+                    >
+                      {TURN_SETTINGS.clear}
+                    </button>
+                  ) : null}
+                </div>
+                <p className="settings-section__hint mb-0" data-testid="settings-turn-paid-note">
+                  {TURN_SETTINGS.paidNote}
+                </p>
               </div>
             </div>
           </details>

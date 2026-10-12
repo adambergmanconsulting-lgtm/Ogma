@@ -500,6 +500,7 @@ export default function App() {
         loadingOlder={loom.loadingOlder}
         onLoadOlder={() => void loom.onLoadOlder()}
         onSend={(text) => void loom.onSend(text)}
+        onEdit={(id, text) => void loom.onEdit(id, text)}
         onCopyInvite={call.onCopyInvite}
         call={spaceCallBand}
         callBusy={loom.busy || call.busy}
@@ -521,6 +522,7 @@ export default function App() {
         loadingOlder={loom.loadingOlder}
         onLoadOlder={() => void loom.onLoadOlder()}
         onSend={(text) => void loom.onSend(text)}
+        onEdit={(id, text) => void loom.onEdit(id, text)}
         onCopyInvite={loom.onCopyInvite}
         onStartCall={offerStartCall ? goCall : undefined}
         callBusy={loom.busy || call.busy || acceptBusy}

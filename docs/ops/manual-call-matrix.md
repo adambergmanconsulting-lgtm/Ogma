@@ -19,8 +19,11 @@
 | 3 | Desktop | Phone Safari/Chrome | Phone Wi‑Fi, foreground | | |
 | 4 | Desktop | Phone | Phone cellular | | |
 | 5 | Phone | Phone | Both Wi‑Fi foreground | | |
+| 6 | Desktop | Desktop | Guest / AP-isolated Wi‑Fi — **Loom text only** | | Expect fail without TURN if isolation is real |
+| 7 | Desktop | Desktop | Same as #6 + BYO TURN — Loom text only | | Expect pass; A/V optional |
 
 ## Decision
 
 - Mostly pass → STUN-only OK for now.
 - Repeated cellular/symmetric fail → optional TURN design (see connectivity.md).
+- #6 fail + #7 pass → isolation class confirmed; chat-only does not need a parallel transport ([connectivity.md LAN P2P](../engineering/protocols/connectivity.md#lan-p2p-chat-first-investigation)).

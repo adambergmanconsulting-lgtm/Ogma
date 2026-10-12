@@ -7,7 +7,7 @@
 - Sealed append log (text + join + Call/screen system lines) in IndexedDB; sync over WebRTC when space open (warm set up to 3 while tab open).
 - Space secret → UTF-8 bytes → HKDF → AES-256-GCM (Web Crypto). **Locked:** UTF-8 of `#space=` string (never change).
 - Availability = members online; Ogma stores nothing. Leave and reopen: missing ids catch up via the same `have`/`need`/`entries` from peers who still have them; no Ogma backlog while everyone with that history is offline.
-- Display **name** + **vault key** on cold start (Continue creates the key, shown once). Vault key wraps Remembered secrets + Log out / retrieve / move. **Create** / **Switch vault** then Continue erases this browser’s Loom store + people directory (no sealed orphans). Legacy profiles without a key keep `localSecret` on-device; Settings **Add vault key** migrates those into `wrappedSecret`.
+- Cold **Continue** is name-only (Join works with `localSecret`). **New** chat or Settings **Add vault key** creates the key (shown once). Vault key wraps Remembered secrets + Log out / retrieve / move + person id. **Switch vault** / **Start over** then Continue erases this browser’s Loom store + people directory (no sealed orphans). Name-only profiles keep `localSecret` on-device; adding a key migrates those into `wrappedSecret`.
 - Host Call binds Thread room + `#space=` so in-call text is this Loom log ([capability-urls.md](capability-urls.md), [overview.md](../../product/overview.md)).
 
 ## Envelope (wire + disk)
@@ -25,13 +25,14 @@
 
 **Plaintext inside ciphertext** (UTF-8 JSON, max 4 KiB):
 - Text: `{ "kind": "text", "text": "..." }`
+- Text edit (append-only): `{ "kind": "text", "text": "...", "replaces": "<root-id>" }` — `replaces` is the original text message id. UI folds the newest author-matching edit onto the root bubble (quiet **edited**); the edit envelope stays in the sealed log for sync.
 - Join (once per author when they open the space): `{ "kind": "join" }`
 - Call / screen (system lines, like join): `{ "kind": "call-start" }` · `{ "kind": "call-end" }` · `{ "kind": "screen-share" }` · `{ "kind": "screen-share-end" }`
 - Legacy still opens: `{ "text": "..." }` (treated as text)
 
-**All-list tip / lastMessageAt:** text only. System kinds do not write the tip (Call sort still uses `lastCallAt`).
+**All-list tip / lastMessageAt:** text only (including edits). System kinds do not write the tip (Call sort still uses `lastCallAt`).
 
-**Dedupe:** by `id`. **Order:** `ts` then `id`. Clock skew: accept; UI sorts stably.
+**Dedupe:** by `id`. **Order:** `ts` then `id`. Clock skew: accept; UI sorts stably. Edits never rewrite an existing id.
 
 ## Keying
 

@@ -9,7 +9,7 @@
 - **Free core (no cost):** static app shell; link → live A/V + text → leave. Ogma holds no free-user media/chat DB.
 - **Thread (now):** rendezvous via BitTorrent trackers (`@trystero-p2p/torrent`); media over WebRTC **P2P mesh** (selective subscribe; hub later).
 - **Paid team (later, optional):** images in chat, SFU streaming, related team extras — opt-in infra; honest copy when active.
-- **Loom / Chat:** encrypted peer-seeded **text** on device; **name** + **vault** on cold start (Continue creates a vault key, shown once); session until **Log out**; unlock or create new when logged out.
+- **Loom / Chat:** encrypted peer-seeded **text** on device; cold **name** only (Join without vault key); **New** or Settings creates vault key once; session until **Log out**; unlock or create new when logged out.
 - **Shell:** [in-page-layout.md](heuristics/in-page-layout.md) — top bar, gutters, space panes, Call placement.
 - **1:1 video must work** (incl. phone foreground). 3 = mesh. 4+ = client hub + selective video on free path.
 - **Phones:** participants yes; hubs/seeders last resort.
@@ -31,8 +31,8 @@
 | Job | Outcome |
 |-----|---------|
 | Name | Required once per browser profile to chat/call |
-| Vault | Cold **Your name** → **Continue** → **Your vault key** (once); logged out → **Open vault** (key) or quiet **Create a new vault**. **Create** / **Switch vault** → Continue erases chats on this browser (other browsers untouched). Session until **Log out**. A vault holds a person id (public key). The name stays a label. The vault key is not the id |
-| Chat (Loom) | `#space=<secret>`; sealed history + join / Call / screen system lines; All sorted by text or Call activity (not system lines); titles **`a,b,c`** (other people); **`{name} joined`**, **started a call**, **ended the call**, **shared a screen**, **stopped sharing** in open chat; warm sync while tab open; open-chat tab shows people title; **Copy link** (+ Active **Invite**); All **People** **Invite** starts a new space while **Active**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
+| Vault | Cold **Your name** → **Continue** → shell (name-only; Join works). **New** chat or Settings **Add vault key** → **Your vault key** (once). Logged out → **Open vault** (key) or quiet **Create a new vault**. **Switch vault** / **Start over** → Continue erases chats on this browser. Session until **Log out**. A vault key holds a person id (public key). The name stays a label. The vault key is not the id |
+| Chat (Loom) | `#space=<secret>`; sealed history + join / Call / screen system lines; edit own text (append-only `replaces`; quiet **edited**); All sorted by text or Call activity (not system lines); titles **`a,b,c`** (other people); **`{name} joined`**, **started a call**, **ended the call**, **shared a screen**, **stopped sharing** in open chat; warm sync while tab open; open-chat tab shows people title; **Copy link** (+ Active **Invite**); All **People** **Invite** starts a new space while **Active**; retention/Load older: [loom-sync.md](../engineering/protocols/loom-sync.md) |
 | **Host Call** | Chat-column **New** → space (invite on-space) → video-pane **Call**; same Loom log + compose; call invite `?room=` + `#space=` — shell: [in-page-layout.md](heuristics/in-page-layout.md) |
 | Accept Call | Peer with the space warm sees **`{name} started a call`** → **Accept** / **Not now**; Accept starts the same Thread. Link Join still works without a warm tab |
 | Join Call | `?room=` (+ `#space=` when from a chat) → **Join**; no cold Create lobby |
@@ -40,7 +40,7 @@
 | Move device | Export file (includes space invites) → Import on the other vault (re-wraps with that vault’s key) |
 | Work shell | Top bar brand · Active · Settings; Video \| Chat; chat column **This chat** \| **All** · **New** · **Join**; All invite paste + **Search**; resume last space or idle (no auto-create); **Ogma** opens the All tab (soft-nav in Call); **Invite** on the open chat; install Moment after first chat; Settings **Home screen** anytime |
 
-**First visit:** Name → Continue → save vault key → Chat-column **New** or **Join** (paste on All), or open a chat from All. After the first chat, offer install. One work shell — [in-page-layout.md](heuristics/in-page-layout.md).
+**First visit:** Name → Continue → **Join** an invite (no vault key yet) or **New** (creates vault key once, then the chat). After the first chat, offer install. One work shell — [in-page-layout.md](heuristics/in-page-layout.md).
 
 ## Honest copy (ship in UI)
 
@@ -61,6 +61,7 @@ Forced accounts to join, Ogma-sent invites, public room directory / open hangout
 | Extra | Intent |
 |-------|--------|
 | Images in side chat | Typed chat envelope; not on free Loom/Thread sync |
+| Connectivity assist (TURN) | Opt-in relay for hard networks; free stays STUN / user TURN — niche + economics: [business-case.md](business-case.md) |
 | SFU streaming | Second media-plane adapter; free stays mesh |
 | Org billing | May need team accounts; free joins stay link-based |
 
@@ -71,7 +72,7 @@ Forced accounts to join, Ogma-sent invites, public room directory / open hangout
 | M1 | Trystero; 1:1 solid (+ phone); 3-mesh; text; selective subscribe; no Gun |
 | M1.5 | Client hub for free 4+ |
 | M2 | Loom encrypted text sync |
-| Team | Paid SFU + images (after free-core quality) |
+| Team | Paid connectivity (TURN) and/or SFU + images (after free-core quality); see [business-case.md](business-case.md) |
 
 ## Planned (after M1)
 
@@ -82,6 +83,7 @@ Forced accounts to join, Ogma-sent invites, public room directory / open hangout
 
 ## Related
 
+- Niche / competition / paid connectivity: [business-case.md](business-case.md)
 - Topology: [thread-topology.md](../engineering/protocols/thread-topology.md)
 - Connectivity / TURN: [connectivity.md](../engineering/protocols/connectivity.md)
 - Loom: [loom-sync.md](../engineering/protocols/loom-sync.md)

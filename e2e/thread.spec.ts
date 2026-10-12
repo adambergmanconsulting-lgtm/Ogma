@@ -11,7 +11,7 @@ import {
 } from './helpers';
 
 test.describe('Name + home', () => {
-  test('name then vault key then spaces strip with Start new and idle workspace', async ({
+  test('name then shell; New reveals vault key then spaces strip with idle workspace', async ({
     page,
   }) => {
     await page.goto('/');
@@ -19,11 +19,16 @@ test.describe('Name + home', () => {
     await expect(page.getByTestId('vault-splash-open')).toHaveCount(0);
     await page.getByTestId('vault-name').fill('Ada');
     await page.getByTestId('name-continue').click();
+    await expect(page.getByTestId('app-work-shell')).toBeVisible();
+    await expect(page.getByTestId('app-home')).toBeVisible();
+    await expect(page.getByTestId('secret-value')).toHaveCount(0);
+    await page.getByTestId('home-new-chat').click();
     await expect(page.getByTestId('secret-value')).toBeVisible();
     const vaultKey = (await page.getByTestId('secret-value').innerText()).trim();
     expect(vaultKey.length).toBeGreaterThan(8);
     await page.getByTestId('secret-continue').click();
-    await expect(page.getByTestId('app-work-shell')).toBeVisible();
+    await expect(page.getByTestId('space-compose')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('chat-pane-spaces').click();
     await expect(page.getByTestId('app-home')).toBeVisible();
     await expect(page.getByTestId('space-chat').getByTestId('home-new-chat')).toBeVisible();
     await expect(page.getByTestId('home-new-chat')).toContainText('New');
@@ -240,7 +245,7 @@ test.describe('Thread two-peer', () => {
 });
 
 test.describe('Person id', () => {
-  test('cold vault key adds an id beside Your name', async ({ page }) => {
+  test('vault key from New adds an id beside Your name', async ({ page }) => {
     const vaultKey = await ensureVault(page, 'Ada');
     expect(vaultKey).toBeTruthy();
     await page.getByTestId('nav-settings').click();
@@ -310,6 +315,16 @@ test.describe('Loom chat-only two-peer', () => {
     await host.getByTestId('space-compose').fill('loom only');
     await host.getByTestId('space-send').click();
     await expect(guest.getByText('loom only')).toBeVisible({ timeout: 30_000 });
+
+    await host.locator('[data-testid^="space-edit-"]').first().click();
+    await expect(host.getByTestId('space-edit-save')).toBeVisible();
+    await host.getByTestId('space-compose').fill('loom revised');
+    await host.getByTestId('space-edit-save').click();
+    await expect(host.getByText('loom revised')).toBeVisible();
+    await expect(host.getByTestId('message-edited')).toBeVisible();
+    await expect(guest.getByText('loom revised')).toBeVisible({ timeout: 30_000 });
+    await expect(guest.getByTestId('message-edited')).toBeVisible({ timeout: 30_000 });
+    await expect(guest.getByText('loom only')).toHaveCount(0);
 
     await host.getByTestId('chat-pane-spaces').click();
     await expect(host.locator('[data-testid^="space-activity-"]').first()).toBeVisible();
@@ -730,9 +745,8 @@ test.describe('Vault session', () => {
     await expect(page.getByTestId('vault-name')).toBeVisible();
     await page.getByTestId('vault-name').fill('Bo');
     await page.getByTestId('name-continue').click();
-    await expect(page.getByTestId('secret-value')).toBeVisible({ timeout: 15_000 });
-    await page.getByTestId('secret-continue').click();
     await expect(page.getByTestId('app-home')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('secret-value')).toHaveCount(0);
     await expect(page.getByText('do not keep')).toHaveCount(0);
     await page.getByTestId('chat-pane-spaces').click();
     await expect(page.locator('[data-testid^="space-chat-"]')).toHaveCount(0);

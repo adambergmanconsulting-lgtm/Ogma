@@ -52,7 +52,7 @@ export function isLoomSystemKind(kind: string): kind is LoomSystemKind {
 
 /** Sealed Loom plaintext (inside AES-GCM). Legacy `{ text }` still opens as text. */
 export type LoomSealPayload =
-  | { kind: 'text'; text: string }
+  | { kind: 'text'; text: string; replaces?: string }
   | { kind: LoomSystemKind };
 
 export async function sealPayload(
@@ -66,7 +66,9 @@ export async function sealPayload(
   const nonce = crypto.getRandomValues(new Uint8Array(12));
   const body =
     payload.kind === 'text'
-      ? { kind: 'text' as const, text: payload.text }
+      ? payload.replaces
+        ? { kind: 'text' as const, text: payload.text, replaces: payload.replaces }
+        : { kind: 'text' as const, text: payload.text }
       : { kind: payload.kind };
   const plain = new TextEncoder().encode(JSON.stringify(body));
   const cipher = await crypto.subtle.encrypt(
@@ -96,12 +98,19 @@ export async function openPayload(
   const parsed = JSON.parse(new TextDecoder().decode(plain)) as {
     kind?: unknown;
     text?: unknown;
+    replaces?: unknown;
   };
   if (typeof parsed?.kind === 'string' && isLoomSystemKind(parsed.kind)) {
     return { kind: parsed.kind };
   }
   if (parsed?.kind === 'text' && typeof parsed.text === 'string') {
-    return { kind: 'text', text: parsed.text };
+    const replaces =
+      typeof parsed.replaces === 'string' && parsed.replaces.trim()
+        ? parsed.replaces
+        : undefined;
+    return replaces
+      ? { kind: 'text', text: parsed.text, replaces }
+      : { kind: 'text', text: parsed.text };
   }
   // Legacy envelopes: `{ "text": "..." }` without kind.
   if (typeof parsed?.text === 'string') {
