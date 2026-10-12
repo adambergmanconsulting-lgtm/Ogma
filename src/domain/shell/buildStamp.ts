@@ -19,7 +19,7 @@ const MONTHS = [
 export const BUILD_TIME_ISO =
   typeof __BUILD_TIME__ === 'string' && __BUILD_TIME__.trim() ? __BUILD_TIME__.trim() : '';
 
-/** Quiet Settings footer: `Last updated · 11 Oct 2026` (UTC day). */
+/** Quiet Settings footer: `Last updated · 11 Oct 2026, 19:30 UTC`. */
 export function formatBuildStamp(iso: string): string | null {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return null;
@@ -27,7 +27,9 @@ export function formatBuildStamp(iso: string): string | null {
   const day = d.getUTCDate();
   const month = MONTHS[d.getUTCMonth()];
   const year = d.getUTCFullYear();
-  return `Last updated · ${day} ${month} ${year}`;
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `Last updated · ${day} ${month} ${year}, ${hh}:${mm} UTC`;
 }
 
 export function settingsBuildStampLabel(
