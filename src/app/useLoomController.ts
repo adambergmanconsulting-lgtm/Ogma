@@ -305,6 +305,9 @@ export function useLoomController() {
       const session = await openLoomSync(secret, store, {
         onEntries: (entries) => void ingestEntries(spaceId, entries, true),
         onError: (message) => setError(message),
+        onPeerCount: (n) => {
+          if (n > 0) setError(null);
+        },
         getOwnCard: () => ownCardRef.current,
         onCard: (card) => {
           void rememberPersonCard(card);

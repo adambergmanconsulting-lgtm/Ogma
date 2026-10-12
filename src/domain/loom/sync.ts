@@ -8,6 +8,11 @@ import type { LoomStore } from './storePort';
 import type { LoomEnvelope, PersonCardWire, SyncWire } from './types';
 
 const LOOM_APP_ID = 'ogma-loom-v1';
+
+/** Trystero may fire join errors after a live peer exists; chat can already work. */
+export function loomJoinErrorIsActionable(connectedPeers: number): boolean {
+  return connectedPeers <= 0;
+}
 const CHUNK_MAX_ENTRIES = 32;
 /** While in Call, re-broadcast the ring so a missed first announce still offers Accept. */
 const CALL_REANNOUNCE_MS = 8_000;
@@ -61,6 +66,7 @@ export async function openLoomSync(
     roomKey,
     {
       onJoinError: (err) => {
+        if (!loomJoinErrorIsActionable(Object.keys(room.getPeers()).length)) return;
         handlers.onError?.(joinErrorMessage(err));
       },
     },

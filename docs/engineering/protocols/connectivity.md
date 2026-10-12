@@ -36,6 +36,7 @@ Record pass/fail for A/V + text within ~30s of join:
 
 - Status labels: `connectionLabel` — **Joining…** / **Reconnecting…** / error message (else **Couldn't connect**) / when `connected`: **Connected** / **Waiting…** / **Connecting…** ([ui-naming.md](../../product/heuristics/ui-naming.md)).
 - Join failure copy: “Couldn't reach peers — this network may block direct connections. Try Settings → Network help.” (`JOIN_PEERS_UNREACHABLE` in `joinErrorMessage.ts`). Trystero `{ error }` is humanized there — never show `[object Object]` or raw SDP essays.
+- Loom: do not keep that banner when a peer is already connected (chat can work while Trystero still reports a failed ICE attempt); clear on peer join (`loomJoinErrorIsActionable`).
 - Never show connected with zero tracks and no explanation.
 
 ## Related
