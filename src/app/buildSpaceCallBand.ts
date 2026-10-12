@@ -32,6 +32,7 @@ export function buildSpaceCallBand(
     pinnedPeerIds: call.webrtc.pins,
     showAllVideos: call.webrtc.showAllVideos,
     capacityWarning: call.webrtc.capacityWarning,
+    linkQualityNotice: call.linkQualityNotice,
     devicesOpen: call.drawer === 'settings',
     videoDevices: call.media.videoDevices,
     audioDevices: call.media.audioDevices,

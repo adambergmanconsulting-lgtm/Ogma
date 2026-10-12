@@ -20,6 +20,8 @@ export interface MediaPlane {
   ): void;
   applySendBitrate(maxBitrateBps: number): void;
   peerConnections(): RTCPeerConnection[];
+  /** Mesh peers keyed by Trystero peer id. */
+  peersById(): Record<string, RTCPeerConnection>;
 }
 
 type PeerMap = Record<string, RTCPeerConnection>;
@@ -42,6 +44,14 @@ export function createMeshMediaPlane(room: Room): MediaPlane {
     },
     peerConnections() {
       return Object.values(room.getPeers() as PeerMap).filter(Boolean);
+    },
+    peersById() {
+      const peers = room.getPeers() as PeerMap;
+      const out: Record<string, RTCPeerConnection> = {};
+      for (const [id, pc] of Object.entries(peers)) {
+        if (pc) out[id] = pc;
+      }
+      return out;
     },
   };
 }

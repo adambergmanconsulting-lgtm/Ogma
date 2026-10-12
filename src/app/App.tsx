@@ -17,14 +17,17 @@ import { systemLineLabel } from '../domain/loom/systemLine';
 import { isFreshSoloChat } from '../domain/loom/spaceIndex';
 import { parseRoomIdFromLocation } from '../domain/signaling/room';
 import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
+import { installAudioUnlockOnGesture } from '../domain/shell/audioUnlock';
 import {
   readWelcomeDismissed,
   shouldOfferWelcome,
   writeWelcomeDismissed,
 } from '../domain/shell/pwaInstall';
+import { onAppBecameVisible } from '../domain/shell/tabAlert';
 import { resolveCallSurface } from '../domain/thread/callSurface';
 import type { ChatMessage } from '../domain/types';
 import { IncomingCallBanner } from '../components/IncomingCallBanner';
+import { PwaUpdateBanner } from '../components/PwaUpdateBanner';
 import { AppSettingsDrawer } from './AppSettingsDrawer';
 import { buildSpaceCallBand } from './buildSpaceCallBand';
 import { useCallController } from './useCallController';
@@ -79,7 +82,18 @@ export default function App() {
     inCall: call.inCall,
     spaceSecret: loom.spaceSecret,
   });
-  usePwaUpdate({ inCall: call.inCall });
+  const pwaUpdate = usePwaUpdate({ vaultReveal: loom.screen === 'reveal' });
+
+  useEffect(() => installAudioUnlockOnGesture(), []);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return;
+      onAppBecameVisible({ incomingCall: Boolean(callRing.incomingCall) });
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [callRing.incomingCall]);
 
   onScreenShareChangeRef.current = (sharing) => {
     const secret = call.boundSpaceSecret ?? loom.focusedSecret;
@@ -429,7 +443,16 @@ export default function App() {
       error={loom.error}
       spaceInput={loom.spaceInput}
       onSpaceInput={loom.setSpaceInput}
-      onJoinSpace={loom.onJoinSpace}
+      onJoinSpace={() => {
+        const invite = loom.onJoinSpace();
+        if (!invite) return;
+        if (invite.room) {
+          call.offerInvite(invite.room, invite.space);
+          loom.setScreen('thread');
+          return;
+        }
+        if (invite.space) void loom.onOpenSpaceSecret(invite.space);
+      }}
       onOpenChat={goOpenChat}
       onOpenCall={goOpenCall}
       reach={reach}
@@ -534,6 +557,7 @@ export default function App() {
         pinnedPeerIds={call.webrtc.pins}
         showAllVideos={call.webrtc.showAllVideos}
         capacityWarning={call.webrtc.capacityWarning}
+        linkQualityNotice={call.linkQualityNotice}
         videoDevices={call.media.videoDevices}
         audioDevices={call.media.audioDevices}
         outputDevices={call.media.outputDevices}
@@ -601,6 +625,9 @@ export default function App() {
         appearActive={Boolean(reach.selfPersonId && reach.appearActive && reach.tabVisible)}
         onToggleAppearActive={reach.selfPersonId ? reach.onToggleAppearActive : undefined}
       />
+      {pwaUpdate.updateReady ? (
+        <PwaUpdateBanner onReload={pwaUpdate.applyUpdate} />
+      ) : null}
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{body}</main>
         {callSurface === 'background' ? (

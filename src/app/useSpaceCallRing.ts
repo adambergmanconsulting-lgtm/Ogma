@@ -5,6 +5,7 @@ import {
 } from '../domain/loom/callRing';
 import { startIncomingCallSound, stopIncomingCallSound } from '../domain/loom/callRingSound';
 import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
+import { pulseCallAlert, stopTabAlert } from '../domain/shell/tabAlert';
 
 /**
  * Ephemeral Call ring over Loom sync: announce when we start A/V, offer Accept to peers.
@@ -26,21 +27,29 @@ export function useSpaceCallRing(opts: {
   const spaceSecretRef = useRef(opts.spaceSecret);
   spaceSecretRef.current = opts.spaceSecret;
 
-  const dismissIncomingCall = useCallback(() => {
+  const clearIncomingAlerts = useCallback(() => {
     stopIncomingCallSound();
-    setIncomingCall(null);
-    setAcceptError(null);
+    stopTabAlert();
   }, []);
 
-  const markCalling = useCallback((spaceId: string) => {
-    callingIdsRef.current.add(spaceId);
-    setCallingSpaceId(spaceId);
-    setIncomingCall((cur) => {
-      if (cur?.spaceId === spaceId) stopIncomingCallSound();
-      return cur?.spaceId === spaceId ? null : cur;
-    });
+  const dismissIncomingCall = useCallback(() => {
+    clearIncomingAlerts();
+    setIncomingCall(null);
     setAcceptError(null);
-  }, []);
+  }, [clearIncomingAlerts]);
+
+  const markCalling = useCallback(
+    (spaceId: string) => {
+      callingIdsRef.current.add(spaceId);
+      setCallingSpaceId(spaceId);
+      setIncomingCall((cur) => {
+        if (cur?.spaceId === spaceId) clearIncomingAlerts();
+        return cur?.spaceId === spaceId ? null : cur;
+      });
+      setAcceptError(null);
+    },
+    [clearIncomingAlerts],
+  );
 
   const clearCalling = useCallback((spaceId: string) => {
     callingIdsRef.current.delete(spaceId);
@@ -84,22 +93,28 @@ export function useSpaceCallRing(opts: {
           ts,
         };
         // Re-announce while already offering — keep ringing, do not restart.
-        if (cur?.spaceId !== spaceId) startIncomingCallSound();
+        if (cur?.spaceId !== spaceId) {
+          startIncomingCallSound();
+          pulseCallAlert();
+        }
         return next;
       });
       setAcceptError(null);
     })();
   }, []);
 
-  const onCallEndWire = useCallback((spaceId: string) => {
-    setIncomingCall((cur) => {
-      if (cur?.spaceId === spaceId) stopIncomingCallSound();
-      return cur?.spaceId === spaceId ? null : cur;
-    });
-    setAcceptError(null);
-  }, []);
+  const onCallEndWire = useCallback(
+    (spaceId: string) => {
+      setIncomingCall((cur) => {
+        if (cur?.spaceId === spaceId) clearIncomingAlerts();
+        return cur?.spaceId === spaceId ? null : cur;
+      });
+      setAcceptError(null);
+    },
+    [clearIncomingAlerts],
+  );
 
-  useEffect(() => () => stopIncomingCallSound(), []);
+  useEffect(() => () => clearIncomingAlerts(), [clearIncomingAlerts]);
 
   return {
     incomingCall,

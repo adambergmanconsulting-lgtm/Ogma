@@ -23,6 +23,7 @@ export type SpaceCallBand = {
   pinnedPeerIds?: string[];
   showAllVideos?: boolean;
   capacityWarning?: string | null;
+  linkQualityNotice?: string | null;
   devicesOpen: boolean;
   videoDevices: MediaDeviceOption[];
   audioDevices: MediaDeviceOption[];

@@ -14,6 +14,7 @@ import {
   PRIVACY_SETTINGS,
   THREAD_FREE_HONEST_COPY,
 } from '../domain/thread/honestCopy';
+import { ALERT_SETTINGS } from '../domain/loom/chatSoundSettings';
 import { TURN_SETTINGS } from '../domain/thread/iceConfig';
 
 function settingsInstallBody(mode: InstallOfferMode): string {
@@ -46,6 +47,8 @@ interface VaultSettingsProps {
   turnError: string | null;
   busy: boolean;
   error: string | null;
+  chatSoundEnabled: boolean;
+  onChatSoundEnabledChange: (enabled: boolean) => void;
   onClose: () => void;
   onRename: (name: string) => void;
   onEnableVault: () => void;
@@ -57,7 +60,7 @@ interface VaultSettingsProps {
   onSwitchVault: () => void;
 }
 
-/** Settings drawer: You → Vault → Home screen → folded Privacy / Network. */
+/** Settings drawer: You → Vault → Home screen → folded Alerts / Privacy / Network. */
 export function VaultSettings(props: VaultSettingsProps) {
   const buildStamp = settingsBuildStampLabel();
   const [name, setName] = useState(props.displayName);
@@ -252,6 +255,30 @@ export function VaultSettings(props: VaultSettingsProps) {
         ) : null}
 
         <div className="settings-folds">
+          <details className="settings-fold" data-testid="settings-alerts">
+            <summary className="settings-fold__title">{ALERT_SETTINGS.summary}</summary>
+            <div className="settings-fold__body">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  data-testid="settings-chat-sound"
+                  type="checkbox"
+                  className="mt-1"
+                  checked={props.chatSoundEnabled}
+                  onChange={(e) => props.onChatSoundEnabledChange(e.target.checked)}
+                />
+                <span className="min-w-0 space-y-1">
+                  <span className="block text-sm font-medium text-[color:var(--color-ink)]">
+                    {ALERT_SETTINGS.chatSoundLabel}
+                  </span>
+                  <span className="settings-section__hint mb-0 block">
+                    {ALERT_SETTINGS.chatSoundBody}
+                  </span>
+                </span>
+              </label>
+              <p className="settings-section__hint mb-0">{ALERT_SETTINGS.callRingBody}</p>
+            </div>
+          </details>
+
           <details className="settings-fold" data-testid="settings-privacy">
             <summary className="settings-fold__title">{PRIVACY_SETTINGS.summary}</summary>
             <div className="settings-fold__body">

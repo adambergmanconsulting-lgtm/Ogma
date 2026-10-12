@@ -45,6 +45,7 @@ interface CallShellProps {
   pinnedPeerIds?: string[];
   showAllVideos?: boolean;
   capacityWarning?: string | null;
+  linkQualityNotice?: string | null;
   videoDevices: MediaDeviceOption[];
   audioDevices: MediaDeviceOption[];
   outputDevices: MediaDeviceOption[];
@@ -139,6 +140,15 @@ export function CallShell(props: CallShellProps) {
             onTogglePin={props.onTogglePin}
             applyAudioOutput={props.applyAudioOutput}
           />
+          {props.linkQualityNotice ? (
+            <p
+              role="status"
+              data-testid="link-quality"
+              className="app-gutter-x pb-1 text-xs text-[color:var(--color-muted)]"
+            >
+              {props.linkQualityNotice}
+            </p>
+          ) : null}
           {props.capacityWarning ? (
             <p
               role="status"

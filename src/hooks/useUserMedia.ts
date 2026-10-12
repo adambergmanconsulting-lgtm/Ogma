@@ -9,7 +9,7 @@ import {
 } from '../domain/media/backgroundBlurController';
 import { loadMaskEdgeCut } from '../domain/media/backgroundBlurMask';
 import { isSoftwareBackgroundBlurSupported } from '../domain/media/backgroundBlurSupport';
-import type { SendQualityTier } from '../domain/media/constraints';
+import type { LinkQuality, SendQualityTier } from '../domain/media/constraints';
 import { devicesByKind, listMediaDevices, setAudioOutput } from '../domain/media/devices';
 import {
   buildPublishStream,
@@ -32,7 +32,7 @@ import type { MediaDeviceOption, MediaConstraintsConfig } from '../domain/types'
 export interface UseUserMediaOptions {
   peerCount?: number;
   qualityTier?: SendQualityTier;
-  congested?: boolean;
+  linkQuality?: LinkQuality;
   onTrackReplaced?: (track: MediaStreamTrack) => void;
   /** Fires when screen share starts or stops (not when the call tears down). */
   onScreenShareChange?: (sharing: boolean) => void;
@@ -42,10 +42,11 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
   const {
     peerCount = 1,
     qualityTier = 'high',
-    congested = false,
+    linkQuality = 'good',
     onTrackReplaced,
     onScreenShareChange,
   } = options;
+  const congested = linkQuality !== 'good';
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [devices, setDevices] = useState<MediaDeviceOption[]>([]);
   const [videoDeviceId, setVideoDeviceId] = useState('');
@@ -136,7 +137,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
         const next = await startUserMediaCapture({
           peerCount,
           qualityTier,
-          congested,
+          linkQuality,
           videoDeviceId,
           audioDeviceId,
           config,
@@ -168,7 +169,7 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
     [
       audioDeviceId,
       audioOutputId,
-      congested,
+      linkQuality,
       peerCount,
       qualityTier,
       refreshDevices,
@@ -183,11 +184,11 @@ export function useUserMedia(options: UseUserMediaOptions = {}) {
       cameraStreamRef.current,
       peerCount,
       qualityTier,
-      congested,
+      linkQuality,
       videoDeviceId,
       audioDeviceId,
     );
-  }, [audioDeviceId, congested, peerCount, qualityTier, videoDeviceId]);
+  }, [audioDeviceId, linkQuality, peerCount, qualityTier, videoDeviceId]);
 
   useEffect(() => {
     void blurRef.current

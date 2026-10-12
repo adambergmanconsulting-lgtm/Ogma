@@ -3,16 +3,11 @@
  * Web Audio only (no asset); stop on dismiss / Accept / call-end.
  */
 
+import { getSharedAudioContext } from '../shell/audioUnlock';
+
 type Stopper = () => void;
 
 let activeStop: Stopper | null = null;
-
-function getAudioContextConstructor(): typeof AudioContext | undefined {
-  return (
-    globalThis.AudioContext ||
-    (globalThis as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-  );
-}
 
 /** Two short tones (classic ring burst), then silence until the next loop. */
 function scheduleBurst(ctx: AudioContext, at: number): void {
@@ -41,11 +36,10 @@ function scheduleBurst(ctx: AudioContext, at: number): void {
 /** Start (or restart) the incoming-call loop. Safe if already playing. */
 export function startIncomingCallSound(): void {
   stopIncomingCallSound();
-  const Ctx = getAudioContextConstructor();
-  if (!Ctx) return;
+  const ctx = getSharedAudioContext();
+  if (!ctx) return;
 
   try {
-    const ctx = new Ctx();
     void ctx.resume();
 
     const periodSec = 2.8;
@@ -63,7 +57,6 @@ export function startIncomingCallSound(): void {
       cancelled = true;
       globalThis.clearInterval(id);
       activeStop = null;
-      void ctx.close().catch(() => undefined);
     };
   } catch {
     // Autoplay / AudioContext blocked — banner still shows.

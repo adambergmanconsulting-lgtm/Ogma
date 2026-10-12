@@ -9,7 +9,9 @@ import {
   roomShareUrl,
 } from '../domain/signaling/room';
 import { extractRoomSecret, shareRoomLink } from '../domain/signaling/share';
+import type { LinkQuality } from '../domain/media/constraints';
 import { connectionLabel } from '../domain/thread/connectionLabel';
+import { linkQualityLabel } from '../domain/thread/linkQualityCopy';
 import { useUserMedia } from '../hooks/useUserMedia';
 import { useWebRTC } from '../hooks/useWebRTC';
 
@@ -43,12 +45,14 @@ export function useCallController(opts: CallControllerOpts) {
   const replaceTrackRef = useRef<(track: MediaStreamTrack) => void>(() => undefined);
   const [peerCount, setPeerCount] = useState(1);
   const [qualityTier, setQualityTier] = useState<'high' | 'low'>('high');
-  const [congested, setCongested] = useState(false);
+  const [linkQuality, setLinkQuality] = useState<LinkQuality>('good');
+  const [weakestPeerId, setWeakestPeerId] = useState<string | null>(null);
+  const [videoPausedForLink, setVideoPausedForLink] = useState(false);
 
   const media = useUserMedia({
     peerCount,
     qualityTier,
-    congested,
+    linkQuality,
     onTrackReplaced: (track) => replaceTrackRef.current(track),
     onScreenShareChange: opts.onScreenShareChange,
   });
@@ -64,12 +68,30 @@ export function useCallController(opts: CallControllerOpts) {
     onTrackReplaceNeeded: (replace) => {
       replaceTrackRef.current = replace;
     },
-    onSendQualityChange: ({ tier, congested: c, peerCount: n }) => {
+    onSendQualityChange: ({
+      tier,
+      linkQuality: q,
+      weakestPeerId: weakId,
+      videoPausedForLink: paused,
+      peerCount: n,
+    }) => {
       setQualityTier(tier);
-      setCongested(c);
+      setLinkQuality(q);
+      setWeakestPeerId(weakId);
+      setVideoPausedForLink(paused);
       setPeerCount(Math.max(1, n));
     },
   });
+
+  const weakestPeerName = useMemo(() => {
+    if (!weakestPeerId) return null;
+    return webrtc.remotePeers.find((p) => p.peerId === weakestPeerId)?.displayName ?? null;
+  }, [weakestPeerId, webrtc.remotePeers]);
+
+  const linkQualityNotice = useMemo(
+    () => linkQualityLabel(linkQuality, videoPausedForLink, weakestPeerName),
+    [linkQuality, videoPausedForLink, weakestPeerName],
+  );
 
   useEffect(() => {
     setPeerCount(Math.max(1, webrtc.peerCount));
@@ -116,6 +138,18 @@ export function useCallController(opts: CallControllerOpts) {
     setInviteMode(false);
     void enterRoom(createRoomSecret());
   }, [enterRoom]);
+
+  /** Home paste of a Call invite — lobby Join, not auto-enter. */
+  const offerInvite = useCallback((roomId: string, spaceSecret?: string | null) => {
+    if (inCall) return;
+    const id = roomId.trim();
+    if (!id) return;
+    const space = spaceSecret?.trim() || null;
+    setActiveRoom(id);
+    setRoomInput(id);
+    setInviteMode(true);
+    replaceUrlWithRoom(id, space ? { spaceSecret: space } : undefined);
+  }, [inCall]);
 
   const onJoin = useCallback(async (): Promise<string | null> => {
     const id = extractRoomSecret(roomInput);
@@ -170,6 +204,7 @@ export function useCallController(opts: CallControllerOpts) {
     media,
     webrtc,
     onCreate,
+    offerInvite,
     onJoin,
     /** Join/create a Thread; pass spaceSecret so Call chat is that Loom log. */
     startCall: (roomId: string, spaceSecret?: string) => enterRoom(roomId, spaceSecret),
@@ -185,6 +220,7 @@ export function useCallController(opts: CallControllerOpts) {
       webrtc.openRelays,
       webrtc.error,
     ),
+    linkQualityNotice,
     onCopyInvite: async () => {
       if (!shareUrl) return { ok: false as const, reason: 'failed' as const, url: '' };
       const result = await shareRoomLink(shareUrl);

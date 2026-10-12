@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
-import type { SendQualityTier } from '../domain/media/constraints';
+import type { LinkQuality, SendQualityTier } from '../domain/media/constraints';
 import { createMicLevelMonitor, isSpeakingLevel } from '../domain/media/micLevel';
 import {
   maxVideoBitrateBps,
-  sampleOutboundCongestion,
+  nextLinkQuality,
+  samplePeerLinkQuality,
 } from '../domain/media/sendQuality';
 import { capacityWarningLabel } from '../domain/thread/capacityCopy';
 import type { ControlWire, ThreadSession } from '../domain/thread/session';
@@ -17,7 +18,10 @@ import { MAX_PEERS, WARN_PEERS } from '../domain/types';
 
 export type SendQualityChange = {
   tier: SendQualityTier;
-  congested: boolean;
+  linkQuality: LinkQuality;
+  weakestPeerId: string | null;
+  /** True when outbound camera is paused for sustained poor link (not user mute). */
+  videoPausedForLink: boolean;
   peerCount: number;
 };
 
@@ -63,15 +67,22 @@ export function useThreadQuality(options: {
   const onSendQualityChangeRef = useRef(onSendQualityChange);
   onSendQualityChangeRef.current = onSendQualityChange;
 
+  const linkQualityRef = useRef<LinkQuality>('good');
+  const goodStreakRef = useRef(0);
+  const weakestPeerIdRef = useRef<string | null>(null);
+  const poorHoldRef = useRef(0);
+  const pauseOutboundForLinkRef = useRef(false);
+
   const applyOutboundVideoPolicy = useCallback(() => {
     const session = sessionRef.current;
     if (!session) return;
     const self = session.selfId;
     const sendVideo = shouldSendLocalVideo(cameraEnabledRef.current, screenSharingRef.current);
+    const pauseForLink = pauseOutboundForLinkRef.current && !screenSharingRef.current;
     for (const id of Object.keys(session.room.getPeers())) {
       const sub = subscribeFromPeersRef.current.get(id);
       const want = sub ? shouldSendVideoToPeer(self, sub) : true;
-      session.setOutboundVideoEnabled(id, sendVideo && want);
+      session.setOutboundVideoEnabled(id, sendVideo && want && !pauseForLink);
     }
   }, [sessionRef, subscribeFromPeersRef]);
 
@@ -121,17 +132,56 @@ export function useThreadQuality(options: {
   }, [enabled, localStream, sessionRef]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      linkQualityRef.current = 'good';
+      goodStreakRef.current = 0;
+      weakestPeerIdRef.current = null;
+      poorHoldRef.current = 0;
+      pauseOutboundForLinkRef.current = false;
+      return;
+    }
     let cancelled = false;
     const tick = async () => {
       const session = sessionRef.current;
       if (!session || cancelled) return;
       const peerCount = session.peerCount();
-      const congested = await sampleOutboundCongestion(session.mediaPlane.peerConnections());
+      const sample = await samplePeerLinkQuality(session.mediaPlane.peersById());
+      const stepped = nextLinkQuality(
+        linkQualityRef.current,
+        sample.worst,
+        goodStreakRef.current,
+      );
+      linkQualityRef.current = stepped.quality;
+      goodStreakRef.current = stepped.goodStreak;
+      if (sample.worst !== 'good') {
+        weakestPeerIdRef.current = sample.weakestPeerId;
+      } else if (stepped.quality === 'good') {
+        weakestPeerIdRef.current = null;
+      }
+
+      if (stepped.quality === 'poor') {
+        poorHoldRef.current += 1;
+      } else {
+        poorHoldRef.current = 0;
+        pauseOutboundForLinkRef.current = false;
+      }
+      if (poorHoldRef.current >= 2 && !screenSharingRef.current) {
+        pauseOutboundForLinkRef.current = true;
+      }
+
       const tier: SendQualityTier =
         peerCount <= 2 ? 'high' : localSpeaking ? 'high' : 'low';
-      session.applySendBitrate(maxVideoBitrateBps(peerCount, tier, congested));
-      onSendQualityChangeRef.current?.({ tier, congested, peerCount });
+      session.applySendBitrate(
+        maxVideoBitrateBps(peerCount, tier, stepped.quality),
+      );
+      applyOutboundVideoPolicy();
+      onSendQualityChangeRef.current?.({
+        tier,
+        linkQuality: stepped.quality,
+        weakestPeerId: weakestPeerIdRef.current,
+        videoPausedForLink: pauseOutboundForLinkRef.current,
+        peerCount,
+      });
     };
     void tick();
     const id = window.setInterval(() => void tick(), 3000);
@@ -139,7 +189,7 @@ export function useThreadQuality(options: {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [enabled, localSpeaking, remotePeerCount, sessionRef]);
+  }, [applyOutboundVideoPolicy, enabled, localSpeaking, remotePeerCount, sessionRef]);
 
   return {
     capacityWarning,

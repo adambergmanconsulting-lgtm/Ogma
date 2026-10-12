@@ -45,6 +45,47 @@ export function extractSpaceSecret(input: string): string | null {
   return trimmed.match(/^[a-z0-9_-]{6,128}$/i) ? trimmed : null;
 }
 
+export type InviteSecrets = {
+  room: string | null;
+  space: string | null;
+};
+
+/**
+ * Home **Have an invite?** paste: full share URL or fragment.
+ * Room and space may both be present (Call-from-chat). Bare opaque id → space
+ * (same as historical home Join).
+ */
+export function extractInviteSecrets(input: string): InviteSecrets {
+  const trimmed = input.trim();
+  if (!trimmed) return { room: null, space: null };
+
+  try {
+    if (/^https?:\/\//i.test(trimmed) || trimmed.includes('?') || trimmed.includes('#')) {
+      const url = new URL(trimmed, globalThis.location?.origin ?? 'http://local');
+      return {
+        room: parseRoomIdFromLocation(url),
+        space: parseSpaceSecretFromLocation(url),
+      };
+    }
+  } catch {
+    // fall through
+  }
+
+  if (trimmed.startsWith('room=') || trimmed.startsWith('space=')) {
+    const parsed = parseCapabilityFromHash(`#${trimmed}`);
+    return {
+      room: parsed?.kind === 'room' ? parsed.secret : null,
+      space: parsed?.kind === 'space' ? parsed.secret : null,
+    };
+  }
+
+  if (/^[a-z0-9_-]{6,128}$/i.test(trimmed)) {
+    return { room: null, space: trimmed };
+  }
+
+  return { room: null, space: null };
+}
+
 export type ShareResult =
   | { ok: true; method: 'clipboard' | 'share' }
   | { ok: false; reason: 'cancelled' | 'failed'; url: string };

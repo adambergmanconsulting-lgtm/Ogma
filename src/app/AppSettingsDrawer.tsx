@@ -8,6 +8,8 @@ type SettingsLoom = {
   personId: string | null;
   busy: boolean;
   error: string | null;
+  chatSoundEnabled: boolean;
+  setChatSoundEnabled: (enabled: boolean) => void;
   onRenameVault: (name: string) => void;
   onEnableVault: () => void | Promise<void>;
   onExport: () => void | Promise<void>;
@@ -73,6 +75,8 @@ export function AppSettingsDrawer(props: AppSettingsDrawerProps) {
       turnError={turn.turnError}
       busy={loom.busy}
       error={loom.error}
+      chatSoundEnabled={loom.chatSoundEnabled}
+      onChatSoundEnabledChange={loom.setChatSoundEnabled}
       onClose={close}
       onRename={(name) => {
         loom.onRenameVault(name);

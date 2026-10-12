@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resetSharedAudioContextForTests } from '../shell/audioUnlock';
 import {
   isIncomingCallSoundActive,
   startIncomingCallSound,
@@ -8,18 +9,19 @@ import {
 describe('callRingSound', () => {
   afterEach(() => {
     stopIncomingCallSound();
+    resetSharedAudioContextForTests();
     vi.unstubAllGlobals();
   });
 
   it('no-ops when AudioContext is unavailable', () => {
     vi.stubGlobal('AudioContext', undefined);
     vi.stubGlobal('webkitAudioContext', undefined);
+    resetSharedAudioContextForTests();
     startIncomingCallSound();
     expect(isIncomingCallSoundActive()).toBe(false);
   });
 
   it('starts a loop and stop clears it', () => {
-    const close = vi.fn(async () => undefined);
     const resume = vi.fn(async () => undefined);
     const connect = vi.fn();
     const start = vi.fn();
@@ -45,16 +47,16 @@ describe('callRingSound', () => {
       createOscillator = () => new FakeOscillator();
       createGain = () => new FakeGain();
       resume = resume;
-      close = close;
+      close = vi.fn(async () => undefined);
     }
 
     vi.stubGlobal('AudioContext', FakeAudioContext);
+    resetSharedAudioContextForTests();
     startIncomingCallSound();
     expect(isIncomingCallSoundActive()).toBe(true);
     expect(resume).toHaveBeenCalled();
     expect(start).toHaveBeenCalled();
     stopIncomingCallSound();
     expect(isIncomingCallSoundActive()).toBe(false);
-    expect(close).toHaveBeenCalled();
   });
 });

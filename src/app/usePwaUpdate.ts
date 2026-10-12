@@ -1,31 +1,47 @@
 import { useEffect, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { PWA_UPDATE_CHECK_MS, shouldApplyUpdate } from '../domain/shell/pwaUpdate';
+import { PWA_UPDATE_CHECK_MS, shouldOfferUpdateBanner } from '../domain/shell/pwaUpdate';
 
 /**
- * Detects a waiting service worker and reloads when safe (not in a call).
- * Mid-call updates stay pending until leave.
+ * Detects a waiting service worker. Reload is user-initiated via the banner.
+ * Offer is hidden during vault-key reveal.
  */
-export function usePwaUpdate(opts: { inCall: boolean }) {
-  const appliedRef = useRef(false);
+export function usePwaUpdate(opts: { vaultReveal: boolean }) {
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
-      if (!registration) return;
-      const tick = () => {
-        void registration.update();
-      };
-      window.setInterval(tick, PWA_UPDATE_CHECK_MS);
+      registrationRef.current = registration ?? null;
     },
   });
 
   useEffect(() => {
-    if (appliedRef.current) return;
-    if (!shouldApplyUpdate({ needRefresh, inCall: opts.inCall })) return;
-    appliedRef.current = true;
-    void updateServiceWorker(true);
-  }, [needRefresh, opts.inCall, updateServiceWorker]);
+    const tick = () => {
+      void registrationRef.current?.update();
+    };
+    const id = window.setInterval(tick, PWA_UPDATE_CHECK_MS);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
+
+  const updateReady = shouldOfferUpdateBanner({
+    needRefresh,
+    vaultReveal: opts.vaultReveal,
+  });
+
+  return {
+    updateReady,
+    applyUpdate: () => {
+      void updateServiceWorker(true);
+    },
+  };
 }

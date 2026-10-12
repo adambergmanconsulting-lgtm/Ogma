@@ -32,7 +32,9 @@
 | Call status (error) | Join/room error message (`JOIN_PEERS_UNREACHABLE` / decrypt / handshake), else **Couldn't connect** | Raw enum `error`; `[object Object]`; “Couldn't reach Loom peers” |
 | Settings privacy | Collapsed summary **How privacy works**; Thread free + Loom honest paragraphs inside | Standing full honest essays above You / vault actions; "no servers" / "fully anonymous" / unaudited "E2EE" |
 | Settings TURN | Collapsed summary **Network help (optional)**; open when a TURN URI is saved; honesty that relay may see IP / timing | Standing TURN form above common settings; bundled public TURN on by default |
-| Settings order | **You** (name) → **Vault** (export / import / log out) → **Home screen** when needed → folded Privacy / Network → quiet **Last updated · {D Mon YYYY, HH:MM UTC}** (build clock, UTC; no semver) | Vault buttons with no heading; Privacy standing open; install duplicated under setup and Home screen; a version number when only the deploy day is known |
+| Settings order | **You** (name) → **Vault** (export / import / log out) → **Home screen** when needed → folded **Alerts** / Privacy / Network → quiet **Last updated · {D Mon YYYY, HH:MM UTC}** (build clock, UTC; no semver) | Vault buttons with no heading; Privacy standing open; install duplicated under setup and Home screen; a version number when only the deploy day is known |
+| PWA update | Quiet strip under the top bar: **Reload for update** (one control; applies the waiting app and reloads). Hidden during vault-key reveal | Silent auto-reload; semver / “New version” essays; Update as loud as Incoming Call; dismiss that leaves a waiting worker with no path |
+| Settings Alerts | Folded summary **Alerts**; **Chat sounds** (default on); note that Incoming Call rings in-tab | Silent chat by default; burying the toggle; push / wake-closed-app claims |
 | Settings You | Heading **You**; **Your name** / **Save name**; Active row when a person id exists | Burying name under Privacy / Network; vault essay as the You lead |
 | Settings Vault | Heading **Vault**; short scope; **Export** \| **Import** pair; **Log out**; quiet **Switch vault** + erase hint | Orphan vault buttons; Switch as loud as Export |
 | Devices drawer title | **Devices** | "Hardware"; "hot-swap" subtitles; standing test-sound tutorials |
@@ -40,6 +42,8 @@
 | Local tile name | Display name only | "(You)" suffix |
 | Capacity notice | `{n} of {max} — quality may drop` | Long "room is getting full" essays |
 | Capacity full | `Room full ({max} max)` | Long "room is full of people" essays |
+| Link quality (fair/poor, video still sending) | **Weak connection with {name} — lowering video**; without a known name: **Weak connection — lowering video** | Blaming "their Wi‑Fi"; rewriting **Connected**; listing every weak peer |
+| Link quality (outbound camera paused for congestion) | **Weak connection with {name} — video paused**; without a known name: **Weak connection — video paused** | Muting audio for congestion; pausing screen share for congestion |
 | Call lobby honest (free) | overview Thread free honest paragraph (muted under name on Join) | Paid-path copy; "no servers" / "fully anonymous" |
 | Background blur | On the local video tile: sparkles **Blur background** / **Clear background**. While software blur is on, a sliders glyph **Blur settings** opens and closes **Backdrop** and **Edge cut** (folded until opened). Hidden while sharing a screen | "Portrait mode"; "virtual background" for blur-only; blur on the call bar; backdrop standing on the tile |
 | Screen share | **Share screen** / **Stop sharing**. Shared picture fills the video window for everyone; other cameras stay as PiP. If the browser cannot capture: **This browser can't share a screen. Open Ogma in Chrome or Edge.** | A second Share window button; blur while the screen is the picture; shared screen only in a grid cell; raw `NotSupportedError` |

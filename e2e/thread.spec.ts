@@ -901,4 +901,31 @@ test.describe('Home Join paste', () => {
     await hostContext.close();
     await guestContext.close();
   });
+
+  test('guest pastes Call invite into All Join', async ({ browser }) => {
+    test.setTimeout(120_000);
+    const hostContext = await newMediaContext(browser);
+    const guestContext = await newMediaContext(browser);
+    const host = await hostContext.newPage();
+    const guest = await guestContext.newPage();
+
+    await createRoom(host, 'Host');
+    const roomUrl = host.url();
+    expect(roomUrl).toMatch(/[?&]room=/);
+
+    await ensureVault(guest, 'Guest');
+    await guest.getByTestId('chat-pane-spaces').click();
+    await expect(guest.getByTestId('home-join')).toBeVisible();
+    await guest.getByTestId('home-join').locator('summary').click();
+    await guest.getByTestId('space-input').fill(roomUrl);
+    await expect(guest.getByTestId('join-space')).toBeEnabled();
+    await guest.getByTestId('join-space').click();
+
+    await expect(guest.getByTestId('join-room')).toBeVisible({ timeout: 15_000 });
+    await guest.getByTestId('join-room').click();
+    await expect(guest.getByTestId('connection-label')).toBeVisible({ timeout: 30_000 });
+
+    await hostContext.close();
+    await guestContext.close();
+  });
 });

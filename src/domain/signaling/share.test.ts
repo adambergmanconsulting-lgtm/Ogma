@@ -1,5 +1,35 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { extractRoomSecret, shareRoomLink } from './share';
+import { extractInviteSecrets, extractRoomSecret, shareRoomLink } from './share';
+
+describe('extractInviteSecrets', () => {
+  it('parses Call-from-chat URL (room + space)', () => {
+    expect(
+      extractInviteSecrets('https://ogma.example/Ogma/?room=roomSecret&space=spaceSecret#space=spaceSecret'),
+    ).toEqual({ room: 'roomSecret', space: 'spaceSecret' });
+  });
+
+  it('parses room-only share URL', () => {
+    expect(extractInviteSecrets('https://ogma.example/?room=abc123def')).toEqual({
+      room: 'abc123def',
+      space: null,
+    });
+  });
+
+  it('parses space-only share URL', () => {
+    expect(extractInviteSecrets('https://ogma.example/?space=sec123#space=sec123')).toEqual({
+      room: null,
+      space: 'sec123',
+    });
+  });
+
+  it('treats bare id as space (home Join)', () => {
+    expect(extractInviteSecrets('meetup42')).toEqual({ room: null, space: 'meetup42' });
+  });
+
+  it('rejects empty', () => {
+    expect(extractInviteSecrets('')).toEqual({ room: null, space: null });
+  });
+});
 
 describe('extractRoomSecret', () => {
   it('parses full URL with room query', () => {

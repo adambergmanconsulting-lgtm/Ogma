@@ -63,7 +63,12 @@ import {
   readVaultSessionKey,
   writeVaultSessionKey,
 } from '../domain/loom/vaultSession';
+import {
+  readChatSoundEnabled,
+  writeChatSoundEnabled,
+} from '../domain/loom/chatSoundSettings';
 import { playNewMessageSound } from '../domain/loom/notifySound';
+import { pulseChatAlert, stopTabAlert } from '../domain/shell/tabAlert';
 import { pickWarmSpaceIds } from '../domain/loom/warm';
 import {
   clearCapabilityFromUrl,
@@ -71,7 +76,7 @@ import {
   replaceUrlWithSpace,
   spaceShareUrl,
 } from '../domain/signaling/room';
-import { extractSpaceSecret, shareRoomLink } from '../domain/signaling/share';
+import { extractInviteSecrets, shareRoomLink, type InviteSecrets } from '../domain/signaling/share';
 import type { SpaceMessageView } from '../components/SpaceView';
 import type { LoomSystemKind } from '../domain/loom/systemLine';
 import { useLoomUrlOpen } from './useLoomUrlOpen';
@@ -91,8 +96,6 @@ export type RevealState = {
   secret: string;
   why: string;
 };
-
-const SOUND_KEY = 'ogma.chatSound';
 
 function initialScreen(): LoomScreen {
   const v = readVault();
@@ -117,7 +120,7 @@ export function useLoomController() {
   const [messages, setMessages] = useState<SpaceMessageView[]>([]);
   const [hasMoreOlder, setHasMoreOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const soundEnabled = localStorage.getItem(SOUND_KEY) === '1';
+  const [chatSoundEnabled, setChatSoundEnabled] = useState(() => readChatSoundEnabled());
 
   const secretsRef = useRef(new Map<string, string>());
   const syncRef = useRef(new Map<string, LoomSyncSession>());
@@ -264,13 +267,26 @@ export function useLoomController() {
       if (viewing) {
         await clearUnread(store, spaceId);
         if (secret) await loadMessages(spaceId, secret);
+        if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+          stopTabAlert();
+        }
       }
       await refreshSpaces();
-      if (fromPeer && !viewing && soundEnabled) playNewMessageSound();
+      const tabHidden =
+        typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      if (fromPeer && chatSoundEnabled && (!viewing || tabHidden)) {
+        playNewMessageSound();
+        pulseChatAlert();
+      }
       await syncRef.current.get(spaceId)?.broadcastHave();
     },
-    [loadMessages, refreshSpaces, soundEnabled],
+    [chatSoundEnabled, loadMessages, refreshSpaces],
   );
+
+  const setChatSoundEnabledPersist = useCallback((enabled: boolean) => {
+    writeChatSoundEnabled(enabled);
+    setChatSoundEnabled(enabled);
+  }, []);
 
   const ensureSelfJoin = useCallback(
     async (spaceId: string, secret: string) => {
@@ -335,6 +351,7 @@ export function useLoomController() {
         setFocusedSecret(secret);
         setFocusedSpaceId(row.spaceId);
         replaceUrlWithSpace(secret);
+        stopTabAlert();
         await clearUnread(store, row.spaceId);
         await trimSpaceMessages(store, row.spaceId);
         setMessages([]);
@@ -637,6 +654,8 @@ export function useLoomController() {
     setSpaceInput,
     busy,
     error,
+    chatSoundEnabled,
+    setChatSoundEnabled: setChatSoundEnabledPersist,
     unlocked,
     inviteUrl: focusedSecret ? spaceShareUrl(focusedSecret) : null,
     /** Space capability secret for the open chat (Call derives Thread room from this). */
@@ -709,13 +728,16 @@ export function useLoomController() {
     onRevealContinue,
     /** Land in the space immediately — invite lives on the space (not a dead-end reveal). */
     onCreateSpace: () => openSpaceWithSecret(createSpaceSecret()),
-    onJoinSpace: () => {
-      const secret = extractSpaceSecret(spaceInput);
-      if (!secret) {
+    /** Home **Have an invite?** — returns room/space for App to open Call lobby and/or chat. */
+    onJoinSpace: (): InviteSecrets | null => {
+      const invite = extractInviteSecrets(spaceInput);
+      if (!invite.room && !invite.space) {
         setError('Paste an invite link');
-        return;
+        return null;
       }
-      void openSpaceWithSecret(secret);
+      setError(null);
+      setSpaceInput('');
+      return invite;
     },
     /** Re-open a space by capability secret (e.g. return to a backgrounded Call). */
     onOpenSpaceSecret: (secret: string): Promise<string | null> => openSpaceWithSecret(secret),

@@ -9,17 +9,20 @@ describe('buildUserMediaConstraints', () => {
     expect((video.frameRate as ConstrainDoubleRange).ideal).toBe(30);
   });
 
-  it('drops ideal width/fps for crowded or congested calls', () => {
-    const crowded = buildUserMediaConstraints({}, 5, { tier: 'high', congested: false });
-    const congested = buildUserMediaConstraints({}, 3, { tier: 'high', congested: true });
-    const low = buildUserMediaConstraints({}, 3, { tier: 'low', congested: false });
+  it('drops ideal width/fps for crowded or weak-link calls', () => {
+    const crowded = buildUserMediaConstraints({}, 5, { tier: 'high', linkQuality: 'good' });
+    const fair = buildUserMediaConstraints({}, 3, { tier: 'high', linkQuality: 'fair' });
+    const poor = buildUserMediaConstraints({}, 2, { tier: 'high', linkQuality: 'poor' });
+    const low = buildUserMediaConstraints({}, 3, { tier: 'low', linkQuality: 'good' });
 
     const crowdedW = (crowded.video as MediaTrackConstraints).width as ConstrainULongRange;
-    const congestedW = (congested.video as MediaTrackConstraints).width as ConstrainULongRange;
+    const fairW = (fair.video as MediaTrackConstraints).width as ConstrainULongRange;
+    const poorW = (poor.video as MediaTrackConstraints).width as ConstrainULongRange;
     const lowW = (low.video as MediaTrackConstraints).width as ConstrainULongRange;
 
     expect(crowdedW.ideal).toBeLessThan(1280);
-    expect(congestedW.ideal).toBeLessThanOrEqual(640);
+    expect(fairW.ideal).toBeLessThanOrEqual(640);
+    expect(poorW.ideal).toBeLessThanOrEqual(360);
     expect(lowW.ideal).toBeLessThanOrEqual(640);
   });
 

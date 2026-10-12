@@ -3,6 +3,7 @@ import { DEFAULT_MEDIA_CONSTRAINTS } from '../types';
 import {
   applyVideoQualityToTrack,
   buildUserMediaConstraints,
+  type LinkQuality,
   type SendQualityTier,
 } from './constraints';
 import { devicesByKind } from './devices';
@@ -10,7 +11,7 @@ import { devicesByKind } from './devices';
 export async function startUserMediaCapture(options: {
   peerCount: number;
   qualityTier: SendQualityTier;
-  congested: boolean;
+  linkQuality: LinkQuality;
   videoDeviceId: string;
   audioDeviceId: string;
   config?: Partial<MediaConstraintsConfig>;
@@ -22,7 +23,7 @@ export async function startUserMediaCapture(options: {
       audioDeviceId: options.config?.audioDeviceId || options.audioDeviceId || undefined,
     },
     options.peerCount,
-    { tier: options.qualityTier, congested: options.congested },
+    { tier: options.qualityTier, linkQuality: options.linkQuality },
   );
   return navigator.mediaDevices.getUserMedia(constraints);
 }
@@ -45,7 +46,7 @@ export function applyLiveVideoQuality(
   stream: MediaStream,
   peerCount: number,
   qualityTier: SendQualityTier,
-  congested: boolean,
+  linkQuality: LinkQuality,
   videoDeviceId: string,
   audioDeviceId: string,
 ): void {
@@ -56,7 +57,7 @@ export function applyLiveVideoQuality(
       audioDeviceId: audioDeviceId || undefined,
     },
     peerCount,
-    { tier: qualityTier, congested },
+    { tier: qualityTier, linkQuality },
   );
   for (const track of stream.getVideoTracks()) {
     void applyVideoQualityToTrack(track, constraints);

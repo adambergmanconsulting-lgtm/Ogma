@@ -3,14 +3,24 @@ import { DEFAULT_MEDIA_CONSTRAINTS } from '../types';
 
 export type SendQualityTier = 'high' | 'low';
 
+/** Per-peer / room mesh path quality from video RTP stats. */
+export type LinkQuality = 'good' | 'fair' | 'poor';
+
 export type ConstraintQualityOptions = {
   /** Speaking self-tier — silent peers send lower capture. */
   tier?: SendQualityTier;
-  /** From WebRTC outbound stats — drop below soft ceiling. */
+  /** From WebRTC peer stats — drop below soft ceiling. */
+  linkQuality?: LinkQuality;
+  /** @deprecated Prefer linkQuality; true maps to fair. */
   congested?: boolean;
 };
 
-/** Soft capture ceilings by N; congestion/tier move quality down from the ceiling. */
+function resolveLinkQuality(quality: ConstraintQualityOptions): LinkQuality {
+  if (quality.linkQuality) return quality.linkQuality;
+  return quality.congested ? 'fair' : 'good';
+}
+
+/** Soft capture ceilings by N; link quality / tier move quality down from the ceiling. */
 export function buildUserMediaConstraints(
   config: Partial<MediaConstraintsConfig> = {},
   peerCount = 1,
@@ -19,7 +29,7 @@ export function buildUserMediaConstraints(
   const widthMax = config.widthMax ?? DEFAULT_MEDIA_CONSTRAINTS.widthMax;
   const frameRateMax = config.frameRateMax ?? DEFAULT_MEDIA_CONSTRAINTS.frameRateMax;
   const tier = quality.tier ?? 'high';
-  const congested = quality.congested ?? false;
+  const linkQuality = resolveLinkQuality(quality);
   const n = Math.max(1, peerCount);
 
   let widthIdeal: number;
@@ -29,11 +39,19 @@ export function buildUserMediaConstraints(
     widthIdeal = 1280;
     fpsIdeal = 30;
   } else if (n <= 4) {
-    widthIdeal = congested ? 640 : 960;
-    fpsIdeal = congested ? 20 : 30;
+    widthIdeal = 960;
+    fpsIdeal = 30;
   } else {
-    widthIdeal = congested ? 480 : 640;
-    fpsIdeal = congested ? 15 : 20;
+    widthIdeal = 640;
+    fpsIdeal = 20;
+  }
+
+  if (linkQuality === 'fair') {
+    widthIdeal = Math.min(widthIdeal, n <= 2 ? 640 : n <= 4 ? 640 : 480);
+    fpsIdeal = Math.min(fpsIdeal, n <= 2 ? 20 : 15);
+  } else if (linkQuality === 'poor') {
+    widthIdeal = Math.min(widthIdeal, 360);
+    fpsIdeal = Math.min(fpsIdeal, 10);
   }
 
   if (tier === 'low') {

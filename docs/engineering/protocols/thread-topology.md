@@ -67,7 +67,9 @@ Before coding M1.5 hub: prove on Chromium and WebKit that a received `MediaStrea
 
 ## Encoding
 
-- Soft ceilings: width max 1280, fps max 30; scale with N, speaking tier, congestion (`buildUserMediaConstraints`, `maxVideoBitrateBps`).
+- Soft ceilings: width max 1280, fps max 30; scale with N, speaking tier, and per-peer **link quality** (`good` / `fair` / `poor` from video RTP loss/RTT on each mesh PC — `buildUserMediaConstraints`, `maxVideoBitrateBps`).
+- **Degrade ladder (audio last):** fair → smaller capture + lower video bitrate (+ yield blur); poor → tinier capture + floor bitrate; sustained poor → pause **outbound camera** video (`replaceTrack(null)`), screen share exempt. Never cap or mute audio for link quality.
+- Room policy follows the **worst** peer link; UI may name that peer ([connectivity.md](connectivity.md) UI). Hub re-elect on poor link is M1.5 — not mesh encode.
 - Prefer high quality on healthy small rooms; do not hard-drop solely because N rose.
 - Prefer forward encoded bits; simulcast later (or with paid SFU).
 

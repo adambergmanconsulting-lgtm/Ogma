@@ -189,6 +189,15 @@ export function SpaceView(props: SpaceViewProps) {
                   />
                 ) : null}
               </div>
+              {call?.linkQualityNotice ? (
+                <p
+                  role="status"
+                  data-testid="link-quality"
+                  className="space-pane-pad pt-1 text-[11px] text-[color:var(--color-muted)]"
+                >
+                  {call.linkQualityNotice}
+                </p>
+              ) : null}
               {call?.capacityWarning ? (
                 <p
                   role="status"
