@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Send, X } from 'lucide-react';
 import type { ChatMessage } from '../domain/types';
+import { ChatMessageMeta } from './ChatMessageMeta';
 import { ChatMessageText } from './ChatMessageText';
-import { PersonName } from './PersonName';
 
 interface ChatDrawerProps {
   open: boolean;
@@ -78,15 +78,13 @@ export function ChatDrawer({
                 key={m.id}
                 className={['max-w-[90%] text-sm', mine ? 'ml-auto' : 'mr-auto'].join(' ')}
               >
-                {!mine ? (
-                  <div className="mb-0.5 text-left text-[11px] text-[color:var(--color-muted)]">
-                    <PersonName
-                      name={m.displayName}
-                      selfName={selfName}
-                      personId={personId}
-                    />
-                  </div>
-                ) : null}
+                <ChatMessageMeta
+                  at={m.sentAt}
+                  align={mine ? 'end' : 'start'}
+                  author={m.displayName}
+                  selfName={selfName}
+                  personId={personId}
+                />
                 <ChatMessageText text={m.text} align={mine ? 'end' : 'start'} />
               </div>
             );

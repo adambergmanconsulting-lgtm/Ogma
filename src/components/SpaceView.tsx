@@ -3,6 +3,7 @@ import { Phone } from 'lucide-react';
 import { unlockRemoteAudio } from '../domain/media/remoteAudioUnlock';
 import type { ShareResult } from '../domain/signaling/share';
 import { ControlBar } from './ControlBar';
+import { ChatMessageMeta } from './ChatMessageMeta';
 import { ChatMessageText } from './ChatMessageText';
 import { ChatColumn, type ChatPane } from './ChatColumn';
 import { ChatInvite } from './ChatInvite';
@@ -345,15 +346,13 @@ export function SpaceView(props: SpaceViewProps) {
                       m.self ? 'ml-auto' : 'mr-auto',
                     ].join(' ')}
                   >
-                    {!m.self ? (
-                      <div className="mb-0.5 text-left text-[11px] text-[color:var(--color-muted)]">
-                        <PersonName
-                          name={m.author}
-                          selfName={props.selfName}
-                          personId={props.personId}
-                        />
-                      </div>
-                    ) : null}
+                    <ChatMessageMeta
+                      at={m.ts}
+                      align={m.self ? 'end' : 'start'}
+                      author={m.author}
+                      selfName={props.selfName}
+                      personId={props.personId}
+                    />
                     <ChatMessageText text={m.text} align={m.self ? 'end' : 'start'} />
                   </div>
                 ),
