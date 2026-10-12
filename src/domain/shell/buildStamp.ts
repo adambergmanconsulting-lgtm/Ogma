@@ -19,17 +19,17 @@ const MONTHS = [
 export const BUILD_TIME_ISO =
   typeof __BUILD_TIME__ === 'string' && __BUILD_TIME__.trim() ? __BUILD_TIME__.trim() : '';
 
-/** Quiet Settings footer: `Last updated · 11 Oct 2026, 19:30 UTC`. */
+/** Quiet Settings footer: `Last updated · 11 Oct 2026, 21:30` (local wall time). */
 export function formatBuildStamp(iso: string): string | null {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return null;
   const d = new Date(ms);
-  const day = d.getUTCDate();
-  const month = MONTHS[d.getUTCMonth()];
-  const year = d.getUTCFullYear();
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `Last updated · ${day} ${month} ${year}, ${hh}:${mm} UTC`;
+  const day = d.getDate();
+  const month = MONTHS[d.getMonth()];
+  const year = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `Last updated · ${day} ${month} ${year}, ${hh}:${mm}`;
 }
 
 export function settingsBuildStampLabel(
