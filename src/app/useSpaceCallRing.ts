@@ -1,9 +1,9 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   shouldOfferIncomingCall,
   type IncomingCall,
 } from '../domain/loom/callRing';
-import { playNewMessageSound } from '../domain/loom/notifySound';
+import { startIncomingCallSound, stopIncomingCallSound } from '../domain/loom/callRingSound';
 import { threadSecretFromSpace } from '../domain/signaling/threadFromSpace';
 
 /**
@@ -27,6 +27,7 @@ export function useSpaceCallRing(opts: {
   spaceSecretRef.current = opts.spaceSecret;
 
   const dismissIncomingCall = useCallback(() => {
+    stopIncomingCallSound();
     setIncomingCall(null);
     setAcceptError(null);
   }, []);
@@ -34,7 +35,10 @@ export function useSpaceCallRing(opts: {
   const markCalling = useCallback((spaceId: string) => {
     callingIdsRef.current.add(spaceId);
     setCallingSpaceId(spaceId);
-    setIncomingCall((cur) => (cur?.spaceId === spaceId ? null : cur));
+    setIncomingCall((cur) => {
+      if (cur?.spaceId === spaceId) stopIncomingCallSound();
+      return cur?.spaceId === spaceId ? null : cur;
+    });
     setAcceptError(null);
   }, []);
 
@@ -71,22 +75,31 @@ export function useSpaceCallRing(opts: {
         // Accept can derive the room under the click if this fails
       }
       if (callingIdsRef.current.has(spaceId) || inCallRef.current) return;
-      setIncomingCall({
-        spaceId,
-        spaceSecret: secret,
-        roomId,
-        author: author.trim(),
-        ts,
+      setIncomingCall((cur) => {
+        const next: IncomingCall = {
+          spaceId,
+          spaceSecret: secret,
+          roomId,
+          author: author.trim(),
+          ts,
+        };
+        // Re-announce while already offering — keep ringing, do not restart.
+        if (cur?.spaceId !== spaceId) startIncomingCallSound();
+        return next;
       });
       setAcceptError(null);
-      playNewMessageSound();
     })();
   }, []);
 
   const onCallEndWire = useCallback((spaceId: string) => {
-    setIncomingCall((cur) => (cur?.spaceId === spaceId ? null : cur));
+    setIncomingCall((cur) => {
+      if (cur?.spaceId === spaceId) stopIncomingCallSound();
+      return cur?.spaceId === spaceId ? null : cur;
+    });
     setAcceptError(null);
   }, []);
+
+  useEffect(() => () => stopIncomingCallSound(), []);
 
   return {
     incomingCall,
