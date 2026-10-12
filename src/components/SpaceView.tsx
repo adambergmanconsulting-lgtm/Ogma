@@ -153,15 +153,8 @@ export function SpaceView(props: SpaceViewProps) {
                 <PaneMark kind="video" />
                 <div className="min-w-0 flex-1 truncate text-xs text-[color:var(--color-muted)]">
                   {call ? (
-                    <span className="inline-flex min-w-0 items-center gap-1.5">
-                      <span data-testid="connection-label" className="min-w-0 truncate">
-                        {call.connectionLabel}
-                      </span>
-                      {call.roomCode ? (
-                        <span data-testid="room-code" className="shrink-0 tabular-nums">
-                          {call.roomCode}
-                        </span>
-                      ) : null}
+                    <span data-testid="connection-label" className="min-w-0 truncate">
+                      {call.connectionLabel}
                     </span>
                   ) : (
                     <span data-testid="space-mode-label" role="status">

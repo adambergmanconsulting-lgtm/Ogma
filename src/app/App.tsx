@@ -546,7 +546,6 @@ export default function App() {
         people={loom.people}
         reach={reach}
         connectionLabel={call.statusLabel}
-        roomCode={call.roomCode}
         inviteUrl={call.shareUrl}
         linkHint={call.linkHint}
         error={call.webrtc.error || call.media.error}

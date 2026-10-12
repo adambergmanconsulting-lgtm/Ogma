@@ -5,7 +5,6 @@ import {
   parseRoomIdFromLocation,
   parseSpaceSecretFromLocation,
   replaceUrlWithRoom,
-  roomDisplayCode,
   roomShareUrl,
 } from '../domain/signaling/room';
 import { extractRoomSecret, shareRoomLink } from '../domain/signaling/share';
@@ -213,7 +212,6 @@ export function useCallController(opts: CallControllerOpts) {
     onLeave,
     restoreShareUrl,
     shareUrl,
-    roomCode: activeRoom ? roomDisplayCode(activeRoom) : '',
     statusLabel: connectionLabel(
       webrtc.connectionState,
       webrtc.remotePeers.length,

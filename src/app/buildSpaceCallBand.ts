@@ -13,7 +13,6 @@ export function buildSpaceCallBand(
 ): SpaceCallBand {
   return {
     connectionLabel: call.statusLabel,
-    roomCode: call.roomCode,
     linkHint: call.linkHint,
     error: call.webrtc.error || call.media.error,
     localStream: call.media.stream,

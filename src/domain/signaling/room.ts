@@ -160,11 +160,6 @@ export function clearCapabilityFromUrl(): void {
   window.history.replaceState(null, '', `${url.pathname}${url.search}`);
 }
 
-/** Short code both people can read aloud to confirm same room. */
-export function roomDisplayCode(roomId: string): string {
-  return roomId.slice(0, 6).toUpperCase();
-}
-
 /** 128-bit URL-safe secret for Thread rooms. */
 export function createRoomSecret(): string {
   const bytes = new Uint8Array(16);

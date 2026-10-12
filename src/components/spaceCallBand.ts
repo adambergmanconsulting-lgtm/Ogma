@@ -4,7 +4,6 @@ import type { MediaDeviceOption, RemotePeer } from '../domain/types';
 /** Thread fill for the left presence pane. */
 export type SpaceCallBand = {
   connectionLabel: string;
-  roomCode: string;
   linkHint: string | null;
   error: string | null;
   localStream: MediaStream | null;

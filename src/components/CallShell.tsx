@@ -20,7 +20,6 @@ interface CallShellProps {
   people?: string[];
   reach?: PersonReach | null;
   connectionLabel: string;
-  roomCode: string;
   inviteUrl: string;
   linkHint: string | null;
   error: string | null;
@@ -91,11 +90,6 @@ export function CallShell(props: CallShellProps) {
           <span data-testid="connection-label" className="min-w-0 truncate">
             {props.connectionLabel}
           </span>
-          {props.roomCode ? (
-            <span data-testid="room-code" className="shrink-0 tabular-nums">
-              {props.roomCode}
-            </span>
-          ) : null}
         </div>
         {props.inviteUrl && waitingAlone ? (
           <div className="invite-link-bar-wait mt-1.5">
